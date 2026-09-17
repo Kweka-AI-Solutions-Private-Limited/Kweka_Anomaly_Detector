@@ -1,0 +1,89 @@
+# ==============================================================
+# Anomaly Detector — Docker Build Context Exclusions
+# ==============================================================
+# Files/directories listed here are excluded from the Docker
+# build context (NOT copied to the daemon during docker build).
+# This keeps the build context small and prevents secrets/data
+# from being accidentally baked into the image.
+# ==============================================================
+
+# Version control
+.git/
+.gitignore
+
+# IDE / editor
+.vscode/
+.idea/
+*.code-workspace
+
+# Python environments and caches
+backend/venv/
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+**/*.pyd
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+
+# Node environments and build artifacts
+frontend_react/node_modules/
+frontend_react/dist/
+frontend_react/.env
+
+# Secrets — NEVER bake into Docker image
+backend/.env
+**/.env.*
+!backend/.env.example
+
+# Research datasets — large, not needed at runtime
+backend/data/
+backend/datasets/
+
+# Notebooks
+backend/notebooks/
+
+# Experiment scripts — not part of the application
+backend/experiments/
+
+# Development-only scripts
+backend/scripts/
+
+# Test suites — not needed in production image
+backend/tests/
+backend/src/tests/
+
+# Test output files and logs
+**/*_out.txt
+**/*_output.txt
+docker_*.txt
+*.log
+**/*.pytest_cache
+
+# Live storage data — bind-mounted at runtime, do NOT copy into image
+# (the empty dirs are created by the Dockerfile RUN mkdir command)
+backend/storage/
+
+# Experiment outputs and results
+backend/outputs/
+backend/results/
+outputs/
+results/
+tmp/
+
+# Requirements for development only
+backend/requirements.dev.txt
+
+# Documentation
+README.md
+CHANGELOG.md
+*.md
+!backend/src/**/*.md
+
+# OS artifacts
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# pyrightconfig (type checker only)
+pyrightconfig.json

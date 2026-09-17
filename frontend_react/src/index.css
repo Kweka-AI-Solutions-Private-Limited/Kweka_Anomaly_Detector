@@ -1,0 +1,44 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-size: 17.5px; /* Increased font size for main application content */
+  }
+  
+  body {
+    @apply bg-industrial-100 text-industrial-900 font-sans antialiased text-base leading-relaxed;
+    background-image: radial-gradient(circle at 50% 0%, rgba(224, 106, 38, 0.05) 0%, transparent 65%);
+  }
+
+  /* Headings scale */
+  h1 {
+    @apply text-3xl font-extrabold tracking-tight text-industrial-900;
+  }
+  h2 {
+    @apply text-2xl font-bold tracking-tight text-industrial-900;
+  }
+  h3 {
+    @apply text-xl font-bold text-industrial-900;
+  }
+}
+
+/* Custom scrollbar styling for high-density inspection queues */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f4;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5d1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a39d;
+}

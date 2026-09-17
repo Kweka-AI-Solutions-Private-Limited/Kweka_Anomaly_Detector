@@ -1,0 +1,92 @@
+# ==============================================================
+# Anomaly Detector — Docker Compose Configuration
+# ==============================================================
+# Primary service: anomaly_detector (FastAPI + React + PyTorch CUDA)
+# MongoDB: External (MongoDB Atlas) — NOT included as a service
+#
+# Usage:
+#   docker compose up -d
+#   docker compose logs -f
+#   docker compose down
+#
+# GPU requirement: NVIDIA Container Toolkit must be installed on host
+#   https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html
+# ==============================================================
+
+services:
+  anomaly_detector:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # For same-origin deployment, leave empty (browser uses relative paths)
+        # Set to your domain if behind an external reverse proxy:
+        # VITE_API_BASE_URL: https://your-domain.com
+        VITE_API_BASE_URL: ""
+    image: anomaly_detector:latest
+    container_name: anomaly_detector
+    restart: unless-stopped
+
+    ports:
+      - "8000:8000"
+
+    # GPU configuration (requires NVIDIA Container Toolkit)
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+    # Environment variables — secrets are passed at runtime, NOT baked into image
+    # Copy backend/.env.example to backend/.env and fill in real values
+    env_file:
+      - backend/.env
+
+    # Override or add additional env vars here (non-secret)
+    environment:
+      - ENV=production
+      - HOST=0.0.0.0
+      - PORT=8000
+      - PYTHONUNBUFFERED=1
+      - PYTHONPATH=/app/backend/src
+      # Leave API_BASE_URL empty for same-origin deployment:
+      - API_BASE_URL=
+
+    # Storage bind mount — preserves all live inspection data across container restarts
+    # CRITICAL: This mounts the existing host storage directory.
+    #   - Do NOT use a named volume here or existing data will be hidden.
+    #   - backend/storage/ contains live inspections, references, artifacts, checkpoints.
+    volumes:
+      - ./backend/storage:/app/backend/storage
+
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 90s
+      retries: 3
+
+# ==============================================================
+# Optional: Local Development MongoDB
+# (NOT started by default — use: docker compose --profile dev up)
+# ==============================================================
+# Uncomment and use: docker compose --profile dev up
+# to start a local MongoDB for development WITHOUT Atlas.
+#
+#   mongo_dev:
+#     image: mongo:7
+#     container_name: anomaly_detector_mongo_dev
+#     profiles: [dev]
+#     restart: unless-stopped
+#     ports:
+#       - "27017:27017"
+#     volumes:
+#       - mongo_dev_data:/data/db
+#     environment:
+#       - MONGO_INITDB_DATABASE=Anomaly_Detector
+#
+# volumes:
+#   mongo_dev_data:

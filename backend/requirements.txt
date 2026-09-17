@@ -1,0 +1,57 @@
+# ==============================================================
+# Anomaly Detector — Production Runtime Dependencies
+# ==============================================================
+
+# --- Web Framework ---
+fastapi==0.115.0
+uvicorn[standard]==0.32.0
+python-multipart==0.0.12
+pydantic==2.10.3
+
+# --- Database ---
+pymongo==4.10.1
+python-dotenv==1.0.1
+
+# --- PyTorch (CUDA 12.8) ---
+torch==2.11.0+cu128
+torchvision==0.26.0+cu128
+
+# --- ML / Anomaly Detection ---
+anomalib==2.6.0
+timm==1.0.29
+einops==0.8.2
+kornia==0.8.3
+lightning==2.6.5
+torchmetrics==1.9.0
+
+# --- Image Processing ---
+opencv-python-headless==5.0.0.93
+pillow==12.3.0
+scikit-image==0.26.0
+imagecodecs==2026.3.6
+tifffile==2026.3.3
+
+# --- Numerical / ML Utils ---
+numpy==2.4.6
+scikit-learn==1.9.0
+scipy==1.17.1
+
+# --- Gemini VLM ---
+google-genai==1.16.0
+
+# --- HTTP ---
+httpx==0.28.1
+
+# --- Model Hub ---
+huggingface_hub==1.29.0
+safetensors==0.8.0
+
+# --- Anomalib / Config ---
+omegaconf==2.3.1
+jsonargparse==4.46.0
+docstring_parser==0.18.0
+rich==15.0.0
+rich-argparse==1.8.0
+
+# --- Heatmap generation ---
+matplotlib==3.11.1

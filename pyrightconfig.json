@@ -1,0 +1,11 @@
+{
+  "venvPath": "backend",
+  "venv": "venv",
+  "extraPaths": [
+    "backend/src",
+    "backend/venv/Lib/site-packages"
+  ],
+  "include": [
+    "backend"
+  ]
+}

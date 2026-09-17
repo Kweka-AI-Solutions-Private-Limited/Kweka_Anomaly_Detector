@@ -1,0 +1,82 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv
+
+# Environment files with secrets
+.env
+.env.local
+*.env
+
+# Node / Frontend
+node_modules/
+dist/
+frontend_dist/
+.vite/
+npm-debug.log*
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Storage temporary files & runtime directories (preserve directories via .gitkeep if needed)
+storage/
+backend/storage/
+backend/data/
+backend/datasets/
+backend/outputs/
+results/
+backend/results/
+*.ckpt
+*.pth
+*.pt
+*.onnx
+
+
+# Environment files with secrets
+.env
+.env.local
+.env.*
+*.env
+backend/.env
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv
+backend/venv/
+
+# Python Caches
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.pytest_cache/
+backend/.pytest_cache/
+
+# Node / Frontend
+node_modules/
+frontend_react/node_modules/
+dist/
+frontend_dist/
+.vite/
+npm-debug.log*
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+

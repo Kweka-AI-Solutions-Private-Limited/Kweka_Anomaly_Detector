@@ -1,0 +1,11 @@
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Python cache & virtualenv
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
