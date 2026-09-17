@@ -42,6 +42,14 @@ backend/results/
 *.pt
 *.onnx
 
+# Research Experiments & Notebooks
+backend/experiments/
+experiments/
+backend/notebooks/
+notebooks/
+*.ipynb
+
+
 
 # Environment files with secrets
 .env
