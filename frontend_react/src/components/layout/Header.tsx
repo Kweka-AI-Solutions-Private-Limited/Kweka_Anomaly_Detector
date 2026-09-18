@@ -166,6 +166,8 @@ export const Header: React.FC = () => {
         return 'Operator Feedback';
       case '/settings':
         return 'System Settings & Health';
+      case '/leaf-disease':
+        return 'Leaf Disease Detection';
       default:
         if (path.startsWith('/inspections/')) return 'Inspection Report Detail';
         return 'Product Overview';

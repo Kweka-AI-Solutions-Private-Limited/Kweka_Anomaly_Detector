@@ -502,10 +502,10 @@ export const Inspection: React.FC = () => {
                   >
                     <div className="flex items-center space-x-2 font-extrabold text-industrial-900 text-sm">
                       <Layers className="w-4 h-4 text-brand-600" />
-                      <span>Multi-Product (Phase 1)</span>
+                      <span>Multi-Product (Pure-Gemini Engine)</span>
                     </div>
                     <p className="text-[11px] text-industrial-500 mt-1.5 leading-snug">
-                      Multiple identical instances of the same product per image. Automatic separation & per-instance scoring.
+                      Inspect multiple physical products in one image directly via Gemini VLM. No reference images or PatchCore required.
                     </p>
                   </button>
                 </div>
@@ -653,6 +653,16 @@ export const Inspection: React.FC = () => {
                       </div>
                     )}
                   </label>
+
+                  {/* Sensitivity Guidance Note */}
+                  <div className="p-3 bg-brand-50/60 border border-brand-200 rounded-lg text-[11px] text-industrial-700 space-y-1">
+                    <p className="font-bold text-brand-900">Threshold Sensitivity Behavior:</p>
+                    <p className="leading-relaxed">
+                      • <strong>Higher threshold (e.g. 50.0)</strong> = Less sensitive (only stronger anomalies flagged as REJECT).<br />
+                      • <strong>Lower threshold (e.g. 15.0)</strong> = More sensitive (weaker anomalies flagged as REJECT).<br />
+                      • <strong>Scope:</strong> Applies strictly to <em>Single-Product PatchCore (Pipeline A)</em>. Multi-Product Pure-Gemini (Pipeline B) decisions are evaluated directly by Gemini VLM.
+                    </p>
+                  </div>
                 </div>
               </Card>
             </div>

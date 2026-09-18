@@ -1,0 +1,2112 @@
+[
+  {
+    "product_id": "bushi",
+    "product_name": "BUSHI",
+    "category": "Insecticides",
+    "product_url": "https://naclind.com/products/insecticides/bushi/",
+    "active_ingredient": null,
+    "chemical_class": null,
+    "mode_of_action": "Pyridaben acts as a mitochondrial electron transport inhibitor (METI), blocking cellular respiration and energy production, leading to rapid knockdown and death of mites.",
+    "pack_sizes": [
+      "50 gm",
+      "100 gm",
+      "200 gm",
+      "500 gm",
+      "1 kg"
+    ],
+    "key_benefits": [
+      "Quick knockdown action against wide spectrum of mites",
+      "Highly effective against all mite lifecycle stages (egg, nymph, adult)",
+      "Longer duration of control",
+      "Wettable powder — safer for environment, no crop scorching in summer"
+    ],
+    "crop_applications": [
+      {
+        "crop": "Tea, Cotton",
+        "target_pest_or_disease": null,
+        "dosage": "200 gm/acre"
+      },
+      {
+        "crop": "Chilli",
+        "target_pest_or_disease": null,
+        "dosage": "150–200 gm/acre"
+      }
+    ]
+  },
+  {
+    "product_id": "cairo",
+    "product_name": "Cairo",
+    "category": "Insecticides",
+    "product_url": "https://naclind.com/products/insecticides/cairo/",
+    "active_ingredient": null,
+    "chemical_class": "Synthetic Pyrethroid insecticide",
+    "mode_of_action": "Acts on the sodium channels of insect nerve cells, causing prolonged nerve excitation, paralysis, and death.",
+    "pack_sizes": [
+      "100ml",
+      "250ml",
+      "500ml",
+      "1lt"
+    ],
+    "key_benefits": [
+      "Contact & stomach mode of action",
+      "Provides long duration of control"
+    ],
+    "crop_applications": [
+      {
+        "crop": "Grapes",
+        "target_pest_or_disease": null,
+        "dosage": "100 ml/acre"
+      },
+      {
+        "crop": "Cotton",
+        "target_pest_or_disease": null,
+        "dosage": "200 ml/acre"
+      },
+      {
+        "crop": "Tomato",
+        "target_pest_or_disease": null,
+        "dosage": "120 ml/acre"
+      },
+      {
+        "crop": "Paddy",
+        "target_pest_or_disease": null,
+        "dosage": "100 ml/acre"
+      },
+      {
+        "crop": "Brinjal",
+        "target_pest_or_disease": null,
+        "dosage": "120 ml/acre"
+      },
+      {
+        "crop": "Okra",
+        "target_pest_or_disease": null,
+        "dosage": "120 ml/acre"
+      },
+      {
+        "crop": "Chilli",
+        "target_pest_or_disease": null,
+        "dosage": "200 ml/acre"
+      },
+      {
+        "crop": "Soybean",
+        "target_pest_or_disease": null,
+        "dosage": "120 ml/acre"
+      }
+    ]
+  },
+  {
+    "product_id": "cannon",
+    "product_name": "CANNON",
+    "category": "Insecticides",
+    "product_url": "https://naclind.com/products/insecticides/cannon/",
+    "active_ingredient": "Cypermethrin 5% EC",
+    "chemical_class": null,
+    "mode_of_action": "Chlorpyriphos acts as an acetylcholinesterase (AChE) inhibitor, causing accumulation of acetylcholine in the insect nervous system, leading to continuous nerve stimulation, paralysis, and death.",
+    "pack_sizes": [
+      "100ml",
+      "250ml",
+      "500ml",
+      "1 lt",
+      "5 lt"
+    ],
+    "key_benefits": [
+      "Dual active — Chlorpyriphos (Organophosphate) + Cypermethrin (Pyrethroid)",
+      "Rapid knockdown with strong residual control",
+      "Controls Aphids, Jassids, Thrips, Whitefly, American Bollworm, Spodoptera"
+    ],
+    "crop_applications": []
+  },
+  {
+    "product_id": "dxtar-fs",
+    "product_name": "DXTAR FS",
+    "category": "Insecticides",
+    "product_url": "https://naclind.com/products/insecticides/dxtar-fs/",
+    "active_ingredient": null,
+    "chemical_class": null,
+    "mode_of_action": "Thiamethoxam acts systemically by binding to nicotinic acetylcholine receptors (nAChRs) in the insect nervous system. As a seed treatment, it is absorbed by the germinating seed and translocated throughout the plant to provide early protection. Causes continuous nerve stimulation, leading to paralysis and death of the pest.",
+    "pack_sizes": [
+      "100 ml",
+      "250 ml",
+      "500 ml",
+      "1 liter"
+    ],
+    "key_benefits": [
+      "Thiamethoxam 30% FS — flowable concentrate for seed treatment",
+      "Uniform seed coating with excellent adhesion and minimal dust-off",
+      "Systemic uptake from germination onward",
+      "Early protection against sucking and soil pests"
+    ],
+    "crop_applications": [
+      {
+        "crop": "Soybean, Cotton",
+        "target_pest_or_disease": null,
+        "dosage": "10 ml/Kg seed"
+      },
+      {
+        "crop": "Maize",
+        "target_pest_or_disease": null,
+        "dosage": "8 ml/Kg seed"
+      },
+      {
+        "crop": "Paddy",
+        "target_pest_or_disease": null,
+        "dosage": "3 ml/Kg seed"
+      }
+    ]
+  },
+  {
+    "product_id": "dxtar",
+    "product_name": "DXTAR",
+    "category": "Insecticides",
+    "product_url": "https://naclind.com/products/insecticides/dxtar/",
+    "active_ingredient": "Thiamethoxam 25% WG",
+    "chemical_class": "Neonicotinoid insecticide",
+    "frac_group": "IRAC Group 4A",
+    "mode_of_action": "Thiamethoxam acts systemically by binding to nicotinic acetylcholine receptors (nAChRs) in the insect nervous system.",
+    "source_url": "https://naclind.com/products/insecticides/dxtar/",
+    "source_type": "OFFICIAL_NACL_WEBSITE",
+    "verification_status": "VERIFIED",
+    "pack_sizes": [
+      "100 gm",
+      "250 gm",
+      "500 gm",
+      "1 kg"
+    ],
+    "key_benefits": [
+      "Thiamethoxam 25% WG — systemic and translaminar action",
+      "Quick knockdown and long-lasting residual control",
+      "Effective against sucking pests including Aphids, Thrips, Jassids, and Whitefly"
+    ],
+    "crop_applications": [
+      {
+        "crop": "Paddy",
+        "target_pest_or_disease": "Stem Borer, GLH",
+        "dosage": "40 gm/acre",
+        "dosage_verified": true,
+        "source_url": "https://naclind.com/products/insecticides/dxtar/",
+        "source_type": "OFFICIAL_NACL_WEBSITE"
+      },
+      {
+        "crop": "Cotton",
+        "target_pest_or_disease": "Aphids, Thrips, Jassids, Whitefly",
+        "dosage": "40–80 gm/acre",
+        "dosage_verified": true,
+        "source_url": "https://naclind.com/products/insecticides/dxtar/",
+        "source_type": "OFFICIAL_NACL_WEBSITE"
+      },
+      {
+        "crop": "Tomato",
+        "target_pest_or_disease": "Whitefly, Thrips",
+        "dosage": "80 gm/acre",
+        "dosage_verified": true,
+        "source_url": "https://naclind.com/products/insecticides/dxtar/",
+        "source_type": "OFFICIAL_NACL_WEBSITE"
+      },
+      {
+        "crop": "Brinjal",
+        "target_pest_or_disease": "Shoot & Fruit Borer",
+        "dosage": "80 gm/acre",
+        "dosage_verified": true,
+        "source_url": "https://naclind.com/products/insecticides/dxtar/",
+        "source_type": "OFFICIAL_NACL_WEBSITE"
+      }
+    ]
+  },
+  {
+    "product_id": "ennova",
+    "product_name": "ENNOVA",
+    "category": "Insecticides",
+    "product_url": "https://naclind.com/products/insecticides/ennova/",
+    "active_ingredient": "Acetamiprid 20% SP",
+    "chemical_class": null,
+    "mode_of_action": "Acetamiprid acts systemically by binding to nicotinic acetylcholine receptors (nAChRs) in the insect nervous system, causing continuous nerve stimulation, paralysis, and death. It works through contact and ingestion.",
+    "pack_sizes": [
+      "20 gm",
+      "50 gm",
+      "100 gm",
+      "250 gm",
+      "500 gm",
+      "1 kg"
+    ],
+    "key_benefits": [
+      "Acetamiprid 20% SP — systemic and translaminar action",
+      "Quick knockdown and extended residual protection",
+      "Easy to mix — good solubility in water",
+      "Reliable performance across various crops"
+    ],
+    "crop_applications": [
+      {
+        "crop": "Cotton, Chilli",
+        "target_pest_or_disease": null,
+        "dosage": "20–40 gm/acre"
+      },
+      {
+        "crop": "Paddy",
+        "target_pest_or_disease": null,
+        "dosage": "22–40 gm/acre"
+      }
+    ]
+  },
+  {
+    "product_id": "fenny",
+    "product_name": "Fenny",
+    "category": "Insecticides",
+    "product_url": "https://naclind.com/products/insecticides/fenny/",
+    "active_ingredient": null,
+    "chemical_class": "Synthetic Pyrethroid insecticide",
+    "mode_of_action": "Acts on voltage-gated sodium channels in the insect nervous system, causing prolonged nerve excitation, paralysis, and death.",
+    "pack_sizes": [
+      "100ml",
+      "250ml",
+      "500ml",
+      "1lt"
+    ],
+    "key_benefits": [
+      "New generation broad-spectrum Pyrethroid insecticide",
+      "Strong contact and stomach action — controls larvae, whitefly, mites and jassids",
+      "Quick knockdown action",
+      "Longer persistence period of control"
+    ],
+    "crop_applications": [
+      {
+        "crop": "Cotton",
+        "target_pest_or_disease": null,
+        "dosage": "320 ml/acre"
+      },
+      {
+        "crop": "Sugarcane",
+        "target_pest_or_disease": null,
+        "dosage": "400 ml/acre"
+      },
+      {
+        "crop": "Rice",
+        "target_pest_or_disease": null,
+        "dosage": "200 ml/acre"
+      }
+    ]
+  },
+  {
+    "product_id": "force-super",
+    "product_name": "FORCE SUPER",
+    "category": "Insecticides",
+    "product_url": "https://naclind.com/products/insecticides/force-super/",
+    "active_ingredient": "Chlorpyriphos 50% EC",
+    "chemical_class": null,
+    "mode_of_action": "Chlorpyriphos acts as an acetylcholinesterase (AChE) inhibitor. It disrupts the normal functioning of the insect nervous system by preventing the breakdown of acetylcholine, leading to continuous nerve impulse transmission, paralysis, and death.",
+    "pack_sizes": [
+      "100 ml",
+      "250 ml",
+      "500 ml",
+      "1 liter",
+      "5 Liter"
+    ],
+    "key_benefits": [
+      "Chlorpyriphos 50% EC — contact, stomach, and fumigant action",
+      "Quick knockdown and long-lasting protection",
+      "Controls both soil and foliar pests",
+      "Good penetration into soil and plant surfaces"
+    ],
+    "crop_applications": [
+      {
+        "crop": "Paddy",
+        "target_pest_or_disease": null,
+        "dosage": "300–320 ml/acre"
+      },
+      {
+        "crop": "Cotton",
+        "target_pest_or_disease": null,
+        "dosage": "400–480 ml/acre"
+      }
+    ]
+  },
+  {
+    "product_id": "fury",
+    "product_name": "FURY",
+    "category": "Insecticides",
+    "product_url": "https://naclind.com/products/insecticides/fury/",
+    "active_ingredient": null,
+    "chemical_class": null,
+    "mode_of_action": "Carbofuran acts as an acetylcholinesterase (AChE) inhibitor, preventing the breakdown of acetylcholine in the insect nervous system. This causes continuous nerve impulse transmission, resulting in paralysis and death of the target pest.",
+    "pack_sizes": [
+      "1 Kg",
+      "4 Kg"
+    ],
+    "key_benefits": [
+      "Carbofuran 3% CG — systemic, contact, and stomach action",
+      "Controls stem borers and soil pests effectively",
+      "Uniform field application — dependable performance"
+    ],
+    "crop_applications": []
+  },
+  {
+    "product_id": "hurricane-plus",
+    "product_name": "HURRICANE PLUS",
+    "category": "Insecticides",
+    "product_url": "https://naclind.com/products/insecticides/hurricane-plus/",
+    "active_ingredient": null,
+    "chemical_class": null,
+    "mode_of_action": "Novaluron acts as a chitin synthesis inhibitor, disrupting molting and preventing proper development of immature insects.",
+    "pack_sizes": [
+      "100 gm",
+      "250 gm",
+      "500 gm",
+      "1 kg"
+    ],
+    "key_benefits": [
+      "Dual active — Novaluron (Benzoylurea) + Emamectin Benzoate (Avermectin)",
+      "Growth regulation + strong stomach activity",
+      "Effective control at multiple life stages",
+      "Uniform dispersion and better stability"
+    ],
+    "crop_applications": [
+      {
+        "crop": "Paddy",
+        "target_pest_or_disease": null,
+        "dosage": "600 ml/acre"
+      },
+      {
+        "crop": "Red Gram, Chilli",
+        "target_pest_or_disease": null,
+        "dosage": "350 ml/acre"
+      }
+    ]
+  },
+  {
+    "product_id": "nagarjuna-4g",
+    "product_name": "Nagarjuna 4G",
+    "category": "Insecticides",
+    "product_url": "https://naclind.com/products/insecticides/nagarjuna-4g/",
+    "active_ingredient": null,
+    "chemical_class": null,
+    "mode_of_action": "Broad-spectrum organophosphate insecticide with contact and stomach action.",
+    "pack_sizes": [
+      "1 Kg",
+      "5 Kg"
+    ],
+    "key_benefits": [
+      "Granular formulation for uniform field application",
+      "Controls Stem Borer and Leaf Folder in paddy",
+      "Stomach action — disrupts nerve impulse transmission",
+      "Longer residual protection applied to soil or standing water"
+    ],
+    "crop_applications": []
+  },
+  {
+    "product_id": "nagarjuna-mida",
+    "product_name": "NAGARJUNA MIDA",
+    "category": "Insecticides",
+    "product_url": "https://naclind.com/products/insecticides/nagarjuna-mida/",
+    "active_ingredient": null,
+    "chemical_class": null,
+    "mode_of_action": "Imidacloprid acts systemically by binding to nicotinic acetylcholine receptors (nAChRs) in the insect nervous system. This causes continuous nerve stimulation, leading to paralysis and eventual death of the pest. Works through contact and ingestion.",
+    "pack_sizes": [
+      "50 ml",
+      "100 ml",
+      "250 ml",
+      "500 ml",
+      "1 liter"
+    ],
+    "key_benefits": [
+      "Imidacloprid 17.8% SL — strong systemic and translaminar action",
+      "Quick knockdown and long-lasting residual protection",
+      "Effective against sucking pests in multiple crops"
+    ],
+    "crop_applications": [
+      {
+        "crop": "Cotton, Paddy, Groundnut",
+        "target_pest_or_disease": null,
+        "dosage": "40–50 ml/acre"
+      },
+      {
+        "crop": "Sugarcane",
+        "target_pest_or_disease": null,
+        "dosage": "140 ml/acre"
+      },
+      {
+        "crop": "Chilli",
+        "target_pest_or_disease": null,
+        "dosage": "50–100 ml/acre"
+      },
+      {
+        "crop": "Tomato",
+        "target_pest_or_disease": null,
+        "dosage": "60–70 ml/acre"
+      }
+    ]
+  },
+  {
+    "product_id": "nagarjuna-suraksha-gr",
+    "product_name": "NAGARJUNA SURAKSHA GR",
+    "category": "Insecticides",
+    "product_url": "https://naclind.com/products/insecticides/nagarjuna-suraksha-gr/",
+    "active_ingredient": null,
+    "chemical_class": null,
+    "mode_of_action": "Chlorantraniliprole acts by activating ryanodine receptors in insect muscles, causing uncontrolled release of calcium. This leads to muscle paralysis, immediate feeding cessation, and eventual death of the pest.",
+    "pack_sizes": [
+      "1 kg",
+      "4 Kg"
+    ],
+    "key_benefits": [
+      "Chlorantraniliprole 0.6% GR — granular formulation for soil application",
+      "Long-lasting control of lepidopteran pests",
+      "Excellent crop safety and low mammalian toxicity",
+      "Uniform granule size for easy and consistent application"
+    ],
+    "crop_applications": [
+      {
+        "crop": "Paddy",
+        "target_pest_or_disease": null,
+        "dosage": "4 kg/acre"
+      },
+      {
+        "crop": "Sugarcane",
+        "target_pest_or_disease": null,
+        "dosage": "7.5 Kg/acre"
+      }
+    ]
+  },
+  {
+    "product_id": "nagarjuna-suraksha-sc",
+    "product_name": "NAGARJUNA SURAKSHA SC",
+    "category": "Insecticides",
+    "product_url": "https://naclind.com/products/insecticides/nagarjuna-suraksha-sc/",
+    "active_ingredient": null,
+    "chemical_class": null,
+    "mode_of_action": "Chlorantraniliprole belongs to the anthranilic diamide class of insecticides, targeting insect ryanodine receptors. It activates ryanodine receptors, causing uncontrolled release of calcium, leading to muscle paralysis, immediate feeding cessation, and death. Most effective through ingestion.",
+    "pack_sizes": [
+      "30 ml",
+      "60 ml",
+      "150 ml"
+    ],
+    "key_benefits": [
+      "Effective and long-duration protection with unique mode of action",
+      "Protects rice from stem borer and leaf folder; sugarcane from early shoot borer and top borer",
+      "Activates muscle ryanodine receptors — contraction and paralysis",
+      "Prevents pest population build-up and maximizes crop yield potential"
+    ],
+    "crop_applications": [
+      {
+        "crop": "Paddy, Chilli, Soybean, Cotton",
+        "target_pest_or_disease": null,
+        "dosage": "60 ml/acre"
+      },
+      {
+        "crop": "Sugarcane",
+        "target_pest_or_disease": null,
+        "dosage": "150 ml/acre"
+      }
+    ]
+  },
+  {
+    "product_id": "pest-lock",
+    "product_name": "PEST LOCK",
+    "category": "Insecticides",
+    "product_url": "https://naclind.com/products/insecticides/pest-lock/",
+    "active_ingredient": "Task SC",
+    "chemical_class": null,
+    "mode_of_action": "Pyriproxyfen acts as a juvenile hormone analog, disrupting insect growth and development, preventing molting and reproduction.",
+    "pack_sizes": [
+      "100 ml",
+      "250 ml",
+      "500 ml",
+      "1 liter"
+    ],
+    "key_benefits": [
+      "Dual active — Pyriproxyfen (Juvenile Hormone Mimic) + Diafenthiuron (METI)",
+      "Targets multiple life stages of sucking pests",
+      "Growth regulation + strong contact activity",
+      "Immediate knockdown and long-term population suppression"
+    ],
+    "crop_applications": [
+      {
+        "crop": "Cotton",
+        "target_pest_or_disease": null,
+        "dosage": "400–500 ml/acre"
+      }
+    ]
+  },
+  {
+    "product_id": "profex-super",
+    "product_name": "Profex Super",
+    "category": "Insecticides",
+    "product_url": "https://naclind.com/products/insecticides/profex-super/",
+    "active_ingredient": "Cypermethrin 4% EC",
+    "chemical_class": null,
+    "mode_of_action": "Dual action — quick knockdown and long-lasting residual control against chewing and sucking pests.",
+    "pack_sizes": [
+      "100ml",
+      "200ml",
+      "500ml",
+      "1 lt",
+      "5 lt"
+    ],
+    "key_benefits": [
+      "Dual active — Profenofos (Organophosphate) + Cypermethrin (Pyrethroid)",
+      "Contact and stomach action for broad-spectrum pest control",
+      "Quick knockdown with residual protection"
+    ],
+    "crop_applications": [
+      {
+        "crop": "Cotton (Boll Worm Complex)",
+        "target_pest_or_disease": null,
+        "dosage": "400–600 ml/acre"
+      }
+    ]
+  },
+  {
+    "product_id": "profex-ultra",
+    "product_name": "PROFEX ULTRA",
+    "category": "Insecticides",
+    "product_url": "https://naclind.com/products/insecticides/profex-ultra/",
+    "active_ingredient": null,
+    "chemical_class": null,
+    "mode_of_action": "Emamectin Benzoate acts by stimulating glutamate-gated chloride channels, causing paralysis and death of the insect.",
+    "pack_sizes": [
+      "150 gm",
+      "300 gm",
+      "750 gm"
+    ],
+    "key_benefits": [
+      "Dual active — Emamectin Benzoate (Avermectin) + Profenofos (Organophosphate)",
+      "Quick knockdown through contact and stomach action",
+      "Long-lasting residual control",
+      "Better stability and effective performance across multiple crops"
+    ],
+    "crop_applications": [
+      {
+        "crop": "Cotton, Maize, Chilli",
+        "target_pest_or_disease": null,
+        "dosage": "700–750 gm/acre"
+      }
+    ]
+  },
+  {
+    "product_id": "profex",
+    "product_name": "PROFEX",
+    "category": "Insecticides",
+    "product_url": "https://naclind.com/products/insecticides/profex/",
+    "active_ingredient": null,
+    "chemical_class": null,
+    "mode_of_action": "Profenofos acts as an acetylcholinesterase (AChE) inhibitor, preventing the breakdown of acetylcholine in the insect nervous system. This results in continuous nerve impulse transmission, leading to paralysis and death of the target insect.",
+    "pack_sizes": [
+      "100ml",
+      "200ml",
+      "500ml",
+      "1 lt",
+      "5 lt"
+    ],
+    "key_benefits": [
+      "Broad-spectrum organophosphate insecticide",
+      "Contact and stomach action",
+      "Strong residual control for extended protection"
+    ],
+    "crop_applications": []
+  },
+  {
+    "product_id": "pymet",
+    "product_name": "PYMET",
+    "category": "Insecticides",
+    "product_url": "https://naclind.com/products/insecticides/pymet/",
+    "active_ingredient": "Pymetrozine 50% WG",
+    "chemical_class": null,
+    "mode_of_action": "Pymetrozine acts as a selective feeding blocker by affecting the insect nervous regulation of salivation and stylet movement. It causes immediate cessation of feeding, leading to starvation and eventual death of sucking pests.",
+    "pack_sizes": [
+      "120 gm",
+      "250 gm",
+      "500 gm",
+      "1 kg"
+    ],
+    "key_benefits": [
+      "Pymetrozine 50% WG — selective feeding blocker",
+      "Rapid feeding inhibition and long-lasting control",
+      "Systemic and translaminar activity",
+      "Causes starvation and eventual death of sucking pests"
+    ],
+    "crop_applications": [
+      {
+        "crop": "Paddy",
+        "target_pest_or_disease": null,
+        "dosage": "120 gm/acre"
+      }
+    ]
+  },
+  {
+    "product_id": "pyrakill",
+    "product_name": "PYRAKILL",
+    "category": "Insecticides",
+    "product_url": "https://naclind.com/products/insecticides/pyrakill/",
+    "active_ingredient": "Tolfenpyrad 15% EC",
+    "chemical_class": null,
+    "mode_of_action": "Dual action for rapid knockdown and residual control against sucking and chewing pests.",
+    "pack_sizes": [
+      "100 ml",
+      "250 ml",
+      "500 ml",
+      "1 liter"
+    ],
+    "key_benefits": [
+      "Tolfenpyrad 15% EC — broad-spectrum insecticide.",
+      "Quick knockdown by disrupting pest energy production",
+      "Strong contact action with rapid knockdown",
+      "Reliable residual performance across multiple crops"
+    ],
+    "crop_applications": []
+  },
+  {
+    "product_id": "quick-50sp",
+    "product_name": "QUICK 50%SP",
+    "category": "Insecticides",
+    "product_url": "https://naclind.com/products/insecticides/quick-50sp/",
+    "active_ingredient": "K 50%SP",
+    "chemical_class": null,
+    "mode_of_action": "Cartap Hydrochloride acts as a nereistoxin analogue, blocking nicotinic acetylcholine receptors in the insect nervous system. This disrupts nerve impulse transmission, causing paralysis and eventual death of the pest.",
+    "pack_sizes": [
+      "25 gm",
+      "50 gm",
+      "100 gm",
+      "250 gm",
+      "500 gm",
+      "1 kg"
+    ],
+    "key_benefits": [
+      "Cartap Hydrochloride 50% SP — soluble powder for easy application",
+      "Excellent systemic and translaminar action",
+      "Strong stomach and contact activity",
+      "Rapid feeding cessation and pest mortality"
+    ],
+    "crop_applications": [
+      {
+        "crop": "Paddy",
+        "target_pest_or_disease": null,
+        "dosage": "400 gm/acre"
+      }
+    ]
+  },
+  {
+    "product_id": "speed",
+    "product_name": "SPEED",
+    "category": "Insecticides",
+    "product_url": "https://naclind.com/products/insecticides/speed/",
+    "active_ingredient": "Imidacloprid 40% WG",
+    "chemical_class": null,
+    "mode_of_action": "Imidacloprid acts systemically by binding to nicotinic acetylcholine receptors (nAChRs) in the insect nervous system, causing paralysis and death.",
+    "pack_sizes": [
+      "40 gm",
+      "100 gm",
+      "250 gm",
+      "500 gm"
+    ],
+    "key_benefits": [
+      "Dual active — Fipronil (Phenylpyrazole) + Imidacloprid (Neonicotinoid)",
+      "Strong contact and systemic activity",
+      "Quick knockdown and extended residual protection",
+      "Effective for sucking and soil pests across multiple crops"
+    ],
+    "crop_applications": [
+      {
+        "crop": "Paddy",
+        "target_pest_or_disease": null,
+        "dosage": "40–50 gm/acre"
+      },
+      {
+        "crop": "Cotton",
+        "target_pest_or_disease": null,
+        "dosage": "50 gm/acre"
+      },
+      {
+        "crop": "Chilli",
+        "target_pest_or_disease": null,
+        "dosage": "40 gm/acre"
+      },
+      {
+        "crop": "Sugarcane",
+        "target_pest_or_disease": null,
+        "dosage": "200 gm/acre"
+      }
+    ]
+  },
+  {
+    "product_id": "task-sc",
+    "product_name": "Task SC",
+    "category": "Insecticides",
+    "product_url": "https://naclind.com/products/insecticides/task-sc/",
+    "active_ingredient": "Task SC",
+    "chemical_class": "Phenylpyrazole insecticide",
+    "mode_of_action": "Blocks GABA-gated chloride channels in the insect nervous system, causing uncontrolled nerve activity, paralysis, and death.",
+    "pack_sizes": [
+      "250ml",
+      "500ml",
+      "1lt"
+    ],
+    "key_benefits": [
+      "Demonstrable Plant Growth Enhancement (PGE) effect in many crops",
+      "Effective and long duration control of thrips in various crops",
+      "Ideal choice for IPM",
+      "Controls pests of rice, chilli, cabbage/cauliflower and sugarcane effectively"
+    ],
+    "crop_applications": [
+      {
+        "crop": "Rice",
+        "target_pest_or_disease": null,
+        "dosage": "400–600 ml/acre"
+      },
+      {
+        "crop": "Cabbage",
+        "target_pest_or_disease": null,
+        "dosage": "320–400 ml/acre"
+      },
+      {
+        "crop": "Chilli",
+        "target_pest_or_disease": null,
+        "dosage": "320–400 ml/acre"
+      },
+      {
+        "crop": "Sugarcane",
+        "target_pest_or_disease": null,
+        "dosage": "600–800 ml/acre"
+      }
+    ]
+  },
+  {
+    "product_id": "trust",
+    "product_name": "Trust",
+    "category": "Insecticides",
+    "product_url": "https://naclind.com/products/insecticides/trust/",
+    "active_ingredient": null,
+    "chemical_class": null,
+    "mode_of_action": "Dual action — quick knockdown and long-lasting residual control against chewing and sucking pests.",
+    "pack_sizes": [
+      "10 gm",
+      "50 gm",
+      "100 gm",
+      "250 gm",
+      "500 gm",
+      "1 Kg"
+    ],
+    "key_benefits": [
+      "Emamectin Benzoate — Avermectin group insecticide",
+      "Controls lepidopteran pests through ingestion and translaminar action",
+      "Paralyses larvae and causes feeding cessation"
+    ],
+    "crop_applications": []
+  },
+  {
+    "product_id": "warrior-plus",
+    "product_name": "Warrior Plus",
+    "category": "Insecticides",
+    "product_url": "https://naclind.com/products/insecticides/warrior-plus/",
+    "active_ingredient": null,
+    "chemical_class": "Synthetic Pyrethroid insecticide",
+    "mode_of_action": "Acts on voltage-gated sodium channels in insect nerve cells, causing hyperexcitation, paralysis, and death.",
+    "pack_sizes": [
+      "100ml",
+      "250ml",
+      "500ml",
+      "1lt"
+    ],
+    "key_benefits": [
+      "Effective against sucking and chewing pests",
+      "Quick knockdown and long residual control",
+      "Suitable for fruits, vegetables, cereals, and ornamental plants",
+      "Long duration insect control"
+    ],
+    "crop_applications": [
+      {
+        "crop": "Cotton",
+        "target_pest_or_disease": null,
+        "dosage": "120–200 ml/acre"
+      },
+      {
+        "crop": "Brinjal",
+        "target_pest_or_disease": null,
+        "dosage": "120 ml/acre"
+      },
+      {
+        "crop": "Tomato",
+        "target_pest_or_disease": null,
+        "dosage": "120 ml/acre"
+      },
+      {
+        "crop": "Rice",
+        "target_pest_or_disease": null,
+        "dosage": "100 ml/acre"
+      }
+    ]
+  },
+  {
+    "product_id": "font",
+    "product_name": "Font",
+    "category": "Fungicides",
+    "product_url": "https://naclind.com/products/fungicides/font/",
+    "active_ingredient": null,
+    "chemical_class": "Cyanoacetamide oxime + Dithiocarbamate fungicide",
+    "mode_of_action": "Cymoxanil acts as a locally systemic fungicide disrupting nucleic acid synthesis, while Mancozeb works as a multi-site contact fungicide interfering with multiple enzyme systems in fungi.",
+    "pack_sizes": [
+      "100gm",
+      "300gm",
+      "600gm",
+      "1200gm"
+    ],
+    "key_benefits": [
+      "Dual action — contact & systemic benefits",
+      "Unique cyanoacetamide formulation",
+      "Rapidly penetrates plant tissues",
+      "Locally systemic + translaminar movement across leaves"
+    ],
+    "crop_applications": [
+      {
+        "crop": "Grapes",
+        "target_pest_or_disease": null,
+        "dosage": "800 gm/acre"
+      },
+      {
+        "crop": "Cucumber",
+        "target_pest_or_disease": null,
+        "dosage": "600 gm/acre"
+      },
+      {
+        "crop": "Potato",
+        "target_pest_or_disease": null,
+        "dosage": "600 gm/acre"
+      },
+      {
+        "crop": "Tomato",
+        "target_pest_or_disease": null,
+        "dosage": "600 gm/acre"
+      }
+    ]
+  },
+  {
+    "product_id": "kadak",
+    "product_name": "Kadak",
+    "category": "Fungicides",
+    "product_url": "https://naclind.com/products/fungicides/kadak/",
+    "active_ingredient": "Azoxystrobin 4.8% w/w + Chlorothalonil 40% w/w SC",
+    "chemical_class": "Strobilurin + Chloronitrile fungicide",
+    "frac_group": "FRAC Group 11 + FRAC Group M5",
+    "mode_of_action": "Azoxystrobin inhibits mitochondrial respiration (QoI inhibitor), while Chlorothalonil acts as a multi-site contact fungicide, disrupting multiple enzyme systems in fungal cells.",
+    "source_url": "https://naclind.com/products/fungicides/kadak/",
+    "source_type": "OFFICIAL_NACL_WEBSITE",
+    "verification_status": "VERIFIED",
+    "pack_sizes": [
+      "150ml",
+      "300ml",
+      "600ml"
+    ],
+    "key_benefits": [
+      "Dual action — shields from spore germination to mycelial growth",
+      "Broad and lasting coverage, reducing number of sprays",
+      "Reduces blemishes and fungal damage for high-quality produce",
+      "Multi-site action delays resistance development"
+    ],
+    "crop_applications": [
+      {
+        "crop": "Cucumber",
+        "target_pest_or_disease": "Downy Mildew, Powdery Mildew",
+        "dosage": "600 ml/acre",
+        "dosage_verified": true,
+        "source_url": "https://naclind.com/products/fungicides/kadak/",
+        "source_type": "OFFICIAL_NACL_WEBSITE"
+      },
+      {
+        "crop": "Cauliflower",
+        "target_pest_or_disease": "Downy Mildew, Alternaria Leaf Spot",
+        "dosage": "600 ml/acre",
+        "dosage_verified": true,
+        "source_url": "https://naclind.com/products/fungicides/kadak/",
+        "source_type": "OFFICIAL_NACL_WEBSITE"
+      },
+      {
+        "crop": "Watermelon",
+        "target_pest_or_disease": "Downy Mildew, Powdery Mildew, Anthracnose",
+        "dosage": "600 ml/acre",
+        "dosage_verified": true,
+        "source_url": "https://naclind.com/products/fungicides/kadak/",
+        "source_type": "OFFICIAL_NACL_WEBSITE"
+      },
+      {
+        "crop": "Cucurbits",
+        "target_pest_or_disease": "Downy Mildew, Powdery Mildew",
+        "dosage": "600 ml/acre",
+        "dosage_verified": true,
+        "source_url": "https://naclind.com/products/fungicides/kadak/",
+        "source_type": "OFFICIAL_NACL_WEBSITE"
+      }
+    ]
+  },
+  {
+    "product_id": "kazan",
+    "product_name": "Kazan",
+    "category": "Fungicides",
+    "product_url": "https://naclind.com/products/fungicides/kazan/",
+    "active_ingredient": "Thifluzamide 24% SC",
+    "chemical_class": "Carboxamide group fungicide (SDHI)",
+    "frac_group": "FRAC Group 7",
+    "mode_of_action": "Inhibits succinate dehydrogenase (SDHI), disrupting fungal respiration and energy production, leading to fungal death.",
+    "source_url": "https://naclind.com/products/fungicides/kazan/",
+    "source_type": "OFFICIAL_NACL_WEBSITE",
+    "verification_status": "VERIFIED",
+    "pack_sizes": [
+      "150ml",
+      "500ml",
+      "1 lt"
+    ],
+    "key_benefits": [
+      "Strong solution for Sheath Blight in rice",
+      "Systemic — preventive & curative action",
+      "Acropetal & basipetal movement",
+      "Long duration of control, reducing number of sprays"
+    ],
+    "crop_applications": [
+      {
+        "crop": "Potato",
+        "target_pest_or_disease": "Black Scurf",
+        "dosage": "150 ml/acre",
+        "dosage_verified": true,
+        "source_url": "https://naclind.com/products/fungicides/kazan/",
+        "source_type": "OFFICIAL_NACL_WEBSITE"
+      },
+      {
+        "crop": "Paddy",
+        "target_pest_or_disease": "Sheath Blight",
+        "dosage": "150 ml/acre",
+        "dosage_verified": true,
+        "source_url": "https://naclind.com/products/fungicides/kazan/",
+        "source_type": "OFFICIAL_NACL_WEBSITE"
+      },
+      {
+        "crop": "Tomato",
+        "target_pest_or_disease": "Early Blight",
+        "dosage": "150 ml/acre",
+        "dosage_verified": true,
+        "source_url": "https://naclind.com/products/fungicides/kazan/",
+        "source_type": "OFFICIAL_NACL_WEBSITE"
+      }
+    ]
+  },
+  {
+    "product_id": "mass-plus",
+    "product_name": "Mass Plus",
+    "category": "Fungicides",
+    "product_url": "https://naclind.com/products/fungicides/mass-plus/",
+    "active_ingredient": "Hexaconazole 5% EC",
+    "chemical_class": "Triazole group fungicide (DMI)",
+    "frac_group": "FRAC Group 3",
+    "mode_of_action": "Inhibits ergosterol biosynthesis by blocking C14-demethylation, disrupting fungal cell membrane formation and stopping disease development.",
+    "source_url": "https://naclind.com/products/fungicides/mass-plus/",
+    "source_type": "OFFICIAL_NACL_WEBSITE",
+    "verification_status": "VERIFIED",
+    "pack_sizes": [
+      "250ml",
+      "500ml",
+      "1 lt"
+    ],
+    "key_benefits": [
+      "Protective, curative and eradicant action with strong antisporulant & translaminar effect",
+      "Blocks ergosterol biosynthesis",
+      "Superior disease management against Ascomycetes, Basidiomycetes and Deuteromycetes"
+    ],
+    "crop_applications": [
+      {
+        "crop": "Mango",
+        "target_pest_or_disease": "Powdery Mildew",
+        "dosage": "200 ml / 100 lit water",
+        "dosage_verified": true,
+        "source_url": "https://naclind.com/products/fungicides/mass-plus/",
+        "source_type": "OFFICIAL_NACL_WEBSITE"
+      },
+      {
+        "crop": "Paddy",
+        "target_pest_or_disease": "Sheath Blight",
+        "dosage": "200 ml / 100 lit water",
+        "dosage_verified": true,
+        "source_url": "https://naclind.com/products/fungicides/mass-plus/",
+        "source_type": "OFFICIAL_NACL_WEBSITE"
+      }
+    ]
+  },
+  {
+    "product_id": "nagarjuna-combi-plus",
+    "product_name": "Nagarjuna Combi Plus",
+    "category": "Fungicides",
+    "product_url": "https://naclind.com/products/fungicides/nagarjuna-combi-plus/",
+    "active_ingredient": null,
+    "chemical_class": "Benzimidazole + Dithiocarbamate fungicide",
+    "mode_of_action": "Carbendazim inhibits fungal cell division by disrupting β-tubulin formation, while Mancozeb acts as a multi-site contact fungicide, interfering with multiple enzyme systems in fungi.",
+    "pack_sizes": [
+      "20gm",
+      "25gm",
+      "100gm",
+      "250gm",
+      "500gm",
+      "1Kg"
+    ],
+    "key_benefits": [
+      "Broad spectrum Systemic + Contact fungicide",
+      "Preventive & curative action",
+      "Also used for seed treatment"
+    ],
+    "crop_applications": [
+      {
+        "crop": "Rice",
+        "target_pest_or_disease": null,
+        "dosage": "300 gm/acre"
+      },
+      {
+        "crop": "Groundnut (Seed Treatment)",
+        "target_pest_or_disease": null,
+        "dosage": "2.5 gm/Kg"
+      },
+      {
+        "crop": "Groundnut (Foliar Spray)",
+        "target_pest_or_disease": null,
+        "dosage": "200 gm/acre"
+      },
+      {
+        "crop": "Potato",
+        "target_pest_or_disease": null,
+        "dosage": "700 gm/acre"
+      },
+      {
+        "crop": "Grapes",
+        "target_pest_or_disease": null,
+        "dosage": "1.5 gm/Lit"
+      },
+      {
+        "crop": "Mango",
+        "target_pest_or_disease": null,
+        "dosage": "1.5 gm/Lit"
+      },
+      {
+        "crop": "Chilli",
+        "target_pest_or_disease": null,
+        "dosage": "300 gm/acre"
+      },
+      {
+        "crop": "Tea",
+        "target_pest_or_disease": null,
+        "dosage": "100–200 gm/acre"
+      },
+      {
+        "crop": "Maize",
+        "target_pest_or_disease": null,
+        "dosage": "1.5 gm/Lit"
+      },
+      {
+        "crop": "Apple",
+        "target_pest_or_disease": null,
+        "dosage": "1.5 gm/Lit"
+      }
+    ]
+  },
+  {
+    "product_id": "nagarjuna-index",
+    "product_name": "Nagarjuna Index",
+    "category": "Fungicides",
+    "product_url": "https://naclind.com/products/fungicides/nagarjuna-index/",
+    "active_ingredient": null,
+    "chemical_class": "Triazole group fungicide",
+    "mode_of_action": "Inhibits ergosterol biosynthesis by blocking C14-demethylation, disrupting fungal cell membrane formation and stopping disease development.",
+    "pack_sizes": [
+      "25gm",
+      "50gm",
+      "100gm",
+      "250gm",
+      "500gm"
+    ],
+    "key_benefits": [
+      "Rapidly absorbed and systemically translocated through plant",
+      "Lowest waiting period among Powdery Mildewicides",
+      "Dual action — prevents & controls Powdery Mildew",
+      "One hour rain fastness"
+    ],
+    "crop_applications": [
+      {
+        "crop": "Apple",
+        "target_pest_or_disease": null,
+        "dosage": "0.04% / acre"
+      },
+      {
+        "crop": "Grapes",
+        "target_pest_or_disease": null,
+        "dosage": "0.04% / acre"
+      },
+      {
+        "crop": "Chilli",
+        "target_pest_or_disease": null,
+        "dosage": "0.04% / acre"
+      }
+    ]
+  },
+  {
+    "product_id": "nagarjuna-result",
+    "product_name": "Nagarjuna Result",
+    "category": "Fungicides",
+    "product_url": "https://naclind.com/products/fungicides/nagarjuna-result/",
+    "active_ingredient": null,
+    "chemical_class": "Triazole group fungicide",
+    "mode_of_action": "Inhibits ergosterol biosynthesis by blocking C14-demethylation, disrupting fungal cell membrane formation and preventing disease progression.",
+    "pack_sizes": [
+      "100ml",
+      "250ml",
+      "500ml",
+      "1lt",
+      "5lt"
+    ],
+    "key_benefits": [
+      "Systemic broad control — prophylactic & curative action",
+      "Absorbed by leaves or stem & translocated upward through Xylem",
+      "Gives long term control",
+      "Potent ergosterol biosynthesis inhibitor"
+    ],
+    "crop_applications": [
+      {
+        "crop": "Wheat",
+        "target_pest_or_disease": null,
+        "dosage": "200 ml/acre"
+      },
+      {
+        "crop": "Paddy",
+        "target_pest_or_disease": null,
+        "dosage": "200 ml/acre"
+      },
+      {
+        "crop": "Groundnut",
+        "target_pest_or_disease": null,
+        "dosage": "200 ml/acre"
+      },
+      {
+        "crop": "Tea",
+        "target_pest_or_disease": null,
+        "dosage": "50–100 ml/acre"
+      },
+      {
+        "crop": "Soybean",
+        "target_pest_or_disease": null,
+        "dosage": "200 ml/acre"
+      },
+      {
+        "crop": "Banana",
+        "target_pest_or_disease": null,
+        "dosage": "0.1%"
+      },
+      {
+        "crop": "Coffee",
+        "target_pest_or_disease": null,
+        "dosage": "0.08%"
+      }
+    ]
+  },
+  {
+    "product_id": "oscar",
+    "product_name": "Oscar",
+    "category": "Fungicides",
+    "product_url": "https://naclind.com/products/fungicides/oscar/",
+    "active_ingredient": null,
+    "chemical_class": "Strobilurin + Triazole fungicide",
+    "mode_of_action": "Inhibits mitochondrial respiration. De-methylation inhibitors, ergosterol biosynthesis inhibitor.",
+    "pack_sizes": [
+      "50ml",
+      "100ml",
+      "250ml",
+      "500ml",
+      "1 lt"
+    ],
+    "key_benefits": [
+      "Effective control on Sheath Blight",
+      "Broader flag leaf & Better grain filling",
+      "Translaminar & Systemic movement",
+      "Longer duration of control, reducing number of sprays"
+    ],
+    "crop_applications": [
+      {
+        "crop": "Paddy",
+        "target_pest_or_disease": null,
+        "dosage": "330 ml/acre"
+      },
+      {
+        "crop": "Chilli",
+        "target_pest_or_disease": null,
+        "dosage": "330 ml/acre"
+      }
+    ]
+  },
+  {
+    "product_id": "sivic",
+    "product_name": "Sivic",
+    "category": "Fungicides",
+    "product_url": "https://naclind.com/products/fungicides/sivic/",
+    "active_ingredient": null,
+    "chemical_class": "Benzothiazole group fungicide",
+    "mode_of_action": "Inhibits melanin biosynthesis in the fungus, preventing appressoria formation and blocking fungal penetration into plant tissues.",
+    "pack_sizes": [
+      "25gm",
+      "50gm",
+      "120gm",
+      "250gm"
+    ],
+    "key_benefits": [
+      "Controls Blast in Paddy at all stages",
+      "Preventive action prevents fungus entry into plant system",
+      "Longer duration of control",
+      "2 hours of rain fastness"
+    ],
+    "crop_applications": [
+      {
+        "crop": "Paddy",
+        "target_pest_or_disease": null,
+        "dosage": "120–160 gm/acre"
+      }
+    ]
+  },
+  {
+    "product_id": "slogan",
+    "product_name": "Slogan",
+    "category": "Fungicides",
+    "product_url": "https://naclind.com/products/fungicides/slogan/",
+    "active_ingredient": null,
+    "chemical_class": "Strobilurin + Benzothiazole fungicide",
+    "mode_of_action": "Picoxystrobin inhibits mitochondrial respiration (QoI inhibitor), while Tricyclazole inhibits melanin biosynthesis, preventing fungal penetration and disease development.",
+    "pack_sizes": [
+      "200ml",
+      "400ml",
+      "1 lt"
+    ],
+    "key_benefits": [
+      "Dual mode of action — preventive & curative effect",
+      "Unique redistribution properties: systemic + translaminar",
+      "Ideal resistance management & IDM tool"
+    ],
+    "crop_applications": [
+      {
+        "crop": "Chilli",
+        "target_pest_or_disease": null,
+        "dosage": "400 ml/acre"
+      },
+      {
+        "crop": "Paddy",
+        "target_pest_or_disease": null,
+        "dosage": "400 ml/acre"
+      }
+    ]
+  },
+  {
+    "product_id": "zeb",
+    "product_name": "Zeb",
+    "category": "Fungicides",
+    "product_url": "https://naclind.com/products/fungicides/zeb/",
+    "active_ingredient": null,
+    "chemical_class": "Dithiocarbamate group fungicide",
+    "mode_of_action": "Acts as a multi-site fungicide by interfering with multiple enzyme systems in fungal cells, preventing spore germination and disease development.",
+    "pack_sizes": [
+      "100gm",
+      "250gm",
+      "500gm",
+      "1 Kg"
+    ],
+    "key_benefits": [
+      "Broad-spectrum multi-site action — controls numerous fungal diseases",
+      "Used for foliar sprays, nursery drenching, and seed treatments",
+      "Safe for natural enemies and the environment (IDM compatible)",
+      "Delays resistance development when used with systemic fungicides"
+    ],
+    "crop_applications": [
+      {
+        "crop": "Wheat",
+        "target_pest_or_disease": null,
+        "dosage": "0.6–0.8 kg/acre"
+      },
+      {
+        "crop": "Maize",
+        "target_pest_or_disease": null,
+        "dosage": "0.6–0.8 kg/acre"
+      },
+      {
+        "crop": "Paddy",
+        "target_pest_or_disease": null,
+        "dosage": "0.6–0.8 kg/acre"
+      },
+      {
+        "crop": "Jowar",
+        "target_pest_or_disease": null,
+        "dosage": "0.6–0.8 kg/acre"
+      },
+      {
+        "crop": "Potato",
+        "target_pest_or_disease": null,
+        "dosage": "0.6–0.8 kg/acre"
+      },
+      {
+        "crop": "Tomato",
+        "target_pest_or_disease": null,
+        "dosage": "0.6–0.8 kg/acre"
+      },
+      {
+        "crop": "Grapes",
+        "target_pest_or_disease": null,
+        "dosage": "0.6–0.8 kg/acre"
+      },
+      {
+        "crop": "Guava",
+        "target_pest_or_disease": null,
+        "dosage": "8 gm per plant"
+      },
+      {
+        "crop": "Banana",
+        "target_pest_or_disease": null,
+        "dosage": "0.6–0.8 kg/acre"
+      },
+      {
+        "crop": "Apple",
+        "target_pest_or_disease": null,
+        "dosage": "30 gm per tree"
+      }
+    ]
+  },
+  {
+    "product_id": "zen",
+    "product_name": "Zen",
+    "category": "Fungicides",
+    "product_url": "https://naclind.com/products/fungicides/zen/",
+    "active_ingredient": "Carbendazim 50% WP",
+    "chemical_class": "Benzimidazole group fungicide",
+    "frac_group": "FRAC Group 1",
+    "mode_of_action": "Carbendazim acts as a systemic fungicide, inhibiting β-tubulin synthesis during fungal cell division, preventing fungal growth.",
+    "source_url": "https://naclind.com/products/fungicides/zen/",
+    "source_type": "OFFICIAL_NACL_WEBSITE",
+    "verification_status": "VERIFIED",
+    "pack_sizes": [
+      "50gm",
+      "100gm",
+      "250gm",
+      "500gm",
+      "1 Kg"
+    ],
+    "key_benefits": [
+      "Protection against various fungal pathogens including Powdery Mildew and Anthracnose",
+      "Superior protection with cost-effectiveness per Acre",
+      "Rapidly absorbed and translocated throughout the entire plant",
+      "Rain-fast — remains effective even if it rains a few hours after application"
+    ],
+    "crop_applications": [
+      {
+        "crop": "Paddy",
+        "target_pest_or_disease": "Blast, Sheath Blight",
+        "dosage": "100–200 gm/acre (Blast); 2.5 gm/Kg seed (Sheath Blight)",
+        "dosage_verified": true,
+        "source_url": "https://naclind.com/products/fungicides/zen/",
+        "source_type": "OFFICIAL_NACL_WEBSITE"
+      },
+      {
+        "crop": "Wheat",
+        "target_pest_or_disease": "Loose Smut",
+        "dosage": "Seed treatment @ 2 gm/kg seed",
+        "dosage_verified": true,
+        "source_url": "https://naclind.com/products/fungicides/zen/",
+        "source_type": "OFFICIAL_NACL_WEBSITE"
+      },
+      {
+        "crop": "Groundnut",
+        "target_pest_or_disease": "Tikka Leaf Spot",
+        "dosage": "90 gm/acre",
+        "dosage_verified": true,
+        "source_url": "https://naclind.com/products/fungicides/zen/",
+        "source_type": "OFFICIAL_NACL_WEBSITE"
+      },
+      {
+        "crop": "Pea",
+        "target_pest_or_disease": "Powdery Mildew",
+        "dosage": "100 gm/acre",
+        "dosage_verified": true,
+        "source_url": "https://naclind.com/products/fungicides/zen/",
+        "source_type": "OFFICIAL_NACL_WEBSITE"
+      },
+      {
+        "crop": "Cotton",
+        "target_pest_or_disease": "Leaf Spot",
+        "dosage": "100 gm/acre",
+        "dosage_verified": true,
+        "source_url": "https://naclind.com/products/fungicides/zen/",
+        "source_type": "OFFICIAL_NACL_WEBSITE"
+      },
+      {
+        "crop": "Pumpkin",
+        "target_pest_or_disease": "Powdery Mildew, Anthracnose",
+        "dosage": "120 gm/acre",
+        "dosage_verified": true,
+        "source_url": "https://naclind.com/products/fungicides/zen/",
+        "source_type": "OFFICIAL_NACL_WEBSITE"
+      },
+      {
+        "crop": "Brinjal",
+        "target_pest_or_disease": "Fruit Rot",
+        "dosage": "120 gm/acre",
+        "dosage_verified": true,
+        "source_url": "https://naclind.com/products/fungicides/zen/",
+        "source_type": "OFFICIAL_NACL_WEBSITE"
+      },
+      {
+        "crop": "Apple",
+        "target_pest_or_disease": "Scab",
+        "dosage": "2.5 gm per 10 liters of water",
+        "dosage_verified": true,
+        "source_url": "https://naclind.com/products/fungicides/zen/",
+        "source_type": "OFFICIAL_NACL_WEBSITE"
+      },
+      {
+        "crop": "Grapes",
+        "target_pest_or_disease": "Powdery Mildew, Anthracnose",
+        "dosage": "120 gm/acre",
+        "dosage_verified": true,
+        "source_url": "https://naclind.com/products/fungicides/zen/",
+        "source_type": "OFFICIAL_NACL_WEBSITE"
+      },
+      {
+        "crop": "Barley",
+        "target_pest_or_disease": "Loose Smut",
+        "dosage": "Seed treatment @ 2 gm/kg seed",
+        "dosage_verified": true,
+        "source_url": "https://naclind.com/products/fungicides/zen/",
+        "source_type": "OFFICIAL_NACL_WEBSITE"
+      },
+      {
+        "crop": "Tapioca",
+        "target_pest_or_disease": "Tuber Rot",
+        "dosage": "1 gm per liter of water",
+        "dosage_verified": true,
+        "source_url": "https://naclind.com/products/fungicides/zen/",
+        "source_type": "OFFICIAL_NACL_WEBSITE"
+      },
+      {
+        "crop": "Moong",
+        "target_pest_or_disease": "Leaf spots & Web blight",
+        "dosage": "100–200 gm/acre",
+        "dosage_verified": true,
+        "source_url": "https://naclind.com/products/fungicides/zen/",
+        "source_type": "OFFICIAL_NACL_WEBSITE"
+      },
+      {
+        "crop": "Cucurbits",
+        "target_pest_or_disease": "Powdery Mildew, Anthracnose",
+        "dosage": "120 gm/acre",
+        "dosage_verified": true,
+        "source_url": "https://naclind.com/products/fungicides/zen/",
+        "source_type": "OFFICIAL_NACL_WEBSITE"
+      },
+      {
+        "crop": "Cowpea",
+        "target_pest_or_disease": "Powdery Mildew",
+        "dosage": "120 gm/acre",
+        "dosage_verified": true,
+        "source_url": "https://naclind.com/products/fungicides/zen/",
+        "source_type": "OFFICIAL_NACL_WEBSITE"
+      },
+      {
+        "crop": "Chilli",
+        "target_pest_or_disease": "Dieback",
+        "dosage": "Seed treatment @ 2 gm/kg seed",
+        "dosage_verified": true,
+        "source_url": "https://naclind.com/products/fungicides/zen/",
+        "source_type": "OFFICIAL_NACL_WEBSITE"
+      }
+    ]
+  },
+  {
+    "product_id": "carnage",
+    "product_name": "Carnage",
+    "category": "Herbicides",
+    "product_url": "https://naclind.com/products/herbicides/carnage/",
+    "active_ingredient": null,
+    "chemical_class": "Triazine group herbicide",
+    "mode_of_action": "Inhibits Photosystem II (PS II), disrupting photosynthesis and causing chlorosis followed by weed death.",
+    "pack_sizes": [
+      "250gm",
+      "500gm",
+      "1Kg"
+    ],
+    "key_benefits": [
+      "Selective early post herbicide on Sugarcane — broad spectrum activity",
+      "Both foliar and soil activity — kills existing weeds and new emergence",
+      "Longer duration of weed control — protects Sugarcane from early weed competition"
+    ],
+    "crop_applications": [
+      {
+        "crop": "Sugarcane",
+        "target_pest_or_disease": null,
+        "dosage": "1 Kg/acre"
+      }
+    ]
+  },
+  {
+    "product_id": "carpet",
+    "product_name": "Carpet",
+    "category": "Herbicides",
+    "product_url": "https://naclind.com/products/herbicides/carpet/",
+    "active_ingredient": null,
+    "chemical_class": "Isoxazoline group herbicide",
+    "mode_of_action": "Inhibits very long chain fatty acid (VLCFA) synthesis, preventing cell division and shoot elongation in germinating weeds.",
+    "pack_sizes": [
+      "60gm"
+    ],
+    "key_benefits": [
+      "Effectively controls Phalaris minor",
+      "Long duration control through residual activity",
+      "Safe for wheat — minimizes crop damage"
+    ],
+    "crop_applications": [
+      {
+        "crop": "Wheat",
+        "target_pest_or_disease": null,
+        "dosage": "60 gm/acre"
+      }
+    ]
+  },
+  {
+    "product_id": "dash",
+    "product_name": "Dash",
+    "category": "Herbicides",
+    "product_url": "https://naclind.com/products/herbicides/dash/",
+    "active_ingredient": null,
+    "chemical_class": "Triazolopyrimidine sulfonamide + Aryloxyphenoxypropionate (FOP) group herbicide",
+    "mode_of_action": "Penoxsulam inhibits ALS (acetolactate synthase), blocking amino acid synthesis, while Cyhalofop-Butyl inhibits ACCase (acetyl-CoA carboxylase), disrupting fatty acid synthesis in grassy weeds.",
+    "pack_sizes": [
+      "400ml",
+      "1lt"
+    ],
+    "key_benefits": [
+      "Dual active — Penoxsulam (ALS inhibitor) + Cyhalofop-Butyl (ACCase inhibitor)",
+      "Targets both grassy weeds and selected broadleaf weeds",
+      "Flexible application after weed emergence",
+      "Absorbed through leaves and translocated for complete control",
+      "Safe for rice plants — minimal phytotoxicity risk"
+    ],
+    "crop_applications": [
+      {
+        "crop": "Paddy (Transplanted)",
+        "target_pest_or_disease": null,
+        "dosage": "800–900 ml/acre"
+      },
+      {
+        "crop": "Paddy (Direct Seeded Rice)",
+        "target_pest_or_disease": null,
+        "dosage": "800–900 ml/acre"
+      }
+    ]
+  },
+  {
+    "product_id": "eraze-n",
+    "product_name": "Eraze N",
+    "category": "Herbicides",
+    "product_url": "https://naclind.com/products/herbicides/eraze-n/",
+    "active_ingredient": null,
+    "chemical_class": "Chloroacetamide group herbicide",
+    "mode_of_action": "Inhibits very long chain fatty acid (VLCFA) synthesis, restricting cell division and elongation in germinating weeds.",
+    "pack_sizes": [
+      "50ml",
+      "100ml",
+      "500ml"
+    ],
+    "key_benefits": [
+      "Non-toxic, Selective & Pre-Emergence herbicide",
+      "Controls Annual Grasses, Sedges, and Broad-leaved weeds",
+      "Recommended for Direct Seeded Rice (DSR) under puddled condition"
+    ],
+    "crop_applications": []
+  },
+  {
+    "product_id": "eraze-plus",
+    "product_name": "Eraze Plus",
+    "category": "Herbicides",
+    "product_url": "https://naclind.com/products/herbicides/eraze-plus/",
+    "active_ingredient": null,
+    "chemical_class": "Chloroacetamide group herbicide",
+    "mode_of_action": "Inhibits very long chain fatty acid (VLCFA) synthesis, thereby blocking cell division and elongation in germinating weed seedlings.",
+    "pack_sizes": [
+      "600ml"
+    ],
+    "key_benefits": [
+      "Selective, broad-spectrum & pre-emergence herbicide for transplanted rice",
+      "EW formulation — no phytotoxicity, safe to Nursery and Main Crop",
+      "No phytotoxic effect on Paddy when used as recommended",
+      "No residual effect on subsequent/follow crop"
+    ],
+    "crop_applications": [
+      {
+        "crop": "Transplanted Paddy",
+        "target_pest_or_disease": null,
+        "dosage": "600 ml/acre"
+      }
+    ]
+  },
+  {
+    "product_id": "eraze-strong",
+    "product_name": "Eraze Strong",
+    "category": "Herbicides",
+    "product_url": "https://naclind.com/products/herbicides/eraze-strong/",
+    "active_ingredient": null,
+    "chemical_class": "Sulfonylurea + Chloroacetamide group herbicide",
+    "mode_of_action": "It has wide window of application which provides more flexibility for time of application",
+    "pack_sizes": [
+      "2Kg",
+      "4Kg"
+    ],
+    "key_benefits": [
+      "Inhibits perennial and annual weeds, grasses, broad leaf weeds and sedges",
+      "Granular formulation — easy hand dispersal in puddled rice crop",
+      "Mix with sand and broadcast uniformly in rice with standing water"
+    ],
+    "crop_applications": [
+      {
+        "crop": "Transplanted Paddy",
+        "target_pest_or_disease": null,
+        "dosage": "4 Kg/acre"
+      }
+    ]
+  },
+  {
+    "product_id": "eraze",
+    "product_name": "Eraze",
+    "category": "Herbicides",
+    "product_url": "https://naclind.com/products/herbicides/eraze/",
+    "active_ingredient": null,
+    "chemical_class": "Chloroacetamide group herbicide",
+    "mode_of_action": "Inhibits cell division and elongation (VLCFA synthesis inhibitor), stopping root and shoot development in germinating weeds.",
+    "pack_sizes": [
+      "100ml",
+      "250ml",
+      "500ml",
+      "1 lt",
+      "5 lt"
+    ],
+    "key_benefits": [
+      "Controls grasses, sedges & broad leaved weeds in transplanted rice",
+      "Can be applied as foliar spray or mixed with sand for broadcasting in standing water",
+      "Contains vegetable oil as solvent — safe to Paddy Crop",
+      "Controls both narrow and broad leaf weeds before emergence",
+      "Suitable for integrated weed management"
+    ],
+    "crop_applications": [
+      {
+        "crop": "Transplanted Paddy",
+        "target_pest_or_disease": null,
+        "dosage": "400–600 ml/acre"
+      }
+    ]
+  },
+  {
+    "product_id": "imax",
+    "product_name": "IMAX",
+    "category": "Herbicides",
+    "product_url": "https://naclind.com/products/herbicides/imax/",
+    "active_ingredient": null,
+    "chemical_class": "Triazinone group herbicide",
+    "mode_of_action": "Inhibits Photosystem II (PS II), disrupting photosynthesis and leading to chlorosis and eventual weed death.",
+    "pack_sizes": [
+      "350ml",
+      "700ml",
+      "3.5lt"
+    ],
+    "key_benefits": [
+      "Controls Phalaris minor resistant to most other herbicides",
+      "Economical — broad-spectrum activity at low dose",
+      "No residual effect on succeeding crops"
+    ],
+    "crop_applications": [
+      {
+        "crop": "Sugarcane (Pre-Emergence)",
+        "target_pest_or_disease": null,
+        "dosage": "600–1200 gm/acre"
+      },
+      {
+        "crop": "Sugarcane (Post-Emergence)",
+        "target_pest_or_disease": null,
+        "dosage": "600–800 gm/acre"
+      },
+      {
+        "crop": "Potato",
+        "target_pest_or_disease": null,
+        "dosage": "300 gm/acre"
+      },
+      {
+        "crop": "Tomato",
+        "target_pest_or_disease": null,
+        "dosage": "300 gm/acre"
+      },
+      {
+        "crop": "Soybean",
+        "target_pest_or_disease": null,
+        "dosage": "200–300 gm/acre"
+      },
+      {
+        "crop": "Wheat (Medium Soil)",
+        "target_pest_or_disease": null,
+        "dosage": "100 gm/acre"
+      },
+      {
+        "crop": "Wheat (Heavy Soil)",
+        "target_pest_or_disease": null,
+        "dosage": "120 gm/acre"
+      }
+    ]
+  },
+  {
+    "product_id": "nagarjuna-cubit",
+    "product_name": "Nagarjuna Cubit",
+    "category": "Herbicides",
+    "product_url": "https://naclind.com/products/herbicides/nagarjuna-cubit/",
+    "active_ingredient": null,
+    "chemical_class": "Pyrimidinyloxybenzoic acid group herbicide",
+    "mode_of_action": "Inhibits ALS (acetolactate synthase), blocking the synthesis of essential branched-chain amino acids, leading to growth cessation and gradual weed death.",
+    "pack_sizes": [
+      "50ml",
+      "100ml",
+      "200ml",
+      "500ml",
+      "1lt"
+    ],
+    "key_benefits": [
+      "Selective, systemic & post-emergence herbicide",
+      "Absorbed by foliage and roots",
+      "Effective against grasses, sedges and broad-leaved weeds (especially Echinochloa spp.)",
+      "Also used to stunt weed growth in non-crop situations"
+    ],
+    "crop_applications": [
+      {
+        "crop": "Paddy (Nursery)",
+        "target_pest_or_disease": null,
+        "dosage": "80 ml/acre"
+      },
+      {
+        "crop": "Transplanted Paddy",
+        "target_pest_or_disease": null,
+        "dosage": "80–100 ml/acre"
+      },
+      {
+        "crop": "Paddy (Direct Seeded Rice)",
+        "target_pest_or_disease": null,
+        "dosage": "80–100 ml/acre"
+      }
+    ]
+  },
+  {
+    "product_id": "nagastra-strong",
+    "product_name": "Nagastra Strong",
+    "category": "Herbicides",
+    "product_url": "https://naclind.com/products/herbicides/nagastra-strong/",
+    "active_ingredient": null,
+    "chemical_class": "Dinitroaniline group herbicide",
+    "mode_of_action": "Inhibits cell division by disrupting microtubule formation during mitosis, thereby preventing root and shoot development in germinating weeds.",
+    "pack_sizes": [],
+    "key_benefits": [
+      "Broad-spectrum and selective herbicide",
+      "One shot solution for annual grasses, Sedges and broad-leaved weeds",
+      "No phytotoxic effect when used as recommended",
+      "No residual effect on subsequent/follow crop",
+      "No harmful effect on crops and soil"
+    ],
+    "crop_applications": [
+      {
+        "crop": "Cotton",
+        "target_pest_or_disease": null,
+        "dosage": "600–700 ml/acre"
+      },
+      {
+        "crop": "Onion",
+        "target_pest_or_disease": null,
+        "dosage": "600–700 ml/acre"
+      },
+      {
+        "crop": "Chilli",
+        "target_pest_or_disease": null,
+        "dosage": "600–700 ml/acre"
+      },
+      {
+        "crop": "Soybean",
+        "target_pest_or_disease": null,
+        "dosage": "600–700 ml/acre"
+      }
+    ]
+  },
+  {
+    "product_id": "point",
+    "product_name": "Point",
+    "category": "Herbicides",
+    "product_url": "https://naclind.com/products/herbicides/point/",
+    "active_ingredient": null,
+    "chemical_class": "Aryloxyphenoxypropionate (FOP) group herbicide",
+    "mode_of_action": "Inhibits ACCase (acetyl-CoA carboxylase), blocking fatty acid synthesis in grasses, leading to growth cessation and weed death.",
+    "pack_sizes": [
+      "160gm"
+    ],
+    "key_benefits": [
+      "Wide window of application — flexible timing",
+      "No effect on follow-up crops — suitable for any crop rotation",
+      "Safe to crop when used as recommended"
+    ],
+    "crop_applications": [
+      {
+        "crop": "Wheat",
+        "target_pest_or_disease": null,
+        "dosage": "160 gm/acre"
+      }
+    ]
+  },
+  {
+    "product_id": "rhino",
+    "product_name": "Rhino",
+    "category": "Herbicides",
+    "product_url": "https://naclind.com/products/herbicides/rhino/",
+    "active_ingredient": null,
+    "chemical_class": "Bipyridylium group herbicide",
+    "mode_of_action": "It effectively controls Phalaris minor, which has developed resistance to most herbicides",
+    "pack_sizes": [
+      "250ml",
+      "500ml",
+      "1lt",
+      "5lt",
+      "20lt"
+    ],
+    "key_benefits": [
+      "Quick acting non-selective broad spectrum contact herbicide",
+      "Acts very fast — unaffected by rain",
+      "Does not enter Tea bush — no residue in made Tea",
+      "Leaves no harmful residue in soil",
+      "Kills weeds by contact, preventing soil erosion"
+    ],
+    "crop_applications": [
+      {
+        "crop": "Tea",
+        "target_pest_or_disease": null,
+        "dosage": "330–1700 ml/acre"
+      },
+      {
+        "crop": "Potato",
+        "target_pest_or_disease": null,
+        "dosage": "500–800 ml/acre"
+      },
+      {
+        "crop": "Cotton",
+        "target_pest_or_disease": null,
+        "dosage": "500–800 ml/acre"
+      },
+      {
+        "crop": "Grapes",
+        "target_pest_or_disease": null,
+        "dosage": "1000 ml/acre"
+      },
+      {
+        "crop": "Sugarcane",
+        "target_pest_or_disease": null,
+        "dosage": "1000 ml/acre"
+      },
+      {
+        "crop": "Apple",
+        "target_pest_or_disease": null,
+        "dosage": "1280 ml/acre"
+      }
+    ]
+  },
+  {
+    "product_id": "rozzer",
+    "product_name": "Rozzer",
+    "category": "Herbicides",
+    "product_url": "https://naclind.com/products/herbicides/rozzer/",
+    "active_ingredient": null,
+    "chemical_class": "Pyrazolone group herbicide",
+    "mode_of_action": "Inhibits HPPD (4-hydroxyphenylpyruvate dioxygenase), disrupting carotenoid biosynthesis and causing whitening followed by weed death.",
+    "pack_sizes": [
+      "15ml",
+      "30ml",
+      "75ml"
+    ],
+    "key_benefits": [
+      "Maize specific early post emergent herbicide",
+      "Completely safe for all Maize species at all growth stages",
+      "Apply at 2–4 leaf stage of the weeds",
+      "Apply under moist field conditions using flat fan nozzle"
+    ],
+    "crop_applications": [
+      {
+        "crop": "Maize",
+        "target_pest_or_disease": null,
+        "dosage": "30 ml/acre"
+      }
+    ]
+  },
+  {
+    "product_id": "sirius",
+    "product_name": "Sirius",
+    "category": "Herbicides",
+    "product_url": "https://naclind.com/products/herbicides/sirius/",
+    "active_ingredient": null,
+    "chemical_class": "Sulfonylurea group herbicide",
+    "mode_of_action": "Inhibits ALS (acetolactate synthase), blocking the synthesis of essential amino acids, resulting in growth arrest and eventual weed death.",
+    "pack_sizes": [
+      "3gm",
+      "12gm"
+    ],
+    "key_benefits": [
+      "Apply within 0–3 days of last puddling in transplanted paddy",
+      "Foliar spray or mix with sand for broadcasting in standing water",
+      "Highly selective to Rice crop — safe to environment",
+      "Controls weeds for longer duration"
+    ],
+    "crop_applications": [
+      {
+        "crop": "Transplanted Paddy",
+        "target_pest_or_disease": null,
+        "dosage": "12 gm/acre"
+      }
+    ]
+  },
+  {
+    "product_id": "smash",
+    "product_name": "Smash",
+    "category": "Herbicides",
+    "product_url": "https://naclind.com/products/herbicides/smash/",
+    "active_ingredient": null,
+    "chemical_class": "Imidazolinone group herbicide",
+    "mode_of_action": "Inhibits ALS (acetolactate synthase), blocking the synthesis of essential branched-chain amino acids, leading to growth cessation and gradual weed death.",
+    "pack_sizes": [
+      "250ml",
+      "500ml",
+      "1lt"
+    ],
+    "key_benefits": [
+      "Broad spectrum — controls broad leaf & grasses in single application",
+      "Longer duration control — systemic & residual action",
+      "Safe for follow crops",
+      "Early weed control — eliminates weed competition"
+    ],
+    "crop_applications": [
+      {
+        "crop": "Soybean",
+        "target_pest_or_disease": null,
+        "dosage": "400 ml/acre"
+      },
+      {
+        "crop": "Groundnut",
+        "target_pest_or_disease": null,
+        "dosage": "400–600 ml/acre"
+      }
+    ]
+  },
+  {
+    "product_id": "surya",
+    "product_name": "Surya",
+    "category": "Herbicides",
+    "product_url": "https://naclind.com/products/herbicides/surya/",
+    "active_ingredient": null,
+    "chemical_class": "Triazine group herbicide",
+    "mode_of_action": "Inhibits Photosystem II (PS II), disrupting photosynthesis and causing chlorosis followed by weed death.",
+    "pack_sizes": [
+      "250gm",
+      "500gm",
+      "1Kg"
+    ],
+    "key_benefits": [
+      "Broad spectrum and selective herbicide",
+      "Kills weeds by inhibiting photosynthesis and enzymatic activity",
+      "Rapidly absorbed by leaves and roots",
+      "Translocated acropetally in xylem to growing points"
+    ],
+    "crop_applications": [
+      {
+        "crop": "Maize",
+        "target_pest_or_disease": null,
+        "dosage": "400–600 gm/acre"
+      },
+      {
+        "crop": "Sugarcane",
+        "target_pest_or_disease": null,
+        "dosage": "400–1600 gm/acre"
+      }
+    ]
+  },
+  {
+    "product_id": "tembo-guard",
+    "product_name": "Tembo Guard",
+    "category": "Herbicides",
+    "product_url": "https://naclind.com/products/herbicides/tembo-guard/",
+    "active_ingredient": null,
+    "chemical_class": "Triketone group herbicide",
+    "mode_of_action": "Inhibits HPPD (4-hydroxyphenylpyruvate dioxygenase), disrupting carotenoid biosynthesis and leading to whitening followed by weed death.",
+    "pack_sizes": [
+      "57.5ml",
+      "115ml",
+      "230ml"
+    ],
+    "key_benefits": [
+      "Maximum weed control in maize",
+      "Controls both broad leaf and grassy weeds",
+      "Rapid, visible action on target weeds within a few days",
+      "Use along with surfactant for best results"
+    ],
+    "crop_applications": [
+      {
+        "crop": "Maize",
+        "target_pest_or_disease": null,
+        "dosage": "115 ml/acre"
+      }
+    ]
+  },
+  {
+    "product_id": "weed-master",
+    "product_name": "Weed Master",
+    "category": "Herbicides",
+    "product_url": "https://naclind.com/products/herbicides/weed-master/",
+    "active_ingredient": null,
+    "chemical_class": "Phosphinic acid group herbicide",
+    "mode_of_action": "Inhibits glutamine synthetase, leading to ammonia accumulation in plant tissues, disruption of photosynthesis, and rapid necrosis of green parts.",
+    "pack_sizes": [
+      "250ml",
+      "500ml",
+      "1lt"
+    ],
+    "key_benefits": [
+      "New generation non-selective, broad-spectrum post emergent herbicide",
+      "Effective in controlling hardy and resistant weeds",
+      "Safe to applicator with recommended safety measures"
+    ],
+    "crop_applications": [
+      {
+        "crop": "Cotton",
+        "target_pest_or_disease": null,
+        "dosage": "1–1.2 lt/acre"
+      },
+      {
+        "crop": "Tea",
+        "target_pest_or_disease": null,
+        "dosage": "1–1.32 lt/acre"
+      }
+    ]
+  },
+  {
+    "product_id": "weed-sweep",
+    "product_name": "Weed Sweep",
+    "category": "Herbicides",
+    "product_url": "https://naclind.com/products/herbicides/weed-sweep/",
+    "active_ingredient": null,
+    "chemical_class": "Aryloxyphenoxypropionate (FOP) group herbicide",
+    "mode_of_action": "It is a selective, systemic & post-emergence herbicide",
+    "pack_sizes": [
+      "100ml",
+      "200ml",
+      "400ml",
+      "1.2lt"
+    ],
+    "key_benefits": [
+      "Quick action on weeds — easy to use",
+      "Only 2–4 hrs rain-free period needed for complete absorption",
+      "Completely safe for crop when applied as recommended",
+      "Early weed control — higher yield potential"
+    ],
+    "crop_applications": [
+      {
+        "crop": "Soybean",
+        "target_pest_or_disease": null,
+        "dosage": "400–500 ml/acre"
+      }
+    ]
+  }
+]

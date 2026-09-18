@@ -222,10 +222,24 @@ def run_multi_instance_inspection(
     run_id: Optional[str] = None
 ) -> Dict[str, Any]:
     """
-    Runs multi-product instance detection and PatchCore inference on each crop.
-    Persists instance-level results, coordinate mappings, composite heatmap,
-    and aggregate verdict.
+    Main entrypoint for Pipeline B (multi-product inspection).
+    Checks PIPELINE_B_MODE environment variable:
+    - "gemini_only" (default): Direct multi-instance inspection via Gemini VLM
+    - "patchcore": Per-instance crop detection + PatchCore inference
     """
+    pipeline_b_mode = os.getenv("PIPELINE_B_MODE", "gemini_only").strip().lower()
+    if pipeline_b_mode == "gemini_only":
+        from services.gemini_pipeline_b_service import run_gemini_only_multi_instance_inspection
+        return run_gemini_only_multi_instance_inspection(
+            db=db,
+            model_id=model_id,
+            upload_file=upload_file,
+            threshold_override=threshold_override,
+            min_instance_area=min_instance_area,
+            max_instances=max_instances,
+            run_id=run_id
+        )
+
     import time
     start_total_time = time.time()
 

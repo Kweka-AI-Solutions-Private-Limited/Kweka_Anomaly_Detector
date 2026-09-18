@@ -11,6 +11,7 @@ import { InspectionHistory } from './pages/InspectionHistory';
 import { InspectionDetail } from './pages/InspectionDetail';
 import { FeedbackPage } from './pages/FeedbackPage';
 import { Settings } from './pages/Settings';
+import { LeafDiseasePage } from './pages/LeafDiseasePage';
 
 export const App: React.FC = () => {
   return (
@@ -18,6 +19,7 @@ export const App: React.FC = () => {
       <Routes>
         <Route element={<AppLayout />}>
           <Route path="/" element={<Home />} />
+          <Route path="/leaf-disease" element={<LeafDiseasePage />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/models" element={<Models />} />
           <Route path="/models/create" element={<CreateModel />} />

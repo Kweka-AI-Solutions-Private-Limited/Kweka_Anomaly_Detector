@@ -39,6 +39,7 @@ from api.inspections_router import router as inspections_router
 from api.inspection_runs_router import router as inspection_runs_router
 from api.dashboard_router import router as dashboard_router
 from api.notifications_router import router as notifications_router
+from api.leaf_disease_router import router as leaf_disease_router
 
 # Load Environment Variables from backend/.env
 env_path = Path(__file__).resolve().parent.parent / ".env"
@@ -279,6 +280,8 @@ app.include_router(inspection_runs_router)
 app.include_router(dashboard_router, prefix="/api")
 app.include_router(notifications_router, prefix="/api")
 app.include_router(notifications_router)
+app.include_router(leaf_disease_router, prefix="/api")
+app.include_router(leaf_disease_router)
 
 
 # ---------------------------------------------------------------

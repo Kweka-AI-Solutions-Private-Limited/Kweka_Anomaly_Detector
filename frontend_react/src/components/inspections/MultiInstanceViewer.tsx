@@ -304,32 +304,46 @@ export const MultiInstanceViewer: React.FC<MultiInstanceViewerProps> = ({
                 <div className="bg-slate-950/80 p-3 rounded-lg border border-slate-800/80 space-y-2 text-xs">
                   <div className="flex items-center justify-between">
                     <span className="text-slate-400">Anomaly Score:</span>
-                    <span className="font-bold text-slate-100 text-sm">
-                      {selectedInstance.prediction.anomaly_score.toFixed(2)}
+                    <span className="font-bold text-slate-100 text-xs font-mono">
+                      {selectedInstance.prediction.anomaly_score != null
+                        ? selectedInstance.prediction.anomaly_score.toFixed(2)
+                        : 'N/A (Pure Gemini Engine)'}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-slate-400">Threshold:</span>
-                    <span className="text-slate-300 font-mono">
-                      {selectedInstance.prediction.threshold.toFixed(2)}
+                    <span className="text-slate-300 font-mono text-xs">
+                      {selectedInstance.prediction.threshold != null
+                        ? selectedInstance.prediction.threshold.toFixed(2)
+                        : 'N/A — Not applicable to Gemini'}
                     </span>
                   </div>
-                  {/* Progress bar */}
-                  <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all ${
-                        selectedInstance.prediction.status?.toUpperCase() === 'REJECT' || selectedInstance.prediction.status?.toUpperCase() === 'ANOMALOUS'
-                          ? 'bg-rose-500'
-                          : 'bg-emerald-500'
-                      }`}
-                      style={{
-                        width: `${Math.min(
-                          100,
-                          (selectedInstance.prediction.anomaly_score / (selectedInstance.prediction.threshold * 1.5)) * 100
-                        )}%`,
-                      }}
-                    />
+                  <div className="flex items-center justify-between pt-1 border-t border-slate-800/60">
+                    <span className="text-slate-400">VLM Confidence:</span>
+                    <span className="font-bold text-cyan-400 font-mono">
+                      {selectedInstance.detection_confidence != null
+                        ? `${(selectedInstance.detection_confidence * 100).toFixed(0)}%`
+                        : 'N/A'}
+                    </span>
                   </div>
+                  {/* Progress bar only rendered when numeric PatchCore score exists */}
+                  {selectedInstance.prediction.anomaly_score != null && selectedInstance.prediction.threshold != null && (
+                    <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all ${
+                          selectedInstance.prediction.status?.toUpperCase() === 'REJECT' || selectedInstance.prediction.status?.toUpperCase() === 'ANOMALOUS'
+                            ? 'bg-rose-500'
+                            : 'bg-emerald-500'
+                        }`}
+                        style={{
+                          width: `${Math.min(
+                            100,
+                            (selectedInstance.prediction.anomaly_score / (selectedInstance.prediction.threshold * 1.5)) * 100
+                          )}%`,
+                        }}
+                      />
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -427,7 +441,9 @@ export const MultiInstanceViewer: React.FC<MultiInstanceViewerProps> = ({
 
                 {inst.prediction && (
                   <div className="text-[11px] text-slate-400 font-mono text-center">
-                    Score: <span className="font-semibold text-slate-200">{inst.prediction.anomaly_score.toFixed(1)}</span>
+                    Score: <span className="font-semibold text-slate-200">
+                      {inst.prediction.anomaly_score != null ? inst.prediction.anomaly_score.toFixed(1) : 'N/A'}
+                    </span>
                   </div>
                 )}
               </button>

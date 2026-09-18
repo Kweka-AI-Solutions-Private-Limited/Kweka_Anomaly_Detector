@@ -211,8 +211,8 @@ class BoundingBox(BaseModel):
 
 class PredictionOutput(BaseModel):
     status: str  # normal, anomalous, review, PASS, REJECT
-    anomaly_score: float
-    threshold: float
+    anomaly_score: Optional[float] = None
+    threshold: Optional[float] = None
     severity: Optional[str] = None
 
 
@@ -277,7 +277,7 @@ class InspectionResultSchema(BaseModel):
     composite_heatmap_uri: Optional[str] = None
     explanation: ExplanationOutput = Field(default_factory=ExplanationOutput)
     vlm_analysis: Optional[VLMAnalysisSchema] = None
-    processing_stats: Optional[Dict[str, float]] = None
+    processing_stats: Optional[Dict[str, Any]] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
     class Config:

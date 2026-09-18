@@ -56,9 +56,13 @@ export const VLMDefectAnalysisCard: React.FC<VLMDefectAnalysisCardProps> = ({
     <div className="pt-4 border-t border-industrial-200 mt-4 space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
-          <Sparkles className="w-4 h-4 text-accent-500" />
-          <h4 className="text-xs font-bold uppercase tracking-wider text-industrial-900">AI DEFECT ANALYSIS</h4>
-          <span className="text-[10px] bg-industrial-100 text-industrial-600 px-1.5 py-0.5 rounded font-normal">
+          <div className="p-1 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+            <Sparkles className="w-4 h-4 text-cyan-400" />
+          </div>
+          <h4 className="text-xs font-black uppercase tracking-wider text-slate-100 flex items-center gap-1.5">
+            AI DEFECT ANALYSIS
+          </h4>
+          <span className="text-[10px] bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 px-2 py-0.5 rounded font-semibold">
             Powered by Gemini
           </span>
         </div>
