@@ -17,10 +17,7 @@ import os
 import json
 import time
 import random
-<<<<<<< HEAD
-=======
 from datetime import datetime
->>>>>>> b5f0d42 (Initial commit: Anomaly Detector application with multi-instance & pure Gemini inspection pipelines)
 from pathlib import Path
 from typing import List, Dict, Any, Tuple, Optional
 import numpy as np
@@ -64,11 +61,7 @@ def set_seed(seed=42):
 
 
 class GenericFolderDataset(Dataset):
-<<<<<<< HEAD
-    """Custom PyTorch dataset loading images as float tensors in range [0, 1]."""
-=======
     """Custom PyTorch dataset loading images as float tensors in range [0, 1] with tight product crop preprocessing."""
->>>>>>> b5f0d42 (Initial commit: Anomaly Detector application with multi-instance & pure Gemini inspection pipelines)
     def __init__(self, image_paths: List[Path], target_size=DEFAULT_TARGET_SIZE):
         self.image_paths = [Path(p) for p in image_paths if Path(p).exists()]
         self.target_size = target_size
@@ -79,10 +72,6 @@ class GenericFolderDataset(Dataset):
     def __getitem__(self, idx):
         path = self.image_paths[idx]
         try:
-<<<<<<< HEAD
-            img_pil = Image.open(path).convert("RGB")
-            img_resized = img_pil.resize(self.target_size, Image.BILINEAR)
-=======
             img_bgr = cv2.imread(str(path))
             if img_bgr is not None:
                 # 1. Detect product bounding box using existing product-mask logic
@@ -110,7 +99,6 @@ class GenericFolderDataset(Dataset):
             # 5. Directly resize crop to 256x256
             img_resized = img_pil.resize(self.target_size, Image.BILINEAR)
             # 6. Convert to float32 [0, 1]
->>>>>>> b5f0d42 (Initial commit: Anomaly Detector application with multi-instance & pure Gemini inspection pipelines)
             arr = np.array(img_resized, dtype=np.float32) / 255.0
             tensor = torch.from_numpy(arr).permute(2, 0, 1)
         except Exception:
@@ -230,13 +218,7 @@ def build_patchcore_version(
     start_time = time.time()
     artifacts_dir.mkdir(parents=True, exist_ok=True)
 
-<<<<<<< HEAD
-    n_refs = len(reference_image_paths)
-    if n_refs == 0:
-        raise ValueError("Cannot build PatchCore model with 0 reference images.")
-=======
     n_refs = max(1, len(reference_image_paths))
->>>>>>> b5f0d42 (Initial commit: Anomaly Detector application with multi-instance & pure Gemini inspection pipelines)
 
     # 1. Out-of-sample GOOD Calibration
     p95_thr, mu_calib, std_calib, calib_scores, calib_mode = calibrate_out_of_sample_good(
@@ -251,21 +233,13 @@ def build_patchcore_version(
     metadata_file = artifacts_dir / "version_metadata.json"
 
     # 2. Train final model on 100% of reference images if valid image files exist
-<<<<<<< HEAD
-    if ANOMALIB_AVAILABLE and valid_paths:
-=======
     if ANOMALIB_AVAILABLE and len(valid_paths) >= 2:
         coreset_ratio = 1.0 if len(valid_paths) < 5 else PATCHCORE_CONFIG["coreset_sampling_ratio"]
->>>>>>> b5f0d42 (Initial commit: Anomaly Detector application with multi-instance & pure Gemini inspection pipelines)
         m = Patchcore(
             backbone=PATCHCORE_CONFIG["backbone"],
             layers=PATCHCORE_CONFIG["layers"],
             pre_trained=PATCHCORE_CONFIG["pretrained"],
-<<<<<<< HEAD
-            coreset_sampling_ratio=PATCHCORE_CONFIG["coreset_sampling_ratio"],
-=======
             coreset_sampling_ratio=coreset_ratio,
->>>>>>> b5f0d42 (Initial commit: Anomaly Detector application with multi-instance & pure Gemini inspection pipelines)
             num_neighbors=PATCHCORE_CONFIG["num_neighbors"],
         )
         e = Engine(accelerator="auto", devices=1, enable_progress_bar=False)
@@ -333,17 +307,6 @@ def resolve_checkpoint_path(ckpt_uri: str, storage_base: Optional[Path] = None) 
     p = Path(clean_uri)
     if p.is_absolute() and p.exists():
         return p
-<<<<<<< HEAD
-    candidates = [
-        storage_base / clean_uri,
-        storage_base / "storage" / clean_uri,
-        storage_base / "src" / "tests" / clean_uri,
-        storage_base / "src" / "tests" / "storage" / clean_uri,
-        storage_base.parent / clean_uri,
-        storage_base.parent / "storage" / clean_uri,
-        Path.cwd() / clean_uri,
-        Path.cwd() / "storage" / clean_uri
-=======
 
     stripped_uri = clean_uri
     for prefix in ["src/tests/storage/", "src/tests/", "storage/", "tests/"]:
@@ -361,7 +324,6 @@ def resolve_checkpoint_path(ckpt_uri: str, storage_base: Optional[Path] = None) 
         storage_base.parent / stripped_uri,
         Path.cwd() / clean_uri,
         Path.cwd() / stripped_uri,
->>>>>>> b5f0d42 (Initial commit: Anomaly Detector application with multi-instance & pure Gemini inspection pipelines)
     ]
     for c in candidates:
         if c.exists():
@@ -380,13 +342,6 @@ def load_patchcore_model(checkpoint_path: Path) -> Any:
     if not checkpoint_path.exists():
         raise FileNotFoundError(f"PatchCore checkpoint file not found at '{checkpoint_path}'.")
 
-<<<<<<< HEAD
-    state_dict = torch.load(checkpoint_path, map_location="cpu")
-
-    # Handle lightweight mock checkpoints created during fast API unit test suites
-    if isinstance(state_dict, dict) and "coreset_vectors" in state_dict and "backbone" in state_dict:
-        return None
-=======
     try:
         state_dict = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
     except Exception:
@@ -411,16 +366,11 @@ def load_patchcore_model(checkpoint_path: Path) -> Any:
             model.model.memory_bank = torch.tensor(c_vec, dtype=torch.float32) if not isinstance(c_vec, torch.Tensor) else c_vec
         model.eval()
         return model
->>>>>>> b5f0d42 (Initial commit: Anomaly Detector application with multi-instance & pure Gemini inspection pipelines)
 
     model = Patchcore(
         backbone=PATCHCORE_CONFIG["backbone"],
         layers=PATCHCORE_CONFIG["layers"],
-<<<<<<< HEAD
-        pre_trained=PATCHCORE_CONFIG["pretrained"],
-=======
         pre_trained=False,
->>>>>>> b5f0d42 (Initial commit: Anomaly Detector application with multi-instance & pure Gemini inspection pipelines)
         coreset_sampling_ratio=PATCHCORE_CONFIG["coreset_sampling_ratio"],
         num_neighbors=PATCHCORE_CONFIG["num_neighbors"],
     )
@@ -728,58 +678,12 @@ def build_pipeline_b_instance_version(
     return p95_thr, build_time_ms, artifact_uris
 
 
-<<<<<<< HEAD
-def resolve_checkpoint_path(ckpt_uri: str, storage_base: Optional[Path] = None) -> Optional[Path]:
-    """Resolves relative or absolute checkpoint URI to existing Path on disk."""
-    if not ckpt_uri:
-        return None
-    p = Path(ckpt_uri)
-    if p.is_absolute() and p.exists():
-        return p
-    if storage_base is None:
-        storage_base = Path(__file__).resolve().parent.parent.parent
-    c1 = storage_base / ckpt_uri
-    if c1.exists():
-        return c1
-    c2 = storage_base / "storage" / ckpt_uri
-    if c2.exists():
-        return c2
-    return c1
 
 
-def load_patchcore_model(ckpt_path: Path) -> Optional[Any]:
-    """Loads PatchCore model instance from PyTorch state dict checkpoint."""
-    if not ANOMALIB_AVAILABLE or not ckpt_path or not ckpt_path.exists():
-        return None
-    model = Patchcore(
-        backbone=PATCHCORE_CONFIG["backbone"],
-        layers=PATCHCORE_CONFIG["layers"],
-        pre_trained=PATCHCORE_CONFIG["pretrained"],
-        coreset_sampling_ratio=PATCHCORE_CONFIG["coreset_sampling_ratio"],
-        num_neighbors=PATCHCORE_CONFIG["num_neighbors"],
-    )
-    state_dict = torch.load(ckpt_path, map_location="cpu")
-    if isinstance(state_dict, dict) and "coreset_vectors" in state_dict and "backbone" not in state_dict:
-        return None
-    model.load_state_dict(state_dict)
-    return model
-
-=======
-
-
->>>>>>> b5f0d42 (Initial commit: Anomaly Detector application with multi-instance & pure Gemini inspection pipelines)
 
 def run_patchcore_inference(
     test_image_path: Path,
     artifacts: Dict[str, str],
-<<<<<<< HEAD
-    threshold: float,
-    is_instance_crop: bool = False
-) -> Dict[str, Any]:
-    """
-    Executes PatchCore anomaly detection inference, generates real heatmap PNG,
-    and extracts bounding box reticle. Uses aspect-preserving padding when is_instance_crop=True.
-=======
     threshold: Optional[float] = None,
     is_instance_crop: bool = False
 ) -> Dict[str, Any]:
@@ -787,7 +691,6 @@ def run_patchcore_inference(
     Executes real PatchCore anomaly detection inference for Pipeline A V4 baseline.
     Returns raw PatchCore anomaly score, basic faithful anomaly map visualization,
     and status. Does NOT apply synthetic fallbacks or custom localization.
->>>>>>> b5f0d42 (Initial commit: Anomaly Detector application with multi-instance & pure Gemini inspection pipelines)
     """
     start_time = time.time()
     
@@ -795,16 +698,6 @@ def run_patchcore_inference(
         raise FileNotFoundError(f"Test image path not found: {test_image_path}")
 
     storage_base = Path(__file__).resolve().parent.parent.parent
-<<<<<<< HEAD
-    heatmap_file = test_image_path.parent / f"{test_image_path.stem}_heatmap.png"
-
-    ckpt_uri = artifacts.get("checkpoint_uri", "")
-    raw_distance = None
-    anomaly_map = None
-
-    if ANOMALIB_AVAILABLE:
-        if ckpt_uri and ckpt_uri not in _MODEL_CACHE:
-=======
     # Pipeline A Single-Product isolation: Save heatmap in test image's parent directory if inside storage/inspections/
     if "inspections" in test_image_path.parts and test_image_path.parent != storage_base / "storage" / "inspections":
         heatmap_dir = test_image_path.parent
@@ -822,7 +715,6 @@ def run_patchcore_inference(
 
     if ckpt_uri:
         if ckpt_uri not in _MODEL_CACHE:
->>>>>>> b5f0d42 (Initial commit: Anomaly Detector application with multi-instance & pure Gemini inspection pipelines)
             resolved_path = resolve_checkpoint_path(ckpt_uri, storage_base)
             if resolved_path and resolved_path.exists():
                 try:
@@ -831,23 +723,14 @@ def run_patchcore_inference(
                         _MODEL_CACHE[ckpt_uri] = (loaded_model, threshold)
                 except Exception as e:
                     import traceback
-<<<<<<< HEAD
-                    print(f"[ERROR] Failed to load PatchCore model from artifact '{resolved_path}': {e}\n{traceback.format_exc()}")
-=======
                     raise RuntimeError(f"Failed to load PatchCore model from artifact '{resolved_path}': {e}\n{traceback.format_exc()}")
             else:
                 raise FileNotFoundError(f"PatchCore model checkpoint not found on disk for '{ckpt_uri}'. Build model version first.")
->>>>>>> b5f0d42 (Initial commit: Anomaly Detector application with multi-instance & pure Gemini inspection pipelines)
 
         if ckpt_uri in _MODEL_CACHE:
             model, cached_thr = _MODEL_CACHE[ckpt_uri]
             model.post_processor = None
-<<<<<<< HEAD
-            engine = Engine(accelerator="auto", devices=1, enable_progress_bar=False)
-            
-=======
 
->>>>>>> b5f0d42 (Initial commit: Anomaly Detector application with multi-instance & pure Gemini inspection pipelines)
             try:
                 if is_instance_crop:
                     test_loader = DataLoader(
@@ -860,50 +743,6 @@ def run_patchcore_inference(
                         batch_size=1, shuffle=False, num_workers=0, collate_fn=generic_collate_fn
                     )
 
-<<<<<<< HEAD
-                preds = engine.predict(model=model, dataloaders=test_loader)
-                if preds:
-                    raw_distance = float(preds[0].pred_score[0])
-                    if hasattr(preds[0], "anomaly_map"):
-                        am = preds[0].anomaly_map[0].detach().cpu().numpy()
-                        if am.ndim == 3:
-                            am = am[0]
-                        anomaly_map = am
-            except Exception as e:
-                import traceback
-                print(f"[ERROR] PatchCore engine predict failed for '{test_image_path}': {e}\n{traceback.format_exc()}")
-
-    # If a model artifact was specified but failed to load or run, check if mock or fallback
-    if raw_distance is None and ckpt_uri:
-        resolved_path = resolve_checkpoint_path(ckpt_uri, storage_base)
-        if not resolved_path or not resolved_path.exists():
-            raise FileNotFoundError(f"PatchCore model checkpoint not found on disk for '{ckpt_uri}'. Build model version first.")
-        
-        try:
-            state_dict = torch.load(resolved_path, map_location="cpu")
-            is_mock_ckpt = isinstance(state_dict, dict) and "coreset_vectors" in state_dict
-        except Exception:
-            is_mock_ckpt = False
-
-        if not is_mock_ckpt:
-            print(f"[WARNING] PatchCore engine execution fallback for '{test_image_path}' using crop feature distance.")
-
-    # Fallback ONLY when running in lightweight test mode without artifacts
-    if raw_distance is None:
-        filename = test_image_path.name.lower()
-        is_good_name = "good" in filename or "pass" in filename or "normal" in filename
-        rng = random.Random(hash(test_image_path.name) & 0xFFFFFFFF)
-        if is_good_name:
-            raw_distance = round(rng.uniform(14.5, max(15.0, threshold - 1.5)), 2)
-        else:
-            raw_distance = round(rng.uniform(threshold + 1.2, threshold + 18.5), 2)
-
-    anomaly_score = round(raw_distance, 2)
-    status = "anomalous" if anomaly_score >= threshold else "normal"
-    severity = "high" if anomaly_score >= (threshold * 1.3) else ("medium" if status == "anomalous" else "low")
-
-    # Generate real Heatmap image artifact & Bounding Box
-=======
                 model.eval()
                 model.post_processor = None
                 with torch.no_grad():
@@ -964,61 +803,10 @@ def run_patchcore_inference(
                 pass
 
     # Basic faithful PatchCore Anomaly Map Visualization
->>>>>>> b5f0d42 (Initial commit: Anomaly Detector application with multi-instance & pure Gemini inspection pipelines)
     bbox = None
     try:
         img_pil = Image.open(test_image_path).convert("RGB")
         img_np = np.array(img_pil)
-<<<<<<< HEAD
-
-        if anomaly_map is not None:
-            norm_map = (anomaly_map - anomaly_map.min()) / (anomaly_map.max() - anomaly_map.min() + 1e-8)
-            norm_map = (norm_map * 255).astype(np.uint8)
-            norm_map_resized = cv2.resize(norm_map, (img_np.shape[1], img_np.shape[0]))
-            
-            heatmap_color = cv2.applyColorMap(norm_map_resized, cv2.COLORMAP_JET)
-            # Save pure colorized anomaly map without pre-blending original image
-            cv2.imwrite(str(heatmap_file), heatmap_color)
-
-            if status == "anomalous":
-                thresh_mask = (norm_map_resized > 128).astype(np.uint8)
-                contours, _ = cv2.findContours(thresh_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-                if contours:
-                    from services.localization_service import select_localization_component_intensity_weighted
-                    bbox = select_localization_component_intensity_weighted(contours, norm_map_resized)
-
-        else:
-            h, w = img_np.shape[:2]
-            heat = np.zeros((h, w), dtype=np.uint8)
-            rng = random.Random(hash(test_image_path.name) & 0xFFFFFFFF)
-            if status == "anomalous":
-                cx, cy = rng.randint(w // 4, 3 * w // 4), rng.randint(h // 4, 3 * h // 4)
-                cv2.circle(heat, (cx, cy), rng.randint(20, 50), 255, -1)
-                cv2.GaussianBlur(heat, (21, 21), 0, heat)
-                bbox = {"x": max(0, cx - 30), "y": max(0, cy - 30), "width": 60, "height": 60}
-            
-            heatmap_color = cv2.applyColorMap(heat, cv2.COLORMAP_JET)
-            # Save pure colorized anomaly map without pre-blending original image
-            cv2.imwrite(str(heatmap_file), heatmap_color)
-
-    except Exception as e:
-        print(f"[ERROR] Heatmap/Localization generation failed for '{test_image_path}': {e}")
-        import traceback
-        traceback.print_exc()
-        Image.new("RGB", (256, 256), color=(200, 50, 50)).save(heatmap_file)
-
-    processing_time_ms = round((time.time() - start_time) * 1000, 1)
-
-    storage_root = Path(__file__).resolve().parent.parent.parent
-    try:
-        heatmap_uri = str(heatmap_file.relative_to(storage_root)).replace("\\", "/")
-    except ValueError:
-        heatmap_uri = f"storage/inspections/heatmaps/{heatmap_file.name}"
-
-    return {
-        "status": status,
-        "anomaly_score": anomaly_score,
-=======
         h, w = img_np.shape[:2]
 
         if anomaly_map is not None:
@@ -1062,14 +850,10 @@ def run_patchcore_inference(
         "status": status,
         "anomaly_score": anomaly_score,
         "raw_score": anomaly_score,
->>>>>>> b5f0d42 (Initial commit: Anomaly Detector application with multi-instance & pure Gemini inspection pipelines)
         "threshold": threshold,
         "severity": severity,
         "bbox": bbox,
         "heatmap_uri": heatmap_uri,
         "processing_time_ms": processing_time_ms
     }
-<<<<<<< HEAD
-=======
 
->>>>>>> b5f0d42 (Initial commit: Anomaly Detector application with multi-instance & pure Gemini inspection pipelines)
