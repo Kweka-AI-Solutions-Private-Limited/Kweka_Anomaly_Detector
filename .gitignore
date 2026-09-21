@@ -1,71 +1,22 @@
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-
-# Virtual environments
-venv/
-env/
-ENV/
-.venv
-
-# Environment files with secrets
-.env
-.env.local
-*.env
-
-# Node / Frontend
-node_modules/
-dist/
-frontend_dist/
-.vite/
-npm-debug.log*
-
-# IDE / OS
-.vscode/
-.idea/
-.DS_Store
-Thumbs.db
-
-# Storage temporary files & runtime directories (preserve directories via .gitkeep if needed)
-storage/
-backend/storage/
-backend/data/
-backend/datasets/
-backend/outputs/
-results/
-backend/results/
-*.ckpt
-*.pth
-*.pt
-*.onnx
-
-# Research Experiments & Notebooks
-backend/experiments/
-experiments/
-backend/notebooks/
-notebooks/
-*.ipynb
-
-
-
-# Environment files with secrets
-.env
-.env.local
-.env.*
-*.env
-backend/.env
-
 # Virtual environments
 venv/
 env/
 ENV/
 .venv
 backend/venv/
+backend/venv_old/
+*venv*/
 
-# Python Caches
+# Node / Frontend
+node_modules/
+frontend_react/node_modules/
+dist/
+dist-ssr/
+frontend_dist/
+.vite/
+npm-debug.log*
+
+# Python Caches & Compiled Files
 __pycache__/
 *.py[cod]
 *$py.class
@@ -74,13 +25,12 @@ __pycache__/
 .pytest_cache/
 backend/.pytest_cache/
 
-# Node / Frontend
-node_modules/
-frontend_react/node_modules/
-dist/
-frontend_dist/
-.vite/
-npm-debug.log*
+# Environment Files with Secrets
+.env
+.env.local
+.env.*
+*.env
+backend/.env
 
 # IDE / OS
 .vscode/
@@ -88,3 +38,16 @@ npm-debug.log*
 .DS_Store
 Thumbs.db
 
+# Storage, Artifacts & Models
+storage/
+backend/storage/
+artifacts/
+results/
+backend/results/
+backend/data/
+backend/datasets/
+backend/outputs/
+*.ckpt
+*.pth
+*.pt
+*.onnx

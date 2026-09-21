@@ -1,0 +1,43 @@
+{
+  "algorithm": {
+    "name": "patchcore",
+    "backbone": "wide_resnet50_2",
+    "layers": [
+      "layer2"
+    ],
+    "coreset_sampling_ratio": 0.05,
+    "num_neighbors": 9,
+    "image_size": [
+      256,
+      256
+    ],
+    "pretrained": true
+  },
+  "calibration": {
+    "method": "95th_percentile_out_of_sample_good",
+    "threshold": 27.70,
+    "calibration_mode": "Split-Sample (80/20 Held-Out GOOD Calibration, N=64)",
+    "mean": 25.80,
+    "std": 1.18,
+    "scores": [
+      23.76,
+      25.66,
+      27.37,
+      27.70
+    ]
+  },
+  "visualization": {
+    "vis_min": 20.16,
+    "vis_max": 35.0,
+    "vis_min_source": "p99.5 of held-out GOOD calibration anomaly-map pixel values (N=64 images, 4,194,304 pixels)",
+    "vis_max_source": "stable defect ceiling: good_score_p99_5 * 1.74 (covers real defect map maxima ~28.4)"
+  },
+  "training": {
+    "reference_count": 320,
+    "valid_image_count": 320,
+    "coreset_vectors": 13107,
+    "build_time_ms": 623354.4
+  },
+  "created_at": "2026-09-11T12:17:28Z",
+  "cuda_available": true
+}
