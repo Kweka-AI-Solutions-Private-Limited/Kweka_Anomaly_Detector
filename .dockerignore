@@ -1,89 +1,37 @@
-# ==============================================================
-# Anomaly Detector — Docker Build Context Exclusions
-# ==============================================================
-# Files/directories listed here are excluded from the Docker
-# build context (NOT copied to the daemon during docker build).
-# This keeps the build context small and prevents secrets/data
-# from being accidentally baked into the image.
-# ==============================================================
-
-# Version control
-.git/
+# Version Control
+.git
 .gitignore
+.github
 
-# IDE / editor
-.vscode/
-.idea/
-*.code-workspace
+# Node & Frontend Build
+**/node_modules
+**/dist
+**/.vite
 
-# Python environments and caches
-backend/venv/
-**/__pycache__/
+# Python Environments & Cache
+**/venv
+**/.venv
+**/env
+**/__pycache__
 **/*.pyc
 **/*.pyo
 **/*.pyd
-**/.pytest_cache/
-**/.mypy_cache/
-**/.ruff_cache/
+.pytest_cache
 
-# Node environments and build artifacts
-frontend_react/node_modules/
-frontend_react/dist/
-frontend_react/.env
-
-# Secrets — NEVER bake into Docker image
-backend/.env
-**/.env.*
-!backend/.env.example
-
-# Research datasets — large, not needed at runtime
-backend/data/
-backend/datasets/
-
-# Notebooks
-backend/notebooks/
-
-# Experiment scripts — not part of the application
-backend/experiments/
-
-# Development-only scripts
-backend/scripts/
-
-# Test suites — not needed in production image
-backend/tests/
-backend/src/tests/
-
-# Test output files and logs
-**/*_out.txt
-**/*_output.txt
-docker_*.txt
-*.log
-**/*.pytest_cache
-
-# Live storage data — bind-mounted at runtime, do NOT copy into image
-# (the empty dirs are created by the Dockerfile RUN mkdir command)
+# Storage, Artifacts, Models & Training Runs
 backend/storage/
-
-# Experiment outputs and results
-backend/outputs/
-backend/results/
-outputs/
+backend/artifacts/
+storage/
+artifacts/
 results/
-tmp/
+*.ckpt
+*.pth
+*.pt
+*.onnx
 
-# Requirements for development only
-backend/requirements.dev.txt
-
-# Documentation
-README.md
-CHANGELOG.md
-*.md
-!backend/src/**/*.md
-
-# OS artifacts
-Thumbs.db
+# IDE & OS Metadata
+.vscode
+.idea
 .DS_Store
-desktop.ini
-
-# pyrightconfig (type checker only)
-pyrightconfig.json
+*.log
+tmp/

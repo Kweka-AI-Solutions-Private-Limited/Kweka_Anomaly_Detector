@@ -48,14 +48,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 
 # ---------------------------------------------------------------
-# Install Python production dependencies
-# PyTorch cu128 requires the PyTorch extra index URL
+# Install Python production dependencies (CPU PyTorch ~1.8GB)
 # ---------------------------------------------------------------
 COPY backend/requirements.txt ./requirements.txt
 
-RUN pip install --no-cache-dir \
-    --extra-index-url https://download.pytorch.org/whl/cu128 \
-    -r requirements.txt
+# Strip +cu128 requirement tags for CPU wheel installation
+RUN sed -i 's/+cu128//g' requirements.txt && \
+    pip install --no-cache-dir \
+    --extra-index-url https://download.pytorch.org/whl/cpu \
+    -r requirements.txt && \
+    find /usr/local/lib/python3.11/site-packages/ -name "*.pyc" -delete && \
+    find /usr/local/lib/python3.11/site-packages/ -name "tests" -type d -exec rm -rf {} + 2>/dev/null || true
 
 # ---------------------------------------------------------------
 # Copy backend application source
