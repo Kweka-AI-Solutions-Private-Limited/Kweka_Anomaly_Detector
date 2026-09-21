@@ -13,7 +13,9 @@ import uuid
 from datetime import datetime
 from typing import List, Optional
 
-from fastapi import APIRouter, File, UploadFile, Form, HTTPException, status
+from fastapi import APIRouter, File, UploadFile, Form, HTTPException, status, Depends, Query
+from pymongo.database import Database
+from db.connection import get_db
 
 from schemas.leaf_disease import LeafDiseaseAnalysisResponse
 from services.leaf_disease.image_validator import validate_multiple_images
@@ -33,15 +35,28 @@ router = APIRouter(prefix="/leaf-disease", tags=["Leaf Disease Analysis"])
 GEMINI_DISEASE_CONFIDENCE_THRESHOLD = 0.15
 
 
+def _serialize_leaf_run(doc: dict) -> dict:
+    """Helper to convert BSON ObjectId to string for FastAPI responses."""
+    if not doc:
+        return doc
+    res = dict(doc)
+    if "_id" in res:
+        res["_id"] = str(res["_id"])
+        res["id"] = res["_id"]
+    return res
+
+
 @router.post("/analyze", response_model=LeafDiseaseAnalysisResponse)
 async def analyze_leaf_disease(
     files: List[UploadFile] = File(...),
-    selected_crop: Optional[str] = Form(None)
+    selected_crop: Optional[str] = Form(None),
+    db: Database = Depends(get_db)
 ):
     """
     Phase 1 Leaf Disease Analysis Endpoint.
     Accepts 1 to 5 leaf image files and optional crop selection override.
     Uses Gemini Vision as intelligent fallback when primary providers are uncertain.
+    Persists analysis run history to MongoDB.
     """
     if not files or len(files) == 0:
         raise HTTPException(
@@ -70,7 +85,7 @@ async def analyze_leaf_disease(
 
     # Handle scenario where ALL images are invalid
     if not validation_res.is_any_valid:
-        return LeafDiseaseAnalysisResponse(
+        resp = LeafDiseaseAnalysisResponse(
             analysis_id=analysis_id,
             timestamp=timestamp_str,
             status="FAILED",
@@ -80,6 +95,15 @@ async def analyze_leaf_disease(
             diagnosis=None,
             retry_guidance="All submitted images failed validation. Please upload clear, uncorrupted images (JPEG, PNG, or WEBP) with adequate lighting.",
         )
+        # Save failed run to history
+        try:
+            doc_data = resp.model_dump() if hasattr(resp, "model_dump") else resp.dict()
+            doc_data["created_at"] = datetime.utcnow()
+            doc_data["filenames"] = [f[0] for f in file_tuples]
+            db.leaf_disease_runs.insert_one(doc_data)
+        except Exception as e:
+            print(f"[WARN] Failed to save leaf disease run history: {e}")
+        return resp
 
     # Filter details for usable valid images
     valid_details = [d for d in validation_res.details if d.is_valid]
@@ -148,7 +172,7 @@ async def analyze_leaf_disease(
             is_uncertain=diagnosis_res.is_uncertain
         )
 
-    return LeafDiseaseAnalysisResponse(
+    resp = LeafDiseaseAnalysisResponse(
         analysis_id=analysis_id,
         timestamp=timestamp_str,
         status=analysis_status,
@@ -159,3 +183,68 @@ async def analyze_leaf_disease(
         nacl_recommendations=nacl_recs,
         retry_guidance=retry_guidance,
     )
+
+    # Save run record to MongoDB leaf_disease_runs collection
+    try:
+        doc_data = resp.model_dump() if hasattr(resp, "model_dump") else resp.dict()
+        doc_data["created_at"] = datetime.utcnow()
+        doc_data["filenames"] = [f[0] for f in file_tuples]
+        db.leaf_disease_runs.insert_one(doc_data)
+    except Exception as e:
+        print(f"[WARN] Failed to persist leaf disease run history: {e}")
+
+    return resp
+
+
+@router.get("/history")
+def get_leaf_disease_history(
+    limit: int = Query(50, ge=1, le=200),
+    status: Optional[str] = Query(None),
+    crop_name: Optional[str] = Query(None),
+    db: Database = Depends(get_db)
+):
+    """
+    Returns list of historical Leaf Disease Analysis runs ordered newest first.
+    Supports filtering by status ('SUCCESS', 'UNCERTAIN', 'FAILED') and crop_name.
+    """
+    query = {}
+    if status:
+        query["status"] = status.upper()
+    if crop_name:
+        query["crop.crop_name"] = crop_name
+
+    cursor = db.leaf_disease_runs.find(query).sort("created_at", -1).limit(limit)
+    runs = [_serialize_leaf_run(doc) for doc in cursor]
+    return runs
+
+
+@router.get("/history/{analysis_id}")
+def get_leaf_disease_run(analysis_id: str, db: Database = Depends(get_db)):
+    """
+    Retrieves a single historical Leaf Disease Analysis run by analysis_id.
+    """
+    doc = db.leaf_disease_runs.find_one({"$or": [{"analysis_id": analysis_id}, {"_id": analysis_id}]})
+    if not doc:
+        raise HTTPException(status_code=404, detail=f"Leaf disease run with ID '{analysis_id}' not found.")
+    return _serialize_leaf_run(doc)
+
+
+@router.delete("/history/{analysis_id}")
+def delete_leaf_disease_run(analysis_id: str, db: Database = Depends(get_db)):
+    """
+    Deletes a specific Leaf Disease Analysis run record from history.
+    """
+    res = db.leaf_disease_runs.delete_one({"$or": [{"analysis_id": analysis_id}, {"_id": analysis_id}]})
+    if res.deleted_count == 0:
+        raise HTTPException(status_code=404, detail=f"Leaf disease run '{analysis_id}' not found.")
+    return {"status": "deleted", "analysis_id": analysis_id}
+
+
+@router.delete("/history")
+def clear_leaf_disease_history(db: Database = Depends(get_db)):
+    """
+    Clears all historical Leaf Disease Analysis runs.
+    """
+    res = db.leaf_disease_runs.delete_many({})
+    return {"status": "cleared", "deleted_count": res.deleted_count}
+

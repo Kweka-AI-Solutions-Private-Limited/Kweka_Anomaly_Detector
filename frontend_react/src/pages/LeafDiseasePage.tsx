@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Leaf,
   Upload,
@@ -15,10 +15,17 @@ import {
   FlaskConical,
   ShieldCheck,
   Building2,
+  History,
+  Trash2,
+  Clock,
+  ChevronRight,
 } from 'lucide-react';
 import { Card } from '../components/common/Card';
 import {
   analyzeLeafDisease,
+  getLeafDiseaseHistory,
+  deleteLeafDiseaseRun,
+  clearLeafDiseaseHistory,
   LeafDiseaseAnalysisResponse,
 } from '../api/leafDisease';
 
@@ -48,7 +55,61 @@ export const LeafDiseasePage: React.FC = () => {
   const [analysisResult, setAnalysisResult] = useState<LeafDiseaseAnalysisResponse | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  // History State
+  const [historyList, setHistoryList] = useState<LeafDiseaseAnalysisResponse[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState<boolean>(false);
+  const [showHistoryModal, setShowHistoryModal] = useState<boolean>(false);
+  const [activeHistoryId, setActiveHistoryId] = useState<string | null>(null);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const fetchHistory = async () => {
+    setIsLoadingHistory(true);
+    try {
+      const data = await getLeafDiseaseHistory(50);
+      setHistoryList(data);
+    } catch (err) {
+      console.warn('Failed to fetch leaf disease run history:', err);
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchHistory();
+  }, []);
+
+  const handleSelectHistoryRun = (run: LeafDiseaseAnalysisResponse) => {
+    setAnalysisResult(run);
+    setActiveHistoryId(run.analysis_id);
+    setShowHistoryModal(false);
+  };
+
+  const handleDeleteRun = async (e: React.MouseEvent, analysisId: string) => {
+    e.stopPropagation();
+    try {
+      await deleteLeafDiseaseRun(analysisId);
+      setHistoryList((prev) => prev.filter((r) => r.analysis_id !== analysisId));
+      if (analysisResult?.analysis_id === analysisId) {
+        setAnalysisResult(null);
+        setActiveHistoryId(null);
+      }
+    } catch (err) {
+      console.error('Failed to delete leaf disease run:', err);
+    }
+  };
+
+  const handleClearHistory = async () => {
+    if (!window.confirm('Are you sure you want to clear all leaf disease analysis run history?')) return;
+    try {
+      await clearLeafDiseaseHistory();
+      setHistoryList([]);
+      setAnalysisResult(null);
+      setActiveHistoryId(null);
+    } catch (err) {
+      console.error('Failed to clear leaf disease history:', err);
+    }
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
@@ -98,6 +159,7 @@ export const LeafDiseasePage: React.FC = () => {
     setPreviewUrls([]);
     setAnalysisResult(null);
     setErrorMsg(null);
+    setActiveHistoryId(null);
   };
 
   const handleAnalyze = async () => {
@@ -124,6 +186,8 @@ export const LeafDiseasePage: React.FC = () => {
       await new Promise((r) => setTimeout(r, 200));
 
       setAnalysisResult(res);
+      setActiveHistoryId(res.analysis_id);
+      fetchHistory();
     } catch (err: any) {
       console.error('[ERROR] Leaf disease analysis failed:', err);
       setErrorMsg(
@@ -162,9 +226,19 @@ export const LeafDiseasePage: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex items-center space-x-2 text-xs font-mono bg-industrial-800/80 px-3.5 py-2 rounded-xl border border-industrial-700 text-emerald-300">
-            <Building2 className="w-4.5 h-4.5 text-emerald-400" />
-            <span>NACL Agrochemical Catalog (56 Products Indexed)</span>
+          <div className="flex items-center space-x-3">
+            <button
+              type="button"
+              onClick={() => setShowHistoryModal(true)}
+              className="flex items-center space-x-2 text-xs font-mono bg-emerald-900/80 hover:bg-emerald-800 px-3.5 py-2 rounded-xl border border-emerald-600/50 text-emerald-200 transition-colors shadow-sm"
+            >
+              <History className="w-4 h-4 text-emerald-400" />
+              <span>Run History ({historyList.length})</span>
+            </button>
+            <div className="flex items-center space-x-2 text-xs font-mono bg-industrial-800/80 px-3.5 py-2 rounded-xl border border-industrial-700 text-emerald-300">
+              <Building2 className="w-4.5 h-4.5 text-emerald-400" />
+              <span>NACL Agrochemical Catalog (56 Products)</span>
+            </div>
           </div>
         </div>
       </div>
@@ -326,6 +400,99 @@ export const LeafDiseasePage: React.FC = () => {
                   <span>{currentStage}</span>
                 </div>
               </div>
+            )}
+          </Card>
+
+          {/* Run History Sidebar Card */}
+          <Card className="p-5 bg-white border-industrial-200 space-y-3.5 shadow-sm">
+            <div className="flex items-center justify-between border-b border-industrial-100 pb-2.5">
+              <div className="flex items-center space-x-2">
+                <History className="w-4 h-4 text-emerald-600" />
+                <h3 className="text-xs font-extrabold text-industrial-900 uppercase font-mono tracking-wider">
+                  Analysis Run History
+                </h3>
+              </div>
+              <span className="text-[11px] font-mono text-industrial-500 font-semibold">
+                {historyList.length} Runs
+              </span>
+            </div>
+
+            {isLoadingHistory ? (
+              <div className="py-6 text-center text-xs font-mono text-industrial-400 animate-pulse flex items-center justify-center space-x-2">
+                <RefreshCw className="w-3.5 h-3.5 animate-spin text-emerald-600" />
+                <span>Loading past runs...</span>
+              </div>
+            ) : historyList.length === 0 ? (
+              <div className="py-6 text-center text-xs text-industrial-400 font-mono italic">
+                No historical analysis runs yet.
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                {historyList.slice(0, 5).map((run) => {
+                  const isSelected = activeHistoryId === run.analysis_id || analysisResult?.analysis_id === run.analysis_id;
+                  return (
+                    <div
+                      key={run.analysis_id}
+                      onClick={() => handleSelectHistoryRun(run)}
+                      className={`p-3 rounded-xl border transition-all cursor-pointer space-y-1.5 ${
+                        isSelected
+                          ? 'bg-emerald-50 border-emerald-400 ring-1 ring-emerald-400'
+                          : 'bg-industrial-50/70 border-industrial-200 hover:bg-emerald-50/50 hover:border-emerald-300'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-mono text-xs font-extrabold text-industrial-900">
+                          {run.analysis_id}
+                        </span>
+                        <span
+                          className={`px-1.5 py-0.2 rounded text-[9px] font-mono font-bold uppercase ${
+                            run.status === 'SUCCESS'
+                              ? 'bg-pass-100 text-pass-800'
+                              : run.status === 'UNCERTAIN'
+                              ? 'bg-amber-100 text-amber-800'
+                              : 'bg-reject-100 text-reject-800'
+                          }`}
+                        >
+                          {run.status}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between text-[11px] font-mono text-industrial-600">
+                        <span className="font-bold text-emerald-800">{run.crop?.crop_name || 'Unknown'}</span>
+                        <span className="truncate max-w-[130px] font-medium">
+                          {run.disease?.disease_name || 'No pathology'}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between text-[10px] font-mono text-industrial-400 pt-1 border-t border-industrial-100">
+                        <span className="flex items-center space-x-1">
+                          <Clock className="w-3 h-3 text-industrial-400" />
+                          <span>{new Date(run.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        </span>
+                        <button
+                          type="button"
+                          onClick={(e) => handleDeleteRun(e, run.analysis_id)}
+                          className="text-industrial-400 hover:text-reject-600 transition-colors p-0.5"
+                          title="Delete run record"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {historyList.length > 5 && (
+              <button
+                type="button"
+                onClick={() => setShowHistoryModal(true)}
+                className="w-full py-2 px-3 rounded-lg bg-industrial-100 hover:bg-industrial-200 text-industrial-700 font-mono text-xs font-extrabold flex items-center justify-center space-x-1 transition-colors"
+              >
+                <span>View All {historyList.length} History Runs</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
             )}
           </Card>
         </div>
@@ -687,6 +854,137 @@ export const LeafDiseasePage: React.FC = () => {
           <div className="p-4 rounded-xl bg-industrial-100 border border-industrial-200 text-xs text-industrial-600 flex items-start space-x-2.5 font-mono">
             <ShieldCheck className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
             <span>{naclRecs.safety_disclaimer}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Full History Modal Dialog */}
+      {showHistoryModal && (
+        <div className="fixed inset-0 z-50 bg-industrial-950/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl border border-industrial-200 shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95">
+            {/* Modal Header */}
+            <div className="p-5 bg-gradient-to-r from-emerald-950 to-industrial-900 text-white flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                  <History className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-extrabold tracking-tight">
+                    Leaf Pathology Analysis Run History
+                  </h3>
+                  <p className="text-xs text-industrial-300 font-mono">
+                    All historical diagnostic records, pathogen evidence, and NACL recommendations
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                {historyList.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleClearHistory}
+                    className="px-3 py-1.5 rounded-lg bg-reject-900/60 hover:bg-reject-800 text-reject-200 border border-reject-600/50 text-xs font-mono font-bold flex items-center space-x-1.5 transition-colors"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Clear All History</span>
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setShowHistoryModal(false)}
+                  className="p-1.5 rounded-xl bg-industrial-800 hover:bg-industrial-700 text-white transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 overflow-y-auto flex-1 space-y-4">
+              {isLoadingHistory ? (
+                <div className="py-12 text-center text-sm font-mono text-industrial-500 flex items-center justify-center space-x-2">
+                  <RefreshCw className="w-4 h-4 animate-spin text-emerald-600" />
+                  <span>Fetching analysis history from database...</span>
+                </div>
+              ) : historyList.length === 0 ? (
+                <div className="py-12 text-center text-sm text-industrial-500 font-mono">
+                  No historical analysis runs found in database.
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {historyList.map((run) => {
+                    const isSelected = activeHistoryId === run.analysis_id || analysisResult?.analysis_id === run.analysis_id;
+                    const recCount = run.nacl_recommendations?.recommendations?.length || 0;
+                    return (
+                      <div
+                        key={run.analysis_id}
+                        onClick={() => handleSelectHistoryRun(run)}
+                        className={`p-4 rounded-xl border transition-all cursor-pointer space-y-2.5 ${
+                          isSelected
+                            ? 'bg-emerald-50/80 border-emerald-500 ring-2 ring-emerald-500/20'
+                            : 'bg-white border-industrial-200 hover:border-emerald-400 hover:shadow-md'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between flex-wrap gap-2">
+                          <div className="flex items-center space-x-3">
+                            <span className="font-mono text-sm font-extrabold text-industrial-900">
+                              {run.analysis_id}
+                            </span>
+                            <span
+                              className={`px-2.5 py-0.5 rounded-full text-xs font-mono font-bold uppercase ${
+                                run.status === 'SUCCESS'
+                                  ? 'bg-pass-100 text-pass-800 border border-pass-300'
+                                  : run.status === 'UNCERTAIN'
+                                  ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                                  : 'bg-reject-100 text-reject-800 border border-reject-300'
+                              }`}
+                            >
+                              {run.status}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center space-x-3 text-xs font-mono text-industrial-500">
+                            <span className="flex items-center space-x-1">
+                              <Clock className="w-3.5 h-3.5" />
+                              <span>{new Date(run.timestamp).toLocaleString()}</span>
+                            </span>
+                            <button
+                              type="button"
+                              onClick={(e) => handleDeleteRun(e, run.analysis_id)}
+                              className="p-1 rounded hover:bg-reject-50 text-industrial-400 hover:text-reject-600 transition-colors"
+                              title="Delete record"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs font-mono pt-1">
+                          <div className="p-2.5 rounded-lg bg-industrial-50 border border-industrial-100">
+                            <span className="text-industrial-400 text-[10px] block font-bold">CROP SPECIES</span>
+                            <span className="font-extrabold text-industrial-900 text-xs">
+                              {run.crop?.crop_name || 'Unknown'}
+                            </span>
+                          </div>
+                          <div className="p-2.5 rounded-lg bg-industrial-50 border border-industrial-100">
+                            <span className="text-industrial-400 text-[10px] block font-bold">PATHOLOGY</span>
+                            <span className="font-extrabold text-industrial-900 text-xs">
+                              {run.disease?.disease_name || 'No pathology'}
+                            </span>
+                          </div>
+                          <div className="p-2.5 rounded-lg bg-industrial-50 border border-industrial-100">
+                            <span className="text-industrial-400 text-[10px] block font-bold">NACL RECOMMENDATIONS</span>
+                            <span className="font-extrabold text-emerald-700 text-xs">
+                              {recCount} Agrochemical Products
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

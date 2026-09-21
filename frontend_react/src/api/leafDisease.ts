@@ -120,3 +120,45 @@ export async function analyzeLeafDisease(
 
   return response.data;
 }
+
+export async function getLeafDiseaseHistory(
+  limit: number = 50,
+  status?: string,
+  cropName?: string
+): Promise<LeafDiseaseAnalysisResponse[]> {
+  const params: Record<string, any> = { limit };
+  if (status) params.status = status;
+  if (cropName) params.crop_name = cropName;
+
+  const response = await apiClient.get<LeafDiseaseAnalysisResponse[]>(
+    '/api/leaf-disease/history',
+    { params }
+  );
+
+  return response.data;
+}
+
+export async function getLeafDiseaseRun(
+  analysisId: string
+): Promise<LeafDiseaseAnalysisResponse> {
+  const response = await apiClient.get<LeafDiseaseAnalysisResponse>(
+    `/api/leaf-disease/history/${analysisId}`
+  );
+  return response.data;
+}
+
+export async function deleteLeafDiseaseRun(
+  analysisId: string
+): Promise<{ status: string; analysis_id: string }> {
+  const response = await apiClient.delete<{ status: string; analysis_id: string }>(
+    `/api/leaf-disease/history/${analysisId}`
+  );
+  return response.data;
+}
+
+export async function clearLeafDiseaseHistory(): Promise<{ status: string; deleted_count: number }> {
+  const response = await apiClient.delete<{ status: string; deleted_count: number }>(
+    '/api/leaf-disease/history'
+  );
+  return response.data;
+}
