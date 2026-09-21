@@ -61,7 +61,7 @@ def set_seed(seed=42):
 
 
 class GenericFolderDataset(Dataset):
-    """Custom PyTorch dataset loading images as float tensors in range [0, 1] with tight product crop preprocessing."""
+    """Custom PyTorch dataset loading images as float tensors in range [0, 1] with adaptive foreground detection & aspect-preserving square padding."""
     def __init__(self, image_paths: List[Path], target_size=DEFAULT_TARGET_SIZE):
         self.image_paths = [Path(p) for p in image_paths if Path(p).exists()]
         self.target_size = target_size
@@ -74,31 +74,61 @@ class GenericFolderDataset(Dataset):
         try:
             img_bgr = cv2.imread(str(path))
             if img_bgr is not None:
-                # 1. Detect product bounding box using existing product-mask logic
-                bg_mask = (img_bgr[:, :, 0] > 210) & (img_bgr[:, :, 1] > 210) & (img_bgr[:, :, 2] > 210)
-                fg_mask = (~bg_mask).astype(np.uint8) * 255
+                # 1. Adaptive Foreground Segmentation (Otsu + Saturation + White fallback)
+                gray = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)
+                _, thresh_otsu_inv = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+                
+                # Color saturation mask for non-grayscale objects
+                hsv = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2HSV)
+                sat = hsv[:, :, 1]
+                _, sat_thresh = cv2.threshold(sat, 30, 255, cv2.THRESH_BINARY)
+                
+                # White background mask fallback (>210)
+                bg_white = (img_bgr[:, :, 0] > 210) & (img_bgr[:, :, 1] > 210) & (img_bgr[:, :, 2] > 210)
+                fg_white = (~bg_white).astype(np.uint8) * 255
+
+                # Combine segmentation masks
+                fg_mask = cv2.bitwise_or(thresh_otsu_inv, sat_thresh)
+                fg_mask = cv2.bitwise_or(fg_mask, fg_white)
+
+                # Morphological close to connect product regions
                 kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (15, 15))
                 mask_closed = cv2.morphologyEx(fg_mask, cv2.MORPH_CLOSE, kernel)
                 
                 ys, xs = np.where(mask_closed > 0)
-                if len(xs) > 0:
+                if len(xs) > 0 and len(ys) > 0:
                     h, w = img_bgr.shape[:2]
-                    xmin, xmax = max(0, int(np.min(xs)) - 5), min(w, int(np.max(xs)) + 5)
-                    ymin, ymax = max(0, int(np.min(ys)) - 5), min(h, int(np.max(ys)) + 5)
-                    # 2 & 3. Crop tightly to product bounding box (do NOT zero background)
-                    crop_bgr = img_bgr[ymin:ymax, xmin:xmax]
+                    xmin, xmax = max(0, int(np.min(xs)) - 8), min(w, int(np.max(xs)) + 8)
+                    ymin, ymax = max(0, int(np.min(ys)) - 8), min(h, int(np.max(ys)) + 8)
+                    
+                    if (xmax - xmin) > 10 and (ymax - ymin) > 10:
+                        crop_bgr = img_bgr[ymin:ymax, xmin:xmax]
+                    else:
+                        crop_bgr = img_bgr
                 else:
                     crop_bgr = img_bgr
 
-                # 4. Convert crop to RGB
-                img_rgb = cv2.cvtColor(crop_bgr, cv2.COLOR_BGR2RGB)
+                # 2. Aspect-Ratio Preserving 1:1 Square Canvas Padding
+                ch, cw = crop_bgr.shape[:2]
+                max_side = max(ch, cw)
+                
+                # Compute smooth background padding color from border mean
+                border_pixels = np.concatenate([crop_bgr[0, :], crop_bgr[-1, :], crop_bgr[:, 0], crop_bgr[:, -1]], axis=0)
+                bg_color = np.mean(border_pixels, axis=0).astype(np.uint8) if len(border_pixels) > 0 else np.array([128, 128, 128], dtype=np.uint8)
+                
+                square_canvas = np.full((max_side, max_side, 3), bg_color, dtype=np.uint8)
+                y_off = (max_side - ch) // 2
+                x_off = (max_side - cw) // 2
+                square_canvas[y_off:y_off+ch, x_off:x_off+cw] = crop_bgr
+
+                # 3. Convert crop canvas to RGB PIL Image
+                img_rgb = cv2.cvtColor(square_canvas, cv2.COLOR_BGR2RGB)
                 img_pil = Image.fromarray(img_rgb)
             else:
                 img_pil = Image.open(path).convert("RGB")
             
-            # 5. Directly resize crop to 256x256
+            # 4. Directly resize undistorted 1:1 square canvas to target size (256x256)
             img_resized = img_pil.resize(self.target_size, Image.BILINEAR)
-            # 6. Convert to float32 [0, 1]
             arr = np.array(img_resized, dtype=np.float32) / 255.0
             tensor = torch.from_numpy(arr).permute(2, 0, 1)
         except Exception:
