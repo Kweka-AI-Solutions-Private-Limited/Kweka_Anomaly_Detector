@@ -344,8 +344,8 @@ def get_inspection_run(db: Database, run_id: str) -> Dict[str, Any]:
     serialized_run = serialize_object_ids(doc)
     serialized_run["run_id"] = str(serialized_run.get("_id", run_id))
 
-    # Fetch associated inspections
-    cursor = db.inspections.find({"run_id": ObjectId(run_id)}).sort("created_at", -1)
+    # Fetch associated inspections in chronological order (1-to-1 batch upload order)
+    cursor = db.inspections.find({"run_id": ObjectId(run_id)}).sort("created_at", 1)
     inspections = []
     for insp_doc in cursor:
         insp_id = str(insp_doc["_id"])

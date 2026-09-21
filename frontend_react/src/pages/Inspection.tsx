@@ -244,8 +244,18 @@ export const Inspection: React.FC = () => {
       const updateBatchFromRun = (runData: InspectionRun) => {
         if (!runData.inspections || runData.inspections.length === 0) return;
         setBatchItems((prev) =>
-          prev.map((item) => {
-            const insp: any = runData.inspections?.find((i: any) => i.filename === item.file.name);
+          prev.map((item, itemIndex) => {
+            // Match 1-to-1 by batch index first (preserves exact upload sequence even with duplicate filenames)
+            let insp: any = runData.inspections?.[itemIndex];
+
+            // Fallback to filename matching if index is out of bounds or filenames differ
+            if (!insp || (insp.filename && item.file.name && insp.filename !== item.file.name)) {
+              const matchedByName = runData.inspections?.find((i: any) => i.filename === item.file.name);
+              if (matchedByName) {
+                insp = matchedByName;
+              }
+            }
+
             if (insp) {
               // 'review' is a terminal state for multi-instance inspections (e.g. PATCHCORE_INSTANCE_FAILED, NO_OBJECTS_DETECTED)
               const isTerminal = insp.status === 'completed' || insp.status === 'review';
