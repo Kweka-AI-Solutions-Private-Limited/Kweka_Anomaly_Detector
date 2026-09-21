@@ -61,7 +61,7 @@ def set_seed(seed=42):
 
 
 class GenericFolderDataset(Dataset):
-    """Custom PyTorch dataset loading images as float tensors in range [0, 1] with adaptive foreground detection & aspect-preserving square padding."""
+    """Custom PyTorch dataset loading images as float tensors in range [0, 1] with tight product crop preprocessing."""
     def __init__(self, image_paths: List[Path], target_size=DEFAULT_TARGET_SIZE):
         self.image_paths = [Path(p) for p in image_paths if Path(p).exists()]
         self.target_size = target_size
@@ -98,8 +98,8 @@ class GenericFolderDataset(Dataset):
                 ys, xs = np.where(mask_closed > 0)
                 if len(xs) > 0 and len(ys) > 0:
                     h, w = img_bgr.shape[:2]
-                    xmin, xmax = max(0, int(np.min(xs)) - 8), min(w, int(np.max(xs)) + 8)
-                    ymin, ymax = max(0, int(np.min(ys)) - 8), min(h, int(np.max(ys)) + 8)
+                    xmin, xmax = max(0, int(np.min(xs)) - 5), min(w, int(np.max(xs)) + 5)
+                    ymin, ymax = max(0, int(np.min(ys)) - 5), min(h, int(np.max(ys)) + 5)
                     
                     if (xmax - xmin) > 10 and (ymax - ymin) > 10:
                         crop_bgr = img_bgr[ymin:ymax, xmin:xmax]
@@ -108,26 +108,26 @@ class GenericFolderDataset(Dataset):
                 else:
                     crop_bgr = img_bgr
 
-                # 2. Aspect-Ratio Preserving 1:1 Square Canvas Padding
+                # 2. Aspect-Preserving Seamless Reflection Padding (No sharp transition lines)
                 ch, cw = crop_bgr.shape[:2]
                 max_side = max(ch, cw)
-                
-                # Compute smooth background padding color from border mean
-                border_pixels = np.concatenate([crop_bgr[0, :], crop_bgr[-1, :], crop_bgr[:, 0], crop_bgr[:, -1]], axis=0)
-                bg_color = np.mean(border_pixels, axis=0).astype(np.uint8) if len(border_pixels) > 0 else np.array([128, 128, 128], dtype=np.uint8)
-                
-                square_canvas = np.full((max_side, max_side, 3), bg_color, dtype=np.uint8)
-                y_off = (max_side - ch) // 2
-                x_off = (max_side - cw) // 2
-                square_canvas[y_off:y_off+ch, x_off:x_off+cw] = crop_bgr
+                pad_top = (max_side - ch) // 2
+                pad_bottom = max_side - ch - pad_top
+                pad_left = (max_side - cw) // 2
+                pad_right = max_side - cw - pad_left
 
-                # 3. Convert crop canvas to RGB PIL Image
+                # BORDER_REFLECT mirrors border texture seamlessly without introducing artificial edges
+                square_canvas = cv2.copyMakeBorder(
+                    crop_bgr, pad_top, pad_bottom, pad_left, pad_right, cv2.BORDER_REFLECT
+                )
+
+                # 3. Convert seamless 1:1 square canvas directly to RGB PIL Image
                 img_rgb = cv2.cvtColor(square_canvas, cv2.COLOR_BGR2RGB)
                 img_pil = Image.fromarray(img_rgb)
             else:
                 img_pil = Image.open(path).convert("RGB")
             
-            # 4. Directly resize undistorted 1:1 square canvas to target size (256x256)
+            # 4. Directly resize seamless 1:1 square canvas to target size (256x256)
             img_resized = img_pil.resize(self.target_size, Image.BILINEAR)
             arr = np.array(img_resized, dtype=np.float32) / 255.0
             tensor = torch.from_numpy(arr).permute(2, 0, 1)
@@ -788,14 +788,49 @@ def run_patchcore_inference(
                                 anomaly_map = am
                             else:
                                 raw_score = getattr(preds, "pred_score", None)
-                                if raw_score is not None:
-                                    raw_distance = float(raw_score[0]) if hasattr(raw_score, "__getitem__") else float(raw_score)
                                 am_tensor = getattr(preds, "anomaly_map", None)
                                 if am_tensor is not None:
                                     am = am_tensor[0].detach().cpu().numpy()
                                     if am.ndim == 3:
                                         am = am[0]
                                     anomaly_map = am
+
+                                if anomaly_map is not None:
+                                    # Product Surface Mask Extraction (Otsu + Saturation + Eroded Boundary)
+                                    img_bgr = cv2.imread(str(test_image_path))
+                                    fg_mask_eroded = None
+                                    if img_bgr is not None:
+                                        gray = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)
+                                        _, thresh_inv = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+                                        hsv = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2HSV)
+                                        sat = hsv[:, :, 1]
+                                        _, sat_thresh = cv2.threshold(sat, 30, 255, cv2.THRESH_BINARY)
+                                        bg_white = (img_bgr[:, :, 0] > 210) & (img_bgr[:, :, 1] > 210) & (img_bgr[:, :, 2] > 210)
+                                        fg_white = (~bg_white).astype(np.uint8) * 255
+
+                                        fg_mask = cv2.bitwise_or(thresh_inv, sat_thresh)
+                                        fg_mask = cv2.bitwise_or(fg_mask, fg_white)
+
+                                        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (15, 15))
+                                        fg_mask = cv2.morphologyEx(fg_mask, cv2.MORPH_CLOSE, kernel)
+
+                                        # Erode boundary by 3 pixels to isolate pure product surface
+                                        erode_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+                                        fg_mask_eroded = cv2.erode(fg_mask, erode_kernel, iterations=1)
+
+                                        am_h, am_w = anomaly_map.shape[:2]
+                                        mask_spatial = cv2.resize(fg_mask_eroded, (am_w, am_h), interpolation=cv2.INTER_NEAREST)
+                                        product_scores = anomaly_map[mask_spatial > 0]
+                                        if product_scores.size > 20:
+                                            raw_distance = float(np.percentile(product_scores, 98.5))
+                                        elif product_scores.size > 0:
+                                            raw_distance = float(product_scores.max())
+                                        else:
+                                            raw_distance = float(anomaly_map.max())
+                                    else:
+                                        raw_distance = float(anomaly_map.max())
+                                elif raw_score is not None:
+                                    raw_distance = float(raw_score[0]) if hasattr(raw_score, "__getitem__") else float(raw_score)
             except Exception as e:
                 import traceback
                 raise RuntimeError(f"PatchCore PyTorch inference execution failed for '{test_image_path}': {e}\n{traceback.format_exc()}")
@@ -856,6 +891,29 @@ def run_patchcore_inference(
                     norm_map = np.zeros((h, w), dtype=np.uint8)
 
             heatmap_color = cv2.applyColorMap(norm_map, cv2.COLORMAP_JET)
+            
+            # Eliminate dark purple background box by restoring original image pixels outside product mask
+            img_bgr = cv2.imread(str(test_image_path))
+            if img_bgr is not None:
+                gray = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)
+                _, thresh_inv = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+                hsv = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2HSV)
+                sat = hsv[:, :, 1]
+                _, sat_thresh = cv2.threshold(sat, 30, 255, cv2.THRESH_BINARY)
+                bg_white = (img_bgr[:, :, 0] > 210) & (img_bgr[:, :, 1] > 210) & (img_bgr[:, :, 2] > 210)
+                fg_white = (~bg_white).astype(np.uint8) * 255
+
+                fg_mask = cv2.bitwise_or(thresh_inv, sat_thresh)
+                fg_mask = cv2.bitwise_or(fg_mask, fg_white)
+                kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (15, 15))
+                fg_mask = cv2.morphologyEx(fg_mask, cv2.MORPH_CLOSE, kernel)
+                erode_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+                fg_mask_eroded = cv2.erode(fg_mask, erode_kernel, iterations=1)
+
+                if fg_mask_eroded.shape[:2] == (h, w):
+                    bg_indices = (fg_mask_eroded == 0)
+                    heatmap_color[bg_indices] = img_bgr[bg_indices]
+
             cv2.imwrite(str(heatmap_file), heatmap_color)
         else:
             Image.new("RGB", (w, h), color=(0, 0, 0)).save(heatmap_file)

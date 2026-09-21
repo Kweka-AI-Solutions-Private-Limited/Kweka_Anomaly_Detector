@@ -1054,13 +1054,6 @@ export const Inspection: React.FC = () => {
                         <span className="font-semibold text-industrial-400">—</span>
                       </div>
                     </div>
-
-                    {/* Detected Region Placeholder */}
-                    <div className="bg-industrial-50 p-3 rounded border border-industrial-200 space-y-1 font-mono">
-                      <span className="text-[10px] font-bold text-industrial-500 uppercase">Detected Region</span>
-                      <p className="text-[11px] text-industrial-400 italic pt-1">Analyzing feature map & bounding box...</p>
-                    </div>
-
                     {/* Model Metadata */}
                     <div className="bg-white p-3 rounded border border-industrial-200 space-y-1 text-industrial-600 font-mono">
                       <div className="flex items-center space-x-1.5 font-semibold text-industrial-900 mb-1">
@@ -1124,21 +1117,6 @@ export const Inspection: React.FC = () => {
                           {currentItem.result.processing_time_ms || 32} ms
                         </span>
                       </div>
-                    </div>
-
-                    {/* Bounding Box coordinates readout */}
-                    <div className="bg-industrial-50 p-3 rounded border border-industrial-200 space-y-1 font-mono">
-                      <span className="text-[10px] font-bold text-industrial-500 uppercase">Detected Region</span>
-                      {currentItem.result.localization?.bbox ? (
-                        <div className="grid grid-cols-4 gap-1 text-[11px] text-industrial-800 pt-1">
-                          <div><span className="text-industrial-400">X:</span> {currentItem.result.localization.bbox.x}</div>
-                          <div><span className="text-industrial-400">Y:</span> {currentItem.result.localization.bbox.y}</div>
-                          <div><span className="text-industrial-400">W:</span> {currentItem.result.localization.bbox.width}</div>
-                          <div><span className="text-industrial-400">H:</span> {currentItem.result.localization.bbox.height}</div>
-                        </div>
-                      ) : (
-                        <p className="text-[11px] text-industrial-400 italic pt-1">No localized anomaly region available.</p>
-                      )}
                     </div>
 
                     {/* Model Metadata */}
