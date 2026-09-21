@@ -20,6 +20,7 @@ export const App: React.FC = () => {
         <Route element={<AppLayout />}>
           <Route path="/" element={<Home />} />
           <Route path="/leaf-disease" element={<LeafDiseasePage />} />
+          <Route path="/leaf-disease/:runId" element={<LeafDiseasePage />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/models" element={<Models />} />
           <Route path="/models/create" element={<CreateModel />} />

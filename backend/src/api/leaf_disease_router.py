@@ -10,7 +10,7 @@ Orchestrates:
 """
 
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 
 from fastapi import APIRouter, File, UploadFile, Form, HTTPException, status, Depends, Query
@@ -97,8 +97,8 @@ async def analyze_leaf_disease(
         )
         # Save failed run to history
         try:
-            doc_data = resp.model_dump() if hasattr(resp, "model_dump") else resp.dict()
-            doc_data["created_at"] = datetime.utcnow()
+            doc_data = resp.model_dump()
+            doc_data["created_at"] = datetime.now(timezone.utc)
             doc_data["filenames"] = [f[0] for f in file_tuples]
             db.leaf_disease_runs.insert_one(doc_data)
         except Exception as e:
@@ -186,14 +186,47 @@ async def analyze_leaf_disease(
 
     # Save run record to MongoDB leaf_disease_runs collection
     try:
-        doc_data = resp.model_dump() if hasattr(resp, "model_dump") else resp.dict()
-        doc_data["created_at"] = datetime.utcnow()
+        doc_data = resp.model_dump(mode="json")
+        doc_data["created_at"] = datetime.now(timezone.utc)
         doc_data["filenames"] = [f[0] for f in file_tuples]
         db.leaf_disease_runs.insert_one(doc_data)
+        print(f"[INFO] Saved leaf disease run '{analysis_id}' to MongoDB history.")
     except Exception as e:
         print(f"[WARN] Failed to persist leaf disease run history: {e}")
 
     return resp
+
+
+@router.get("/catalog")
+def get_nacl_catalog(db: Database = Depends(get_db)):
+    """
+    Returns full NACL product catalog organized by category for interactive UI dropdown.
+    """
+    from db.nacl_product_db import get_all_nacl_products
+    products = get_all_nacl_products(db)
+    categorized: dict = {}
+    for p in products:
+        if "_id" in p:
+            p["_id"] = str(p["_id"])
+        cat = p.get("category", "Other Agrochemicals")
+        if cat not in categorized:
+            categorized[cat] = []
+        categorized[cat].append(p)
+    return {
+        "total_count": len(products),
+        "categories": categorized
+    }
+
+
+@router.post("/feedback")
+def submit_leaf_disease_feedback(
+    payload: dict = Depends(lambda: None), # allow raw JSON body
+    db: Database = Depends(get_db)
+):
+    """
+    Stores user feedback on AI diagnosis to improve Gemini VLM prompt tuning and dataset validation.
+    """
+    pass
 
 
 @router.get("/history")

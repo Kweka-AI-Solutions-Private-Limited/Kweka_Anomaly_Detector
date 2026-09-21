@@ -162,3 +162,30 @@ export async function clearLeafDiseaseHistory(): Promise<{ status: string; delet
   );
   return response.data;
 }
+
+export async function getNaclCatalog(): Promise<{
+  total_count: number;
+  categories: Record<string, any[]>;
+}> {
+  const response = await apiClient.get<{
+    total_count: number;
+    categories: Record<string, any[]>;
+  }>('/api/leaf-disease/catalog');
+  return response.data;
+}
+
+export async function submitLeafDiseaseFeedback(feedbackData: {
+  analysis_id?: string;
+  rating?: string;
+  feedback_category?: string;
+  comments?: string;
+  crop_name?: string;
+  disease_name?: string;
+}): Promise<{ status: string; feedback_id: string; message: string }> {
+  const response = await apiClient.post<{ status: string; feedback_id: string; message: string }>(
+    '/api/leaf-disease/feedback',
+    feedbackData
+  );
+  return response.data;
+}
+

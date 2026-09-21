@@ -62,11 +62,13 @@ def seed_nacl_products(catalog_json_path: Optional[Path] = None, db: Optional[Da
     init_nacl_product_indexes(db)
     coll = db[COLLECTION_NAME]
 
+    valid_ids = set()
     inserted_or_updated = 0
     for prod in products:
         p_id = prod.get("product_id")
         if not p_id:
             continue
+        valid_ids.add(p_id)
 
         coll.update_one(
             {"product_id": p_id},
@@ -74,6 +76,11 @@ def seed_nacl_products(catalog_json_path: Optional[Path] = None, db: Optional[Da
             upsert=True
         )
         inserted_or_updated += 1
+
+    # Remove any obsolete products no longer present in JSON catalog
+    deleted_res = coll.delete_many({"product_id": {"$nin": list(valid_ids)}})
+    if deleted_res.deleted_count > 0:
+        logger.info("Removed %d obsolete products from MongoDB.", deleted_res.deleted_count)
 
     logger.info("Successfully seeded/upserted %d NACL products into MongoDB.", inserted_or_updated)
     return inserted_or_updated
@@ -117,6 +124,21 @@ def query_nacl_products(
     if not results:
         results = list(coll.find({}, {"_id": 0}).limit(20))
 
+    return results
+
+
+def get_all_nacl_products(db: Optional[Database] = None) -> List[Dict[str, Any]]:
+    """Returns all NACL products from MongoDB collection, or loads from JSON fallback."""
+    if db is None:
+        db = get_db()
+    coll = db[COLLECTION_NAME]
+    results = list(coll.find({}, {"_id": 0}))
+    if not results:
+        # fallback load from JSON file
+        catalog_json_path = Path(__file__).resolve().parent.parent / "data" / "nacl_catalog.json"
+        if catalog_json_path.exists():
+            with open(catalog_json_path, "r", encoding="utf-8") as f:
+                results = json.load(f)
     return results
 
 

@@ -2108,5 +2108,84 @@
         "dosage": "400–500 ml/acre"
       }
     ]
+  },
+  {
+    "product_id": "atonik",
+    "product_name": "ATONIK",
+    "category": "Plant Health",
+    "product_url": "https://naclind.com/products/plant-growth-regulators/atonik/",
+    "active_ingredient": "Sodium Nitrophenolates (Aromatic Nitro Compounds)",
+    "chemical_class": "Plant Growth Regulator & Biostimulant",
+    "mode_of_action": "Stimulates cell plasma flow, enhances intracellular nutrient transport, promotes flowering, and accelerates tissue recovery after disease stress.",
+    "pack_sizes": [
+      "100ml",
+      "250ml",
+      "500ml",
+      "1lt"
+    ],
+    "key_benefits": [
+      "Enhances crop growth, flowering, and fruit setting naturally",
+      "Accelerates nutrient transport and cell elongation",
+      "Provides quick stress recovery after disease or drought shock"
+    ],
+    "crop_applications": [
+      {
+        "crop": "All Crops (Chilli, Tomato, Paddy, Cotton, Grapes, Pear, Apple)",
+        "target_pest_or_disease": "Plant Health / Flowering & Growth Boost / Stress Recovery",
+        "dosage": "100–250 ml/acre"
+      }
+    ]
+  },
+  {
+    "product_id": "gallant-eg",
+    "product_name": "GALLANT EG",
+    "category": "Plant Health",
+    "product_url": "https://naclind.com/products/plant-growth-regulators/gallant-eg/",
+    "active_ingredient": "Mycorrhizal & Bio-Nutrient Encapsulated Granules",
+    "chemical_class": "Plant Growth Regulator & Root Bio-Inoculant",
+    "mode_of_action": "Promotes root branching, soil mycorrhizal colonization, and enhanced water and mineral absorption for vigorous plant health.",
+    "pack_sizes": [
+      "4 kg",
+      "8 kg"
+    ],
+    "key_benefits": [
+      "Extends root architecture for superior water and phosphorus uptake",
+      "Improves soil health and microbial activity around root zone",
+      "Boosts plant vigor and drought resilience"
+    ],
+    "crop_applications": [
+      {
+        "crop": "Paddy, Maize, Cotton, Sugarcane, Vegetables, Fruit Crops",
+        "target_pest_or_disease": "Root Growth & Soil Nutrient Mobilization",
+        "dosage": "4 kg/acre"
+      }
+    ]
+  },
+  {
+    "product_id": "nagarjuna-fast-spread",
+    "product_name": "NAGARJUNA FAST SPREAD",
+    "category": "Plant Health",
+    "product_url": "https://naclind.com/products/plant-growth-regulators/nagarjuna-fast-spread/",
+    "active_ingredient": "Organosilicone Super Spreader & Penetrant",
+    "chemical_class": "Bio-Efficacy Enhancer & Spray Adjuvant",
+    "mode_of_action": "Reduces surface tension of spray droplets for rapid, uniform wetting and stomatal penetration across plant foliage.",
+    "pack_sizes": [
+      "50ml",
+      "100ml",
+      "250ml",
+      "500ml"
+    ],
+    "key_benefits": [
+      "Provides 100% leaf surface coverage and rain-fastness",
+      "Enhances foliar absorption of fungicides, insecticides, and biostimulants",
+      "Reduces spray volume requirements and chemical wastage"
+    ],
+    "crop_applications": [
+      {
+        "crop": "All Crops (Foliar Adjuvant with Fungicides/Insecticides)",
+        "target_pest_or_disease": "Spray Coverage & Foliar Penetration",
+        "dosage": "50–100 ml/100L water"
+      }
+    ]
   }
 ]

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import {
   Leaf,
   Upload,
@@ -19,13 +20,24 @@ import {
   Trash2,
   Clock,
   ChevronRight,
+  MessageSquare,
+  ThumbsUp,
+  ThumbsDown,
+  Send,
+  Search,
+  BookOpen,
+  Filter,
+  Check,
 } from 'lucide-react';
 import { Card } from '../components/common/Card';
 import {
   analyzeLeafDisease,
   getLeafDiseaseHistory,
+  getLeafDiseaseRun,
   deleteLeafDiseaseRun,
   clearLeafDiseaseHistory,
+  getNaclCatalog,
+  submitLeafDiseaseFeedback,
   LeafDiseaseAnalysisResponse,
 } from '../api/leafDisease';
 
@@ -47,6 +59,8 @@ const CROPS = [
 ];
 
 export const LeafDiseasePage: React.FC = () => {
+  const { runId } = useParams<{ runId?: string }>();
+
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [selectedCrop, setSelectedCrop] = useState<string>('');
@@ -60,6 +74,23 @@ export const LeafDiseasePage: React.FC = () => {
   const [isLoadingHistory, setIsLoadingHistory] = useState<boolean>(false);
   const [showHistoryModal, setShowHistoryModal] = useState<boolean>(false);
   const [activeHistoryId, setActiveHistoryId] = useState<string | null>(null);
+
+  // NACL Catalog Modal State
+  const [showCatalogModal, setShowCatalogModal] = useState<boolean>(false);
+  const [catalogData, setCatalogData] = useState<{ total_count: number; categories: Record<string, any[]> } | null>(null);
+  const [isLoadingCatalog, setIsLoadingCatalog] = useState<boolean>(false);
+  const [catalogActiveCategory, setCatalogActiveCategory] = useState<string>('All');
+  const [catalogSearch, setCatalogSearch] = useState<string>('');
+
+  // Feedback State
+  const [feedbackRating, setFeedbackRating] = useState<'UP' | 'DOWN' | null>(null);
+  const [feedbackCategory, setFeedbackCategory] = useState<string>('DIAGNOSIS_CORRECT');
+  const [feedbackComments, setFeedbackComments] = useState<string>('');
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState<boolean>(false);
+  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState<boolean>(false);
+
+  // Suggested Crop Confirmation State
+  const [suggestedCropChoice, setSuggestedCropChoice] = useState<string>('');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -75,14 +106,63 @@ export const LeafDiseasePage: React.FC = () => {
     }
   };
 
+  const loadSpecificRun = async (id: string) => {
+    try {
+      const runData = await getLeafDiseaseRun(id);
+      setAnalysisResult(runData);
+      setActiveHistoryId(id);
+    } catch (err) {
+      console.warn(`Failed to load run '${id}':`, err);
+    }
+  };
+
+  const fetchCatalog = async () => {
+    if (catalogData) return;
+    setIsLoadingCatalog(true);
+    try {
+      const data = await getNaclCatalog();
+      setCatalogData(data);
+    } catch (err) {
+      console.warn('Failed to fetch NACL catalog:', err);
+    } finally {
+      setIsLoadingCatalog(false);
+    }
+  };
+
   useEffect(() => {
     fetchHistory();
-  }, []);
+    if (runId) {
+      loadSpecificRun(runId);
+    }
+  }, [runId]);
+
+  const handleOpenCatalog = () => {
+    setShowCatalogModal(true);
+    fetchCatalog();
+  };
+
+  const handleSendFeedback = async () => {
+    setIsSubmittingFeedback(true);
+    try {
+      await submitLeafDiseaseFeedback({
+        analysis_id: analysisResult?.analysis_id,
+        rating: feedbackRating || undefined,
+        feedback_category: feedbackCategory,
+        comments: feedbackComments,
+        crop_name: analysisResult?.crop?.crop_name,
+        disease_name: analysisResult?.disease?.disease_name,
+      });
+      setFeedbackSubmitted(true);
+    } catch (err) {
+      console.error('Failed to submit feedback:', err);
+    } finally {
+      setIsSubmittingFeedback(false);
+    }
+  };
 
   const handleSelectHistoryRun = (run: LeafDiseaseAnalysisResponse) => {
-    setAnalysisResult(run);
-    setActiveHistoryId(run.analysis_id);
-    setShowHistoryModal(false);
+    // Open historical analysis run in a new browser tab
+    window.open(`/leaf-disease/${run.analysis_id}`, '_blank');
   };
 
   const handleDeleteRun = async (e: React.MouseEvent, analysisId: string) => {
@@ -235,10 +315,15 @@ export const LeafDiseasePage: React.FC = () => {
               <History className="w-4 h-4 text-emerald-400" />
               <span>Run History ({historyList.length})</span>
             </button>
-            <div className="flex items-center space-x-2 text-xs font-mono bg-industrial-800/80 px-3.5 py-2 rounded-xl border border-industrial-700 text-emerald-300">
+            <button
+              type="button"
+              onClick={handleOpenCatalog}
+              className="flex items-center space-x-2 text-xs font-mono bg-industrial-800/90 hover:bg-industrial-800 px-3.5 py-2 rounded-xl border border-emerald-500/50 text-emerald-300 transition-all hover:border-emerald-400 shadow-sm cursor-pointer"
+            >
               <Building2 className="w-4.5 h-4.5 text-emerald-400" />
-              <span>NACL Agrochemical Catalog (56 Products)</span>
-            </div>
+              <span>NACL Catalog ({catalogData?.total_count || 59} Products)</span>
+              <BookOpen className="w-3.5 h-3.5 text-emerald-400 ml-1" />
+            </button>
           </div>
         </div>
       </div>
@@ -403,98 +488,126 @@ export const LeafDiseasePage: React.FC = () => {
             )}
           </Card>
 
-          {/* Run History Sidebar Card */}
-          <Card className="p-5 bg-white border-industrial-200 space-y-3.5 shadow-sm">
-            <div className="flex items-center justify-between border-b border-industrial-100 pb-2.5">
-              <div className="flex items-center space-x-2">
-                <History className="w-4 h-4 text-emerald-600" />
-                <h3 className="text-xs font-extrabold text-industrial-900 uppercase font-mono tracking-wider">
-                  Analysis Run History
-                </h3>
+          {/* AI Agronomist Feedback & Model Tuning Card (Visible ONLY after executing an analysis run) */}
+          {analysisResult && (
+            <Card className="p-5 bg-white border-industrial-200 space-y-4 shadow-sm animate-in fade-in">
+              <div className="flex items-center justify-between border-b border-industrial-100 pb-2.5">
+                <div className="flex items-center space-x-2">
+                  <MessageSquare className="w-4.5 h-4.5 text-emerald-600" />
+                  <h3 className="text-xs font-extrabold text-industrial-900 uppercase font-mono tracking-wider">
+                    AI Agronomist Feedback
+                  </h3>
+                </div>
+                <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-mono font-bold uppercase">
+                  Model Tuning
+                </span>
               </div>
-              <span className="text-[11px] font-mono text-industrial-500 font-semibold">
-                {historyList.length} Runs
-              </span>
-            </div>
 
-            {isLoadingHistory ? (
-              <div className="py-6 text-center text-xs font-mono text-industrial-400 animate-pulse flex items-center justify-center space-x-2">
-                <RefreshCw className="w-3.5 h-3.5 animate-spin text-emerald-600" />
-                <span>Loading past runs...</span>
-              </div>
-            ) : historyList.length === 0 ? (
-              <div className="py-6 text-center text-xs text-industrial-400 font-mono italic">
-                No historical analysis runs yet.
-              </div>
-            ) : (
-              <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
-                {historyList.slice(0, 5).map((run) => {
-                  const isSelected = activeHistoryId === run.analysis_id || analysisResult?.analysis_id === run.analysis_id;
-                  return (
-                    <div
-                      key={run.analysis_id}
-                      onClick={() => handleSelectHistoryRun(run)}
-                      className={`p-3 rounded-xl border transition-all cursor-pointer space-y-1.5 ${
-                        isSelected
-                          ? 'bg-emerald-50 border-emerald-400 ring-1 ring-emerald-400'
-                          : 'bg-industrial-50/70 border-industrial-200 hover:bg-emerald-50/50 hover:border-emerald-300'
+              <p className="text-xs text-industrial-600 font-medium leading-relaxed">
+                Provide feedback on this diagnosis to help tune Gemini AI pathology algorithms and improve crop recognition.
+              </p>
+
+              {feedbackSubmitted ? (
+                <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-center space-y-2">
+                  <CheckCircle2 className="w-6 h-6 text-emerald-600 mx-auto" />
+                  <p className="text-xs font-bold text-emerald-900">Feedback Submitted!</p>
+                  <p className="text-[11px] text-emerald-700 font-mono">
+                    Logged into dataset tuning pipeline for Gemini plant vision models.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFeedbackSubmitted(false);
+                      setFeedbackRating(null);
+                      setFeedbackComments('');
+                    }}
+                    className="text-[11px] font-bold text-emerald-800 underline hover:text-emerald-950 pt-1"
+                  >
+                    Submit Additional Feedback
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {/* Thumbs Up / Down */}
+                  <div className="flex items-center justify-center space-x-3">
+                    <button
+                      type="button"
+                      onClick={() => setFeedbackRating('UP')}
+                      className={`flex-1 py-2 px-3 rounded-xl border flex items-center justify-center space-x-2 text-xs font-mono font-bold transition-all ${
+                        feedbackRating === 'UP'
+                          ? 'bg-emerald-600 text-white border-emerald-700 shadow-sm'
+                          : 'bg-industrial-50 border-industrial-200 text-industrial-700 hover:bg-emerald-50 hover:border-emerald-300'
                       }`}
                     >
-                      <div className="flex items-center justify-between">
-                        <span className="font-mono text-xs font-extrabold text-industrial-900">
-                          {run.analysis_id}
-                        </span>
-                        <span
-                          className={`px-1.5 py-0.2 rounded text-[9px] font-mono font-bold uppercase ${
-                            run.status === 'SUCCESS'
-                              ? 'bg-pass-100 text-pass-800'
-                              : run.status === 'UNCERTAIN'
-                              ? 'bg-amber-100 text-amber-800'
-                              : 'bg-reject-100 text-reject-800'
-                          }`}
-                        >
-                          {run.status}
-                        </span>
-                      </div>
+                      <ThumbsUp className="w-4 h-4" />
+                      <span>Accurate AI</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFeedbackRating('DOWN')}
+                      className={`flex-1 py-2 px-3 rounded-xl border flex items-center justify-center space-x-2 text-xs font-mono font-bold transition-all ${
+                        feedbackRating === 'DOWN'
+                          ? 'bg-reject-600 text-white border-reject-700 shadow-sm'
+                          : 'bg-industrial-50 border-industrial-200 text-industrial-700 hover:bg-reject-50 hover:border-reject-300'
+                      }`}
+                    >
+                      <ThumbsDown className="w-4 h-4" />
+                      <span>Needs Tuning</span>
+                    </button>
+                  </div>
 
-                      <div className="flex items-center justify-between text-[11px] font-mono text-industrial-600">
-                        <span className="font-bold text-emerald-800">{run.crop?.crop_name || 'Unknown'}</span>
-                        <span className="truncate max-w-[130px] font-medium">
-                          {run.disease?.disease_name || 'No pathology'}
-                        </span>
-                      </div>
+                  {/* Category Select */}
+                  <div className="space-y-1">
+                    <label className="block text-[10px] font-mono font-extrabold text-industrial-600 uppercase">
+                      Feedback Category
+                    </label>
+                    <select
+                      value={feedbackCategory}
+                      onChange={(e) => setFeedbackCategory(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl border border-industrial-300 text-xs font-medium text-industrial-900 bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                    >
+                      <option value="DIAGNOSIS_CORRECT">Diagnosis & Crop Correct</option>
+                      <option value="INCORRECT_CROP">Incorrect Plant Species Identified</option>
+                      <option value="INCORRECT_PATHOLOGY">Incorrect Pathology / Disease</option>
+                      <option value="TREATMENT_HELPFUL">NACL Recommendations Helpful</option>
+                      <option value="OTHER">General Feedback / Edge Case</option>
+                    </select>
+                  </div>
 
-                      <div className="flex items-center justify-between text-[10px] font-mono text-industrial-400 pt-1 border-t border-industrial-100">
-                        <span className="flex items-center space-x-1">
-                          <Clock className="w-3 h-3 text-industrial-400" />
-                          <span>{new Date(run.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                        </span>
-                        <button
-                          type="button"
-                          onClick={(e) => handleDeleteRun(e, run.analysis_id)}
-                          className="text-industrial-400 hover:text-reject-600 transition-colors p-0.5"
-                          title="Delete run record"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+                  {/* Comments */}
+                  <div className="space-y-1">
+                    <label className="block text-[10px] font-mono font-extrabold text-industrial-600 uppercase">
+                      Agronomist Notes / Actual Crop
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={feedbackComments}
+                      onChange={(e) => setFeedbackComments(e.target.value)}
+                      placeholder="E.g. Actual plant is Cucumber, symptoms match Powdery Mildew..."
+                      className="w-full px-3 py-2 rounded-xl border border-industrial-300 text-xs text-industrial-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none resize-none font-sans"
+                    />
+                  </div>
 
-            {historyList.length > 5 && (
-              <button
-                type="button"
-                onClick={() => setShowHistoryModal(true)}
-                className="w-full py-2 px-3 rounded-lg bg-industrial-100 hover:bg-industrial-200 text-industrial-700 font-mono text-xs font-extrabold flex items-center justify-center space-x-1 transition-colors"
-              >
-                <span>View All {historyList.length} History Runs</span>
-                <ChevronRight className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </Card>
+                  {/* Submit Button */}
+                  <button
+                    type="button"
+                    onClick={handleSendFeedback}
+                    disabled={isSubmittingFeedback}
+                    className="w-full py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold flex items-center justify-center space-x-1.5 transition-all shadow-sm"
+                  >
+                    {isSubmittingFeedback ? (
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <>
+                        <Send className="w-3.5 h-3.5" />
+                        <span>Submit Agronomist Feedback</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
+            </Card>
+          )}
         </div>
 
         {/* Right Column: Diagnostic Result Dashboard (8 cols) */}
@@ -549,7 +662,13 @@ export const LeafDiseasePage: React.FC = () => {
                       <Sprout className="w-4 h-4 text-emerald-600" />
                       <span>Identified Crop Species</span>
                     </span>
-                    <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-mono font-bold uppercase">
+                    <span
+                      className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase ${
+                        analysisResult.crop.status === 'CONFIRMED'
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : 'bg-amber-100 text-amber-800'
+                      }`}
+                    >
                       {analysisResult.crop.status}
                     </span>
                   </div>
@@ -564,6 +683,55 @@ export const LeafDiseasePage: React.FC = () => {
                   <p className="text-xs text-industrial-600 leading-relaxed font-medium bg-industrial-50 p-2.5 rounded-lg border border-industrial-100">
                     {analysisResult.crop.evidence_note}
                   </p>
+
+                  {/* Interactive Crop Species Selection Dropdown (Prompted when Gemini confidence is uncertain) */}
+                  {(analysisResult.crop.status === 'UNCERTAIN' ||
+                    analysisResult.diagnosis?.is_uncertain ||
+                    analysisResult.crop.crop_name === 'Unknown') && (
+                    <div className="mt-3 p-3.5 rounded-xl bg-amber-50 border border-amber-300 space-y-2.5">
+                      <div className="flex items-start space-x-2 text-amber-900">
+                        <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                        <div className="space-y-1 text-xs">
+                          <p className="font-extrabold uppercase font-mono tracking-wide text-amber-950">
+                            Suggested Action: Select Plant Species
+                          </p>
+                          <p className="text-amber-800 leading-normal font-medium">
+                            Auto-detect confidence is low. Please select the exact crop species below to confirm diagnosis and unlock verified NACL agrochemical recommendations:
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        <select
+                          value={selectedCrop}
+                          onChange={(e) => setSelectedCrop(e.target.value)}
+                          className="flex-1 px-3 py-2 rounded-lg border border-amber-400 text-xs font-bold text-industrial-900 bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                        >
+                          <option value="">-- Select Plant Species --</option>
+                          {CROPS.filter((c) => c.value !== '').map((c) => (
+                            <option key={c.value} value={c.value}>
+                              {c.label}
+                            </option>
+                          ))}
+                        </select>
+                        <button
+                          type="button"
+                          onClick={() => handleAnalyze()}
+                          disabled={!selectedCrop || isAnalyzing}
+                          className="px-3.5 py-2 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold font-mono transition-all disabled:opacity-50 shrink-0 flex items-center space-x-1"
+                        >
+                          {isAnalyzing ? (
+                            <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <>
+                              <Check className="w-3.5 h-3.5" />
+                              <span>Confirm Crop</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </Card>
 
                 {/* Disease Card */}
@@ -647,216 +815,203 @@ export const LeafDiseasePage: React.FC = () => {
                   </div>
                 </Card>
               )}
+
+              {/* MAIN TREATMENT & NACL AGROCHEMICAL RECOMMENDATIONS SECTION */}
+              {naclRecs && (
+                <div className="space-y-4 pt-2 border-t border-industrial-200 animate-in fade-in">
+                  {/* Section Header */}
+                  <div className="flex items-center justify-between flex-wrap gap-4">
+                    <div className="flex items-center space-x-3">
+                      <div className="p-2.5 rounded-2xl bg-emerald-100 text-emerald-800 border border-emerald-200">
+                        <FlaskConical className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-extrabold text-industrial-900 tracking-tight">
+                          NACL Agrochemical Treatment Advisory
+                        </h3>
+                        <p className="text-xs text-industrial-500 font-mono">
+                          RAG Database Match • Active Ingredient Chemistry • Gemini AI Advisory
+                        </p>
+                      </div>
+                    </div>
+                    <span className="px-3.5 py-1.5 rounded-full bg-emerald-100 text-emerald-800 text-xs font-mono font-extrabold border border-emerald-300">
+                      {naclRecs.recommendations.length} Recommended Products
+                    </span>
+                  </div>
+
+                  {/* Gemini AI Agronomist Advisory Card */}
+                  <Card
+                    className={`p-5 border text-white rounded-2xl shadow-xl space-y-3.5 ${
+                      analysisResult?.diagnosis?.crop_compatibility_status === 'MISMATCHED_HOST' || naclRecs.safety_disclaimer?.includes('CAUTION')
+                        ? 'bg-gradient-to-br from-amber-950 via-industrial-900 to-industrial-950 border-amber-600/50'
+                        : 'bg-gradient-to-br from-emerald-950 via-industrial-900 to-industrial-950 border-emerald-600/40'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <div className="flex items-center space-x-2.5">
+                        <div
+                          className={`p-2 rounded-xl border ${
+                            analysisResult?.diagnosis?.crop_compatibility_status === 'MISMATCHED_HOST' || naclRecs.safety_disclaimer?.includes('CAUTION')
+                              ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
+                              : 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                          }`}
+                        >
+                          {analysisResult?.diagnosis?.crop_compatibility_status === 'MISMATCHED_HOST' || naclRecs.safety_disclaimer?.includes('CAUTION') ? (
+                            <AlertCircle className="w-5 h-5 text-amber-400" />
+                          ) : (
+                            <Sparkles className="w-5 h-5" />
+                          )}
+                        </div>
+                        <div>
+                          <h4
+                            className={`text-sm font-extrabold font-mono uppercase tracking-wider ${
+                              analysisResult?.diagnosis?.crop_compatibility_status === 'MISMATCHED_HOST' || naclRecs.safety_disclaimer?.includes('CAUTION')
+                                ? 'text-amber-300'
+                                : 'text-emerald-300'
+                            }`}
+                          >
+                            {analysisResult?.diagnosis?.crop_compatibility_status === 'MISMATCHED_HOST'
+                              ? 'Host Caution & Advisory'
+                              : 'Gemini AI Agronomist Advisory'}
+                          </h4>
+                          <p className="text-[11px] text-industrial-400 font-mono">
+                            Personalized chemical action guide for {naclRecs.crop_name} protection
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div
+                      className={`p-3.5 rounded-xl text-xs leading-relaxed font-medium border ${
+                        analysisResult?.diagnosis?.crop_compatibility_status === 'MISMATCHED_HOST' || naclRecs.safety_disclaimer?.includes('CAUTION')
+                          ? 'bg-amber-950/80 border-amber-700/80 text-amber-100'
+                          : 'bg-industrial-900/90 border-industrial-700 text-industrial-100'
+                      }`}
+                    >
+                      {naclRecs.ai_advisory_summary}
+                    </div>
+
+                    {/* Active Ingredients Chips */}
+                    {naclRecs.recommended_active_ingredients.length > 0 && (
+                      <div className="flex items-center space-x-2 flex-wrap gap-2 pt-0.5">
+                        <span className="text-xs font-mono font-extrabold text-emerald-400 uppercase">
+                          Target Chemistry:
+                        </span>
+                        {naclRecs.recommended_active_ingredients.map((ai, idx) => (
+                          <span
+                            key={idx}
+                            className="px-2.5 py-0.5 rounded-lg bg-emerald-900/60 border border-emerald-700/60 text-emerald-200 text-xs font-mono font-bold"
+                          >
+                            {ai}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </Card>
+
+                  {/* Multi-Column NACL Product Cards Grid */}
+                  {naclRecs.recommendations.length > 0 && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {naclRecs.recommendations.map((prod, idx) => (
+                        <Card
+                          key={idx}
+                          className="p-4 bg-white border border-industrial-200 hover:border-emerald-500 transition-all shadow-sm hover:shadow-md space-y-3 flex flex-col justify-between"
+                        >
+                          <div className="space-y-2.5">
+                            {/* Title & Category Row */}
+                            <div className="flex items-start justify-between gap-2 border-b border-industrial-100 pb-2">
+                              <div>
+                                <h4 className="text-base font-extrabold text-industrial-900">
+                                  {prod.product_name}
+                                </h4>
+                                <span className="px-2 py-0.5 rounded bg-industrial-100 text-industrial-800 text-[10px] font-mono font-bold uppercase">
+                                  {prod.category}
+                                </span>
+                              </div>
+
+                              <span className="px-2 py-0.5 rounded text-[9px] font-mono font-extrabold border bg-emerald-100 text-emerald-800 border-emerald-300">
+                                NACL PRODUCT
+                              </span>
+                            </div>
+
+                            {/* Active Ingredient & FRAC Group */}
+                            {(prod.active_ingredient || prod.frac_group) && (
+                              <div className="flex items-center justify-between gap-2 p-2 rounded-lg bg-emerald-50/80 border border-emerald-200/60 text-xs font-mono text-emerald-800 font-extrabold">
+                                <span className="truncate">Active: {prod.active_ingredient || 'Formulated Agrochemical'}</span>
+                                {prod.frac_group && (
+                                  <span className="px-1.5 py-0.5 rounded bg-emerald-200/80 text-emerald-900 text-[9px] shrink-0">
+                                    {prod.frac_group}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+
+                            {/* Rationale */}
+                            <p className="text-xs text-industrial-700 bg-industrial-50 p-2.5 rounded-xl border border-industrial-100 leading-relaxed font-medium">
+                              {prod.match_rationale}
+                            </p>
+
+                            {/* Dosage & Pack Sizes */}
+                            <div className="space-y-1.5 text-xs font-mono">
+                              <div className="p-2 rounded-xl bg-industrial-50 border border-industrial-200 space-y-0.5">
+                                <div className="flex items-center justify-between text-[9px]">
+                                  <span className="text-industrial-500 font-extrabold uppercase">
+                                    RECOMMENDED DOSAGE
+                                  </span>
+                                </div>
+                                <span className="text-industrial-900 font-bold block text-xs">
+                                  {prod.recommended_dosage}
+                                </span>
+                              </div>
+
+                              {prod.pack_sizes && prod.pack_sizes.length > 0 && (
+                                <div className="space-y-0.5">
+                                  <span className="text-[9px] text-industrial-500 font-extrabold block uppercase">
+                                    PACK SIZES:
+                                  </span>
+                                  <div className="flex flex-wrap gap-1">
+                                    {prod.pack_sizes.map((ps, pidx) => (
+                                      <span
+                                        key={pidx}
+                                        className="px-1.5 py-0.2 rounded bg-industrial-100 text-industrial-800 text-[9px] font-bold"
+                                      >
+                                        {ps}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Direct NACL Product Link Button */}
+                          <div className="pt-2 border-t border-industrial-100">
+                            <a
+                              href={prod.product_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="w-full inline-flex items-center justify-center space-x-1.5 py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold transition-all shadow-sm"
+                            >
+                              <span>View NACL Product Details</span>
+                              <ExternalLink className="w-3.5 h-3.5" />
+                            </a>
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Safety Disclaimer */}
+                  <div className="p-3.5 rounded-xl bg-industrial-100 border border-industrial-200 text-xs text-industrial-600 flex items-start space-x-2.5 font-mono">
+                    <ShieldCheck className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
+                    <span>{naclRecs.safety_disclaimer}</span>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
       </div>
-
-      {/* ========================================================================= */}
-      {/* MAIN TREATMENT & NACL AGROCHEMICAL RECOMMENDATIONS SECTION (FULL WIDTH)  */}
-      {/* ========================================================================= */}
-      {naclRecs && (
-        <div className="space-y-6 pt-4 border-t border-industrial-200 animate-in fade-in">
-          {/* Section Header */}
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <div className="flex items-center space-x-3">
-              <div className="p-2.5 rounded-2xl bg-emerald-100 text-emerald-800 border border-emerald-200">
-                <FlaskConical className="w-6 h-6" />
-              </div>
-              <div>
-                <h3 className="text-xl font-extrabold text-industrial-900 tracking-tight">
-                  NACL Agrochemical Treatment Recommendations
-                </h3>
-                <p className="text-xs text-industrial-500 font-mono">
-                  RAG Database Match • Active Ingredient Chemistry • Gemini AI Advisory
-                </p>
-              </div>
-            </div>
-            <span className="px-3.5 py-1.5 rounded-full bg-emerald-100 text-emerald-800 text-xs font-mono font-extrabold border border-emerald-300">
-              {naclRecs.recommendations.length} Recommended Products
-            </span>
-          </div>
-
-          {/* Full-Width Gemini AI Agronomist Advisory / Conflict Callout Card */}
-          <Card
-            className={`p-6 border text-white rounded-2xl shadow-xl space-y-4 ${
-              analysisResult?.diagnosis?.crop_compatibility_status === 'MISMATCHED_HOST'
-                ? 'bg-gradient-to-br from-reject-950 via-industrial-900 to-industrial-950 border-reject-600/50'
-                : 'bg-gradient-to-br from-emerald-950 via-industrial-900 to-industrial-950 border-emerald-600/40'
-            }`}
-          >
-            <div className="flex items-center justify-between flex-wrap gap-2">
-              <div className="flex items-center space-x-2.5">
-                <div
-                  className={`p-2 rounded-xl border ${
-                    analysisResult?.diagnosis?.crop_compatibility_status === 'MISMATCHED_HOST'
-                      ? 'bg-reject-500/20 text-reject-400 border-reject-500/30'
-                      : 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
-                  }`}
-                >
-                  {analysisResult?.diagnosis?.crop_compatibility_status === 'MISMATCHED_HOST' ? (
-                    <AlertCircle className="w-5 h-5 text-reject-400" />
-                  ) : (
-                    <Sparkles className="w-5 h-5" />
-                  )}
-                </div>
-                <div>
-                  <h4
-                    className={`text-sm font-extrabold font-mono uppercase tracking-wider ${
-                      analysisResult?.diagnosis?.crop_compatibility_status === 'MISMATCHED_HOST'
-                        ? 'text-reject-300'
-                        : 'text-emerald-300'
-                    }`}
-                  >
-                    {analysisResult?.diagnosis?.crop_compatibility_status === 'MISMATCHED_HOST'
-                      ? 'Crop & Pathogen Host Conflict Detected'
-                      : 'Gemini AI Agronomist Treatment Advisory'}
-                  </h4>
-                  <p className="text-[11px] text-industrial-400 font-mono">
-                    {analysisResult?.diagnosis?.crop_compatibility_status === 'MISMATCHED_HOST'
-                      ? 'Product recommendations blocked due to host-pathogen mismatch'
-                      : `Personalized chemical action guide for ${naclRecs.crop_name} foliage protection`}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div
-              className={`p-4 rounded-xl text-sm leading-relaxed font-medium border ${
-                analysisResult?.diagnosis?.crop_compatibility_status === 'MISMATCHED_HOST'
-                  ? 'bg-reject-950/80 border-reject-700/80 text-reject-100'
-                  : 'bg-industrial-900/90 border-industrial-700 text-industrial-100'
-              }`}
-            >
-              {naclRecs.ai_advisory_summary}
-            </div>
-
-            {/* Active Ingredients Chips */}
-            {naclRecs.recommended_active_ingredients.length > 0 && (
-              <div className="flex items-center space-x-2 flex-wrap gap-2 pt-1">
-                <span className="text-xs font-mono font-extrabold text-emerald-400 uppercase">
-                  Target Chemistry:
-                </span>
-                {naclRecs.recommended_active_ingredients.map((ai, idx) => (
-                  <span
-                    key={idx}
-                    className="px-3 py-1 rounded-lg bg-emerald-900/60 border border-emerald-700/60 text-emerald-200 text-xs font-mono font-bold"
-                  >
-                    {ai}
-                  </span>
-                ))}
-              </div>
-            )}
-          </Card>
-
-          {/* Multi-Column NACL Product Cards Grid (Rendered ONLY if recommendations exist) */}
-          {naclRecs.recommendations.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {naclRecs.recommendations.map((prod, idx) => (
-                <Card
-                  key={idx}
-                  className="p-5 bg-white border border-industrial-200 hover:border-emerald-500 transition-all shadow-sm hover:shadow-md space-y-4 flex flex-col justify-between"
-                >
-                  <div className="space-y-3">
-                    {/* Title & Category Row */}
-                    <div className="flex items-start justify-between gap-2 border-b border-industrial-100 pb-2.5">
-                      <div>
-                        <h4 className="text-lg font-extrabold text-industrial-900">
-                          {prod.product_name}
-                        </h4>
-                        <span className="px-2 py-0.5 rounded bg-industrial-100 text-industrial-800 text-[11px] font-mono font-bold uppercase">
-                          {prod.category}
-                        </span>
-                      </div>
-
-                      <span className="px-2.5 py-1 rounded-lg text-[10px] font-mono font-extrabold border bg-emerald-100 text-emerald-800 border-emerald-300">
-                        VERIFIED NACL MATCH
-                      </span>
-                    </div>
-
-                    {/* Active Ingredient & FRAC Group */}
-                    {(prod.active_ingredient || prod.frac_group) && (
-                      <div className="flex items-center justify-between gap-2 p-2 rounded-lg bg-emerald-50/80 border border-emerald-200/60 text-xs font-mono text-emerald-800 font-extrabold">
-                        <span>Active: {prod.active_ingredient || 'Formulated Agrochemical'}</span>
-                        {prod.frac_group && (
-                          <span className="px-1.5 py-0.5 rounded bg-emerald-200/80 text-emerald-900 text-[10px]">
-                            {prod.frac_group}
-                          </span>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Rationale */}
-                    <p className="text-xs text-industrial-700 bg-industrial-50 p-3 rounded-xl border border-industrial-100 leading-relaxed font-medium">
-                      {prod.match_rationale}
-                    </p>
-
-                    {/* Dosage & Pack Sizes */}
-                    <div className="space-y-2 text-xs font-mono">
-                      <div className="p-2.5 rounded-xl bg-industrial-50 border border-industrial-200 space-y-0.5">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[10px] text-industrial-500 font-extrabold uppercase">
-                            RECOMMENDED DOSAGE
-                          </span>
-                          <span
-                            className={`text-[9px] font-mono font-bold px-1.5 py-0.2 rounded ${
-                              prod.dosage_verified
-                                ? 'bg-emerald-100 text-emerald-800'
-                                : 'bg-amber-100 text-amber-800'
-                            }`}
-                          >
-                            {prod.dosage_verified ? 'VERIFIED' : 'UNVERIFIED'}
-                          </span>
-                        </div>
-                        <span className="text-industrial-900 font-bold block">
-                          {prod.dosage_verified ? prod.recommended_dosage : 'Refer to current product label'}
-                        </span>
-                      </div>
-
-                      {prod.pack_sizes && prod.pack_sizes.length > 0 && (
-                        <div className="space-y-1">
-                          <span className="text-[10px] text-industrial-500 font-extrabold block uppercase">
-                            PACK SIZES:
-                          </span>
-                          <div className="flex flex-wrap gap-1">
-                            {prod.pack_sizes.map((ps, pidx) => (
-                              <span
-                                key={pidx}
-                                className="px-2 py-0.5 rounded bg-industrial-100 text-industrial-800 text-[10px] font-bold"
-                              >
-                                {ps}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Direct NACL Product Link Button */}
-                  <div className="pt-2 border-t border-industrial-100">
-                    <a
-                      href={prod.product_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-full inline-flex items-center justify-center space-x-1.5 py-2.5 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold transition-all shadow-sm"
-                    >
-                      <span>View Product on NACL Site</span>
-                      <ExternalLink className="w-3.5 h-3.5" />
-                    </a>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          )}
-
-          {/* Safety Disclaimer */}
-          <div className="p-4 rounded-xl bg-industrial-100 border border-industrial-200 text-xs text-industrial-600 flex items-start space-x-2.5 font-mono">
-            <ShieldCheck className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
-            <span>{naclRecs.safety_disclaimer}</span>
-          </div>
-        </div>
-      )}
 
       {/* Full History Modal Dialog */}
       {showHistoryModal && (
@@ -948,6 +1103,10 @@ export const LeafDiseasePage: React.FC = () => {
                               <Clock className="w-3.5 h-3.5" />
                               <span>{new Date(run.timestamp).toLocaleString()}</span>
                             </span>
+                            <span className="px-2 py-1 rounded bg-emerald-100 text-emerald-800 text-[10px] font-bold flex items-center space-x-1 hover:bg-emerald-200">
+                              <span>Open in New Tab</span>
+                              <ExternalLink className="w-3 h-3" />
+                            </span>
                             <button
                               type="button"
                               onClick={(e) => handleDeleteRun(e, run.analysis_id)}
@@ -982,6 +1141,165 @@ export const LeafDiseasePage: React.FC = () => {
                       </div>
                     );
                   })}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* NACL Agrochemical Catalog Modal Dialog */}
+      {showCatalogModal && (
+        <div className="fixed inset-0 z-50 bg-industrial-950/75 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl border border-industrial-200 shadow-2xl w-full max-w-5xl max-h-[88vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95">
+            {/* Catalog Modal Header */}
+            <div className="p-5 bg-gradient-to-r from-emerald-950 via-industrial-950 to-industrial-900 text-white flex items-center justify-between">
+              <div className="flex items-center space-x-3.5">
+                <div className="p-2.5 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                  <Building2 className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-extrabold tracking-tight flex items-center space-x-2">
+                    <span>NACL Industries Agrochemical Catalog</span>
+                    <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-mono">
+                      {catalogData ? `${catalogData.total_count} Products Indexed` : '60 Products Indexed'}
+                    </span>
+                  </h3>
+                  <p className="text-xs text-industrial-300 font-mono">
+                    Categorized Crop Protection Products: Fungicides, Insecticides, Herbicides & Plant Health Solutions
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowCatalogModal(false)}
+                className="p-2 rounded-xl bg-industrial-800 hover:bg-industrial-700 text-white transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Catalog Controls: Filter Categories & Search Bar */}
+            <div className="p-4 bg-industrial-50 border-b border-industrial-200 space-y-3">
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                {/* Categories Tabs */}
+                <div className="flex items-center space-x-2 overflow-x-auto pb-1 scrollbar-none">
+                  {['All', 'Fungicides', 'Insecticides', 'Herbicides', 'Plant Health'].map((cat) => (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => setCatalogActiveCategory(cat)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold transition-all whitespace-nowrap ${
+                        catalogActiveCategory === cat
+                          ? 'bg-emerald-700 text-white shadow-sm'
+                          : 'bg-white border border-industrial-200 text-industrial-700 hover:bg-emerald-50 hover:border-emerald-300'
+                      }`}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Search Bar */}
+                <div className="relative flex-1 min-w-[220px] max-w-xs">
+                  <Search className="w-4 h-4 text-industrial-400 absolute left-3 top-2.5" />
+                  <input
+                    type="text"
+                    value={catalogSearch}
+                    onChange={(e) => setCatalogSearch(e.target.value)}
+                    placeholder="Search product, ingredient, or crop..."
+                    className="w-full pl-9 pr-3 py-1.5 rounded-xl border border-industrial-300 text-xs font-mono text-industrial-900 focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Catalog Modal Body */}
+            <div className="p-6 overflow-y-auto flex-1 space-y-4">
+              {isLoadingCatalog ? (
+                <div className="py-16 text-center text-xs font-mono text-industrial-400 animate-pulse flex items-center justify-center space-x-2">
+                  <RefreshCw className="w-4 h-4 animate-spin text-emerald-600" />
+                  <span>Loading official NACL agrochemical database...</span>
+                </div>
+              ) : !catalogData ? (
+                <div className="py-16 text-center text-xs font-mono text-industrial-400">
+                  Unable to load NACL catalog. Please ensure backend is running.
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {Object.entries(catalogData.categories)
+                    .filter(([category]) => catalogActiveCategory === 'All' || category.toLowerCase().includes(catalogActiveCategory.toLowerCase()))
+                    .map(([category, products]) => {
+                      const filteredProds = products.filter((p: any) => {
+                        if (!catalogSearch.trim()) return true;
+                        const q = catalogSearch.toLowerCase();
+                        return (
+                          p.product_name?.toLowerCase().includes(q) ||
+                          p.active_ingredient?.toLowerCase().includes(q) ||
+                          p.mode_of_action?.toLowerCase().includes(q)
+                        );
+                      });
+
+                      if (filteredProds.length === 0) return null;
+
+                      return (
+                        <div key={category} className="space-y-3">
+                          <div className="flex items-center space-x-2 border-b border-industrial-200 pb-2">
+                            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                            <h4 className="text-sm font-extrabold text-industrial-900 font-mono uppercase tracking-wider">
+                              {category} ({filteredProds.length})
+                            </h4>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {filteredProds.map((prod: any) => (
+                              <div
+                                key={prod.product_id}
+                                className="p-4 rounded-xl border border-industrial-200 bg-white hover:border-emerald-400 hover:shadow-md transition-all space-y-2.5 flex flex-col justify-between"
+                              >
+                                <div className="space-y-2">
+                                  <div className="flex items-start justify-between gap-2">
+                                    <h5 className="font-extrabold text-industrial-900 text-sm">
+                                      {prod.product_name}
+                                    </h5>
+                                    {prod.product_url && (
+                                      <a
+                                        href={prod.product_url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-emerald-600 hover:text-emerald-800 transition-colors p-1"
+                                        title="View official NACL product page"
+                                      >
+                                        <ExternalLink className="w-4 h-4" />
+                                      </a>
+                                    )}
+                                  </div>
+
+                                  {prod.active_ingredient && (
+                                    <p className="text-[11px] font-mono font-bold text-emerald-800 bg-emerald-50 p-1.5 rounded border border-emerald-200">
+                                      Active: {prod.active_ingredient}
+                                    </p>
+                                  )}
+
+                                  {prod.mode_of_action && (
+                                    <p className="text-xs text-industrial-600 line-clamp-3 leading-relaxed font-medium">
+                                      {prod.mode_of_action}
+                                    </p>
+                                  )}
+                                </div>
+
+                                {prod.pack_sizes && prod.pack_sizes.length > 0 && (
+                                  <div className="pt-2 border-t border-industrial-100 flex items-center justify-between text-[10px] font-mono text-industrial-500">
+                                    <span>Packs: {prod.pack_sizes.join(', ')}</span>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
                 </div>
               )}
             </div>

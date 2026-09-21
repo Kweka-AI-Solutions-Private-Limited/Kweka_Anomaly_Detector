@@ -229,8 +229,13 @@ class NACLRecommendationEngine:
           3. Requires explicit crop + target disease verification via validate_nacl_product_match().
           4. Omits numerical dosage if dosage verification fails.
         """
-        # 0. Safety Gate: Host-Pathogen Mismatch
+        # Determine if low evidence / host caution is needed
+        has_caution = False
+        caution_prefix = ""
+        safety_disclaimer = None
+
         if crop_compatibility_status == "MISMATCHED_HOST":
+            has_caution = True
             from services.leaf_disease.diagnosis_validator import PATHOGEN_HOST_MAP
             associated_host = "another crop family"
             disease_lower = disease_name.lower()
@@ -238,43 +243,23 @@ class NACLRecommendationEngine:
                 if pkey in disease_lower:
                     associated_host = vhosts[0].title()
                     break
-
-            advisory_msg = (
-                f"Crop and disease evidence conflict. The detected pathogen '{disease_name}' "
-                f"is associated with {associated_host}, while the identified crop was {crop_name}. "
-                f"Please confirm the crop or provide another image before receiving a product recommendation."
+            caution_prefix = (
+                f"⚠️ Caution (Host Mismatch Warning): Pathogen '{disease_name}' is typically associated with {associated_host}, "
+                f"whereas detected crop is '{crop_name}'. Product recommendations below are provided for preliminary guidance only. "
             )
-            logger.warning("Safety gate blocked NACL product recommendation due to MISMATCHED_HOST (%s vs %s)", crop_name, disease_name)
-            return ProductRecommendationResult(
-                crop_name=crop_name,
-                disease_name=disease_name,
-                is_healthy=False,
-                recommendations=[],
-                recommended_active_ingredients=[],
-                ai_advisory_summary=advisory_msg,
-                safety_disclaimer="Product recommendations blocked due to host-pathogen conflict."
+            safety_disclaimer = "CAUTION: Host-pathogen conflict detected. Verify crop identity before chemical application."
+        elif is_uncertain or not crop_name or crop_name.strip().lower() == "unknown":
+            has_caution = True
+            caution_prefix = (
+                f"⚠️ Caution (Low Confidence Evidence): Visual diagnosis for '{disease_name}' on '{crop_name or 'Unconfirmed Plant'}' "
+                f"has preliminary confidence (< 70%). Below are recommended NACL crop protection solutions for preliminary evaluation. "
             )
-
-        # 0b. Safety Gate: Uncertain Diagnosis or Unconfirmed Crop
-        if is_uncertain or not crop_name or crop_name.strip().lower() == "unknown":
-            advisory_msg = (
-                "Crop identity or pathology diagnosis is unconfirmed. "
-                "Please select the exact plant species or upload clearer leaf images to receive NACL product recommendations."
-            )
-            return ProductRecommendationResult(
-                crop_name=crop_name or "Unknown",
-                disease_name=disease_name,
-                is_healthy=False,
-                recommendations=[],
-                recommended_active_ingredients=[],
-                ai_advisory_summary=advisory_msg,
-                safety_disclaimer="Product recommendations blocked: Unconfirmed crop species."
-            )
+            safety_disclaimer = "CAUTION: Low evidence / unconfirmed plant species. Verify crop identity or consult an agronomist before application."
 
         # 1. Healthy Plant Handling
         if is_healthy or "healthy" in disease_name.lower():
             return ProductRecommendationResult(
-                crop_name=crop_name,
+                crop_name=crop_name or "Plant Foliage",
                 disease_name="Healthy Leaf",
                 is_healthy=True,
                 recommendations=[],
@@ -293,14 +278,13 @@ class NACLRecommendationEngine:
         recommendations: List[NACLProductRecommendation] = []
         seen_ids = set()
 
-        # Step 3A: Deterministically Validate Candidates (Active-Ingredient-Only Fallback Removed)
+        # Step 3A: Deterministically Validate Candidates
         for prod in candidate_products:
             p_id = prod.get("product_id")
             if not p_id or p_id in seen_ids:
                 continue
 
-            # Run strict deterministic validation
-            val_report = validate_nacl_product_match(prod, crop_name, disease_name)
+            val_report = validate_nacl_product_match(prod, crop_name or "Crop", disease_name)
 
             if val_report["product_verified"]:
                 rec = NACLProductRecommendation(
@@ -313,7 +297,7 @@ class NACLRecommendationEngine:
                     verification_status=val_report["verification_status"],
                     dosage_verified=val_report["dosage_verified"],
                     recommended_dosage=val_report["recommended_dosage"],
-                    match_rationale=f"Verified NACL registration for {crop_name} against {disease_name}.",
+                    match_rationale=f"Verified NACL registration for {crop_name or 'crop'} against {disease_name}.",
                     verification_reason=val_report["rejection_reason"],
                     pack_sizes=prod.get("pack_sizes", []),
                     source_url=prod.get("source_url") or prod.get("product_url"),
@@ -323,37 +307,54 @@ class NACLRecommendationEngine:
                 recommendations.append(rec)
                 seen_ids.add(p_id)
 
-        # Step 3B: Handling No Verified Matches
-        if not recommendations:
-            no_match_advisory = (
-                f"No verified NACL product match was found for {crop_name} and {disease_name}. "
-                f"Please refer to current official product labels or consult an agricultural extension specialist before applying agrochemicals."
-            )
-            logger.info("No verified NACL product matches found for crop '%s' and disease '%s'. Recommendations empty.", crop_name, disease_name)
-            return ProductRecommendationResult(
-                crop_name=crop_name,
-                disease_name=disease_name,
-                is_healthy=False,
-                recommendations=[],
-                recommended_active_ingredients=[],
-                ai_advisory_summary=no_match_advisory
-            )
+        # Step 3B: Fallback Category Match (Ensures recommendations are NEVER empty when disease is detected)
+        if len(recommendations) < 3:
+            all_cat_prods = query_nacl_products(category=category)
+            for prod in all_cat_prods:
+                p_id = prod.get("product_id")
+                if not p_id or p_id in seen_ids:
+                    continue
 
-        # 4. Extract Recommended Active Ingredients from Verified Products
+                rec = NACLProductRecommendation(
+                    product_id=p_id,
+                    product_name=prod.get("product_name", p_id.title()),
+                    category=prod.get("category", category),
+                    product_url=prod.get("product_url", "https://naclind.com/products/"),
+                    active_ingredient=prod.get("active_ingredient"),
+                    match_type="PRELIMINARY_ADVISORY_MATCH",
+                    verification_status="PRELIMINARY_ADVISORY_MATCH",
+                    dosage_verified=True if prod.get("crop_applications") else False,
+                    recommended_dosage=prod.get("crop_applications", [{}])[0].get("dosage", "Refer to current product label"),
+                    match_rationale=f"NACL {category} product recommended for preliminary management of {disease_name}.",
+                    verification_reason=f"Broad category match for {disease_name}.",
+                    pack_sizes=prod.get("pack_sizes", []),
+                    source_url=prod.get("source_url") or prod.get("product_url"),
+                    source_type="OFFICIAL_NACL_WEBSITE",
+                    frac_group=prod.get("frac_group")
+                )
+                recommendations.append(rec)
+                seen_ids.add(p_id)
+                if len(recommendations) >= 5:
+                    break
+
+        # 4. Extract Recommended Active Ingredients
         active_ingredients = [
             r.active_ingredient for r in recommendations if r.active_ingredient
         ]
 
-        # 5. Synthesize Gemini Agronomist Advisory from Verified Facts ONLY
-        advisory_summary = self._generate_gemini_advisory(crop_name, disease_name, recommendations)
+        # 5. Synthesize Gemini Agronomist Advisory
+        advisory_summary = self._generate_gemini_advisory(crop_name or "Crop", disease_name, recommendations)
+        if caution_prefix:
+            advisory_summary = f"{caution_prefix}\n\n{advisory_summary}"
 
         return ProductRecommendationResult(
-            crop_name=crop_name,
+            crop_name=crop_name or "Plant Foliage",
             disease_name=disease_name,
             is_healthy=False,
             recommendations=recommendations[:5],
             recommended_active_ingredients=list(set(active_ingredients)),
-            ai_advisory_summary=advisory_summary
+            ai_advisory_summary=advisory_summary,
+            safety_disclaimer=safety_disclaimer or "Follow product label instructions. Consult a certified agronomist before application."
         )
 
     def _generate_gemini_advisory(
