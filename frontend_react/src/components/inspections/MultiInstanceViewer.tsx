@@ -222,7 +222,7 @@ export const MultiInstanceViewer: React.FC<MultiInstanceViewerProps> = ({
                     }}
                     className={`absolute pointer-events-auto cursor-pointer border-2 transition-all rounded-md flex items-start p-1 ${borderStyle}`}
                   >
-                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-extrabold shadow ${
+                    <span className={`px-2 py-0.5 rounded text-xs font-black shadow ${
                       inst.prediction?.status?.toUpperCase() === 'PASS' || inst.prediction?.status?.toUpperCase() === 'NORMAL'
                         ? 'bg-emerald-500 text-slate-950'
                         : 'bg-rose-500 text-white'
@@ -235,7 +235,7 @@ export const MultiInstanceViewer: React.FC<MultiInstanceViewerProps> = ({
             </div>
           </div>
 
-          <div className="mt-3 flex items-center justify-between text-xs text-slate-400 px-1">
+          <div className="mt-3 flex items-center justify-between text-xs sm:text-sm text-slate-300 font-medium px-1">
             <span>Click any box or instance card below to inspect ROI</span>
             {compositeHeatmapUri && (
               <div className="flex items-center gap-2">
@@ -260,20 +260,20 @@ export const MultiInstanceViewer: React.FC<MultiInstanceViewerProps> = ({
             <>
               <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                 <div className="flex items-center gap-2">
-                  <span className="px-2.5 py-1 bg-indigo-500/10 text-indigo-400 font-bold text-xs rounded-md border border-indigo-500/20">
+                  <span className="px-2.5 py-1 bg-indigo-500/10 text-indigo-400 font-bold text-xs sm:text-sm rounded-md border border-indigo-500/20">
                     Instance #{selectedInstance.instance_id}
                   </span>
                   {selectedInstance.prediction && getStatusBadge(selectedInstance.prediction.status)}
                 </div>
-                <span className="text-xs text-slate-400">
+                <span className="text-xs sm:text-sm text-slate-300 font-medium">
                   Confidence: {((selectedInstance.detection_confidence || 0.95) * 100).toFixed(0)}%
                 </span>
               </div>
 
               {/* Crop Image + Heatmap Side by Side */}
               <div className="grid grid-cols-2 gap-3">
-                <div className="bg-slate-950 p-2 rounded-lg border border-slate-800 flex flex-col items-center">
-                  <span className="text-[11px] text-slate-400 mb-1 font-medium">Instance Crop</span>
+                <div className="bg-slate-950 p-2.5 rounded-lg border border-slate-800 flex flex-col items-center">
+                  <span className="text-xs text-slate-300 mb-1 font-semibold">Instance Crop</span>
                   <div className="w-full aspect-square bg-slate-900 rounded overflow-hidden flex items-center justify-center">
                     <img
                       src={formatMediaUrl(selectedInstance.crop_storage_uri)}
@@ -283,8 +283,8 @@ export const MultiInstanceViewer: React.FC<MultiInstanceViewerProps> = ({
                   </div>
                 </div>
 
-                <div className="bg-slate-950 p-2 rounded-lg border border-slate-800 flex flex-col items-center">
-                  <span className="text-[11px] text-slate-400 mb-1 font-medium">Anomaly Heatmap</span>
+                <div className="bg-slate-950 p-2.5 rounded-lg border border-slate-800 flex flex-col items-center">
+                  <span className="text-xs text-slate-300 mb-1 font-semibold">Anomaly Heatmap</span>
                   <div className="w-full aspect-square bg-slate-900 rounded overflow-hidden flex items-center justify-center">
                     {selectedInstance.localization?.heatmap_uri ? (
                       <img
@@ -293,7 +293,7 @@ export const MultiInstanceViewer: React.FC<MultiInstanceViewerProps> = ({
                         className="w-full h-full object-contain"
                       />
                     ) : (
-                      <div className="text-xs text-slate-500 p-2 text-center">No Anomaly Heatmap</div>
+                      <div className="text-xs text-slate-400 p-2 text-center font-medium">No Anomaly Heatmap</div>
                     )}
                   </div>
                 </div>
@@ -301,25 +301,25 @@ export const MultiInstanceViewer: React.FC<MultiInstanceViewerProps> = ({
 
               {/* Score & Threshold Metrics */}
               {selectedInstance.prediction && (
-                <div className="bg-slate-950/80 p-3 rounded-lg border border-slate-800/80 space-y-2 text-xs">
+                <div className="bg-slate-950/80 p-3.5 rounded-lg border border-slate-800/80 space-y-2.5 text-xs sm:text-sm">
                   <div className="flex items-center justify-between">
-                    <span className="text-slate-400">Anomaly Score:</span>
-                    <span className="font-bold text-slate-100 text-xs font-mono">
+                    <span className="text-slate-400 font-medium">Anomaly Score:</span>
+                    <span className="font-bold text-slate-100 font-mono">
                       {selectedInstance.prediction.anomaly_score != null
                         ? selectedInstance.prediction.anomaly_score.toFixed(2)
                         : 'N/A (Pure Gemini Engine)'}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-slate-400">Threshold:</span>
-                    <span className="text-slate-300 font-mono text-xs">
+                    <span className="text-slate-400 font-medium">Threshold:</span>
+                    <span className="text-slate-300 font-mono">
                       {selectedInstance.prediction.threshold != null
                         ? selectedInstance.prediction.threshold.toFixed(2)
                         : 'N/A — Not applicable to Gemini'}
                     </span>
                   </div>
                   <div className="flex items-center justify-between pt-1 border-t border-slate-800/60">
-                    <span className="text-slate-400">VLM Confidence:</span>
+                    <span className="text-slate-400 font-medium">VLM Confidence:</span>
                     <span className="font-bold text-cyan-400 font-mono">
                       {selectedInstance.detection_confidence != null
                         ? `${(selectedInstance.detection_confidence * 100).toFixed(0)}%`
@@ -348,12 +348,12 @@ export const MultiInstanceViewer: React.FC<MultiInstanceViewerProps> = ({
               )}
 
               {/* Instance Bounding Box Coordinates */}
-              <div className="text-[11px] text-slate-400 bg-slate-950/60 p-2.5 rounded-lg border border-slate-800/60 font-mono space-y-1">
+              <div className="text-xs text-slate-300 bg-slate-950/70 p-3 rounded-lg border border-slate-800/80 font-mono space-y-1 font-medium">
                 <div>
                   Original ROI: x={selectedInstance?.bbox?.x ?? 0}, y={selectedInstance?.bbox?.y ?? 0}, w={selectedInstance?.bbox?.width ?? 0}, h={selectedInstance?.bbox?.height ?? 0}
                 </div>
                 {selectedInstance.localization?.bbox && (
-                  <div className="text-amber-400/90">
+                  <div className="text-amber-400 font-semibold">
                     Mapped Anomaly Box: x={selectedInstance.localization.bbox.x}, y={selectedInstance.localization.bbox.y}, w={selectedInstance.localization.bbox.width}, h={selectedInstance.localization.bbox.height}
                   </div>
                 )}
@@ -374,16 +374,16 @@ export const MultiInstanceViewer: React.FC<MultiInstanceViewerProps> = ({
                       <div className="inline-flex p-2 rounded-lg bg-indigo-500/10 text-indigo-400">
                         <Sparkles className="w-5 h-5" />
                       </div>
-                      <h4 className="text-xs font-semibold text-slate-200">
+                      <h4 className="text-xs sm:text-sm font-bold text-slate-200">
                         AI Defect Analysis for Instance #{selectedInstance.instance_id}
                       </h4>
-                      <p className="text-[11px] text-slate-400">
+                      <p className="text-xs text-slate-300 font-medium leading-relaxed">
                         Generate multimodal Gemini insights on defect classification and severity for this crop.
                       </p>
                       <button
                         onClick={() => onTriggerInstanceVlm && onTriggerInstanceVlm(selectedInstance.instance_id)}
                         disabled={isVlmLoading}
-                        className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-medium text-xs rounded-lg transition-all shadow-md shadow-indigo-600/20 disabled:opacity-50"
+                        className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-xs sm:text-sm rounded-lg transition-all shadow-md shadow-indigo-600/20 disabled:opacity-50"
                       >
                         <Sparkles className="w-4 h-4" />
                         {isVlmLoading ? 'Generating AI Analysis...' : 'Generate AI Defect Analysis'}

@@ -10,6 +10,14 @@ Verifies:
 4. Train/Inference feature dimension equality (D + pos_dim).
 """
 
+import sys
+from pathlib import Path
+
+# Add src to path
+src_dir = Path(__file__).resolve().parent.parent
+if str(src_dir) not in sys.path:
+    sys.path.insert(0, str(src_dir))
+
 import unittest
 import torch
 import numpy as np

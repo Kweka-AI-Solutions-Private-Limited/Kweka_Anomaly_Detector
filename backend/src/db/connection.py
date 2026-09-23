@@ -19,7 +19,7 @@ if _env_path.exists():
     load_dotenv(dotenv_path=_env_path)
 
 MONGODB_URI = os.getenv("MONGODB_URI", "")
-MONGODB_DATABASE = os.getenv("MONGODB_DATABASE") or os.getenv("DATABASE_NAME") or "inspectai"
+MONGODB_DATABASE = os.getenv("MONGODB_DATABASE") or os.getenv("DATABASE_NAME") or "kwprotodb"
 
 _mongo_client: MongoClient = None
 
@@ -36,11 +36,11 @@ def get_client() -> MongoClient:
 def get_db(db_name: str = None) -> Database:
     """
     Returns the MongoDB database instance.
-    Enforces MONGODB_DATABASE resolution ('Anomaly_Detector') and ignores arbitrary
+    Enforces MONGODB_DATABASE resolution ('kwprotodb') and ignores arbitrary
     client query parameter overrides to prevent database redirection bugs.
     """
     client = get_client()
-    return client[MONGODB_DATABASE]
+    return client[db_name or MONGODB_DATABASE]
 
 
 def close_connection():

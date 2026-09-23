@@ -642,19 +642,19 @@ export const Home: React.FC = () => {
       {/* ---------------------------------------------------------------------- */}
       <section className="space-y-8">
         <div className="text-center max-w-3xl mx-auto space-y-3">
-          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-industrial-100 text-industrial-700 text-xs font-mono font-bold uppercase tracking-wider">
-            <Factory className="w-3.5 h-3.5 text-industrial-600" />
+          <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-industrial-100 text-industrial-700 text-xs sm:text-sm font-mono font-bold uppercase tracking-wider">
+            <Factory className="w-4 h-4 text-industrial-600" />
             <span>Domain Versatility</span>
           </div>
-          <h2 className="text-3xl font-extrabold text-industrial-900 tracking-tight">
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-industrial-900 tracking-tight">
             Example Inspection Applications
           </h2>
-          <p className="text-industrial-600 text-sm sm:text-base font-semibold">
+          <p className="text-industrial-600 text-base sm:text-lg font-semibold">
             Anomaly Detector is built for generic visual anomaly detection across diverse industrial sectors.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
           {[
             {
               title: 'Manufacturing QC',
@@ -684,15 +684,15 @@ export const Home: React.FC = () => {
           ].map((useCase) => {
             const Icon = useCase.icon;
             return (
-              <Card key={useCase.title} className="p-5 space-y-3 bg-white border-industrial-200">
+              <Card key={useCase.title} className="p-6 space-y-3.5 bg-white border-industrial-200 shadow-xs">
                 <div className="p-3 rounded-xl bg-industrial-100 text-industrial-800 w-fit font-bold">
                   <Icon className="w-6 h-6 text-brand-600" />
                 </div>
-                <h3 className="text-base font-extrabold text-industrial-900">{useCase.title}</h3>
-                <ul className="space-y-1.5 text-xs text-industrial-600 font-semibold">
+                <h3 className="text-base sm:text-lg font-extrabold text-industrial-900">{useCase.title}</h3>
+                <ul className="space-y-2 text-sm text-industrial-700 font-semibold">
                   {useCase.defects.map((d) => (
-                    <li key={d} className="flex items-center space-x-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-brand-500 flex-shrink-0" />
+                    <li key={d} className="flex items-center space-x-2">
+                      <span className="w-2 h-2 rounded-full bg-brand-500 flex-shrink-0" />
                       <span>{d}</span>
                     </li>
                   ))}
@@ -708,47 +708,47 @@ export const Home: React.FC = () => {
       {/* ---------------------------------------------------------------------- */}
       <section className="bg-white p-8 sm:p-10 rounded-3xl border border-industrial-200 shadow-xs space-y-6">
         <div className="max-w-3xl space-y-3">
-          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-brand-50 text-brand-700 text-xs font-mono font-bold uppercase tracking-wider">
-            <HelpCircle className="w-3.5 h-3.5 text-brand-600" />
+          <div className="inline-flex items-center space-x-2 px-3.5 py-1.5 rounded-full bg-brand-50 text-brand-700 text-xs sm:text-sm font-mono font-bold uppercase tracking-wider">
+            <HelpCircle className="w-4 h-4 text-brand-600" />
             <span>Core Methodology</span>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold text-industrial-900 tracking-tight">
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-industrial-900 tracking-tight">
             Why Learn Normality?
           </h2>
-          <p className="text-industrial-600 text-sm sm:text-base font-semibold leading-relaxed">
+          <p className="text-industrial-600 text-base sm:text-lg font-semibold leading-relaxed">
             Traditional supervised defect classification relies on collecting and labeling thousands of examples for every specific defect type. Anomaly Detector instead builds a baseline representation of normal visual appearance from GOOD reference images.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 pt-2">
-          <div className="p-4 rounded-2xl bg-industrial-50 border border-industrial-200 space-y-2">
-            <div className="font-mono text-xs font-black text-brand-600 uppercase">01. Rare Defects</div>
-            <h3 className="text-sm font-extrabold text-industrial-900">Defects are Rare or Unpredictable</h3>
-            <p className="text-xs text-industrial-600 font-medium leading-relaxed">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 pt-2">
+          <div className="p-5 rounded-2xl bg-industrial-50 border border-industrial-200 space-y-2.5">
+            <div className="font-mono text-xs sm:text-sm font-black text-brand-600 uppercase">01. Rare Defects</div>
+            <h3 className="text-base sm:text-lg font-extrabold text-industrial-900">Defects are Rare or Unpredictable</h3>
+            <p className="text-sm text-industrial-700 font-medium leading-relaxed">
               High-yield manufacturing processes rarely produce defect samples for supervised dataset training.
             </p>
           </div>
 
-          <div className="p-4 rounded-2xl bg-industrial-50 border border-industrial-200 space-y-2">
-            <div className="font-mono text-xs font-black text-brand-600 uppercase">02. Novel Defects</div>
-            <h3 className="text-sm font-extrabold text-industrial-900">Unseen Anomaly Types</h3>
-            <p className="text-xs text-industrial-600 font-medium leading-relaxed">
+          <div className="p-5 rounded-2xl bg-industrial-50 border border-industrial-200 space-y-2.5">
+            <div className="font-mono text-xs sm:text-sm font-black text-brand-600 uppercase">02. Novel Defects</div>
+            <h3 className="text-base sm:text-lg font-extrabold text-industrial-900">Unseen Anomaly Types</h3>
+            <p className="text-sm text-industrial-700 font-medium leading-relaxed">
               New or unexpected defect shapes are detected automatically without retraining predefined classifiers.
             </p>
           </div>
 
-          <div className="p-4 rounded-2xl bg-industrial-50 border border-industrial-200 space-y-2">
-            <div className="font-mono text-xs font-black text-brand-600 uppercase">03. Label Cost</div>
-            <h3 className="text-sm font-extrabold text-industrial-900">Zero Labeled Defect Data Needed</h3>
-            <p className="text-xs text-industrial-600 font-medium leading-relaxed">
+          <div className="p-5 rounded-2xl bg-industrial-50 border border-industrial-200 space-y-2.5">
+            <div className="font-mono text-xs sm:text-sm font-black text-brand-600 uppercase">03. Label Cost</div>
+            <h3 className="text-base sm:text-lg font-extrabold text-industrial-900">Zero Labeled Defect Data Needed</h3>
+            <p className="text-sm text-industrial-700 font-medium leading-relaxed">
               Eliminates time-consuming pixel-level defect labeling across thousands of training images.
             </p>
           </div>
 
-          <div className="p-4 rounded-2xl bg-industrial-50 border border-industrial-200 space-y-2">
-            <div className="font-mono text-xs font-black text-brand-600 uppercase">04. Rapid Onboarding</div>
-            <h3 className="text-sm font-extrabold text-industrial-900">Fast Model Creation</h3>
-            <p className="text-xs text-industrial-600 font-medium leading-relaxed">
+          <div className="p-5 rounded-2xl bg-industrial-50 border border-industrial-200 space-y-2.5">
+            <div className="font-mono text-xs sm:text-sm font-black text-brand-600 uppercase">04. Rapid Onboarding</div>
+            <h3 className="text-base sm:text-lg font-extrabold text-industrial-900">Fast Model Creation</h3>
+            <p className="text-sm text-industrial-700 font-medium leading-relaxed">
               Onboard new product lines in minutes simply by providing a small set of defect-free reference images.
             </p>
           </div>
@@ -760,46 +760,46 @@ export const Home: React.FC = () => {
       {/* ---------------------------------------------------------------------- */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* PatchCore "Under the Hood" */}
-        <Card className="p-7 space-y-4 bg-white border-industrial-200">
+        <Card className="p-7 space-y-4 bg-white border-industrial-200 shadow-xs">
           <div className="flex items-center space-x-3 border-b border-industrial-100 pb-3">
             <div className="p-2.5 rounded-xl bg-industrial-100 text-brand-600">
               <Cpu className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-lg font-extrabold text-industrial-900">Under the Hood: PatchCore</h3>
-              <p className="text-xs text-industrial-500 font-mono">Anomaly Detection Engine</p>
+              <h3 className="text-xl font-extrabold text-industrial-900">Under the Hood: PatchCore</h3>
+              <p className="text-xs sm:text-sm text-industrial-500 font-mono font-bold">Anomaly Detection Engine</p>
             </div>
           </div>
-          <ol className="space-y-2.5 text-xs text-industrial-700 font-medium list-decimal list-inside">
-            <li><strong className="text-industrial-900">Local Patch Feature Extraction:</strong> Deep CNN backbones extract multi-scale patch embeddings.</li>
-            <li><strong className="text-industrial-900">Coreset Memory Bank:</strong> Minimized memory bank represents normal visual variation efficiently.</li>
-            <li><strong className="text-industrial-900">Distance Comparison:</strong> Test patches are evaluated against memory bank nearest neighbors.</li>
-            <li><strong className="text-industrial-900">Spatial Localization:</strong> Distance scores yield continuous anomaly heatmaps and bounding boxes.</li>
-            <li><strong className="text-industrial-900">Threshold Decision:</strong> Calibrated score threshold determines PASS vs REJECT.</li>
+          <ol className="space-y-3 text-sm text-industrial-800 font-medium list-decimal list-inside leading-relaxed">
+            <li><strong className="text-industrial-900 font-bold">Local Patch Feature Extraction:</strong> Deep CNN backbones extract multi-scale patch embeddings.</li>
+            <li><strong className="text-industrial-900 font-bold">Coreset Memory Bank:</strong> Minimized memory bank represents normal visual variation efficiently.</li>
+            <li><strong className="text-industrial-900 font-bold">Distance Comparison:</strong> Test patches are evaluated against memory bank nearest neighbors.</li>
+            <li><strong className="text-industrial-900 font-bold">Spatial Localization:</strong> Distance scores yield continuous anomaly heatmaps and bounding boxes.</li>
+            <li><strong className="text-industrial-900 font-bold">Threshold Decision:</strong> Calibrated score threshold determines PASS vs REJECT.</li>
           </ol>
         </Card>
 
         {/* Gemini AI Defect Analysis */}
-        <Card className="p-7 space-y-4 bg-white border-industrial-200">
+        <Card className="p-7 space-y-4 bg-white border-industrial-200 shadow-xs">
           <div className="flex items-center space-x-3 border-b border-industrial-100 pb-3">
             <div className="p-2.5 rounded-xl bg-indigo-50 text-indigo-600">
               <Sparkles className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-lg font-extrabold text-industrial-900">AI-Powered Defect Analysis</h3>
-              <p className="text-xs text-industrial-500 font-mono">Gemini Explanatory Layer</p>
+              <h3 className="text-xl font-extrabold text-industrial-900">AI-Powered Defect Analysis</h3>
+              <p className="text-xs sm:text-sm text-industrial-500 font-mono font-bold">Gemini Explanatory Layer</p>
             </div>
           </div>
-          <div className="space-y-3 text-xs text-industrial-700 font-medium">
+          <div className="space-y-3.5 text-sm text-industrial-800 font-medium">
             <p>
-              PatchCore answers: <strong className="text-industrial-900 font-mono">"Is this image anomalous and where?"</strong>
+              PatchCore answers: <strong className="text-industrial-900 font-mono font-bold">"Is this image anomalous and where?"</strong>
             </p>
             <p>
-              Gemini helps answer: <strong className="text-indigo-700 font-mono">"What might the detected anomaly be?"</strong>
+              Gemini helps answer: <strong className="text-indigo-700 font-mono font-bold">"What might the detected anomaly be?"</strong>
             </p>
-            <div className="p-3 bg-industrial-50 rounded-xl border border-industrial-200 space-y-1 font-mono text-[11px]">
-              <span className="text-industrial-500 font-bold block">Generated for REJECTed inspections on demand:</span>
-              <ul className="list-disc list-inside space-y-0.5 text-industrial-800">
+            <div className="p-4 bg-industrial-50 rounded-xl border border-industrial-200 space-y-1.5 font-mono text-xs sm:text-sm">
+              <span className="text-industrial-600 font-bold block">Generated for REJECTed inspections on demand:</span>
+              <ul className="list-disc list-inside space-y-1 text-industrial-900 font-medium">
                 <li>Defect type & classification proposal</li>
                 <li>Localized spatial position description</li>
                 <li>Severity rating (Low / Medium / High / Critical)</li>
@@ -814,16 +814,16 @@ export const Home: React.FC = () => {
       {/* 8. FINAL PRODUCT FLOW & CTA BANNER                                     */}
       {/* ---------------------------------------------------------------------- */}
       <section className="bg-gradient-to-r from-brand-600 via-brand-500 to-amber-600 text-white rounded-3xl p-8 sm:p-12 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-6">
-        <div className="space-y-2 max-w-xl text-center sm:text-left">
-          <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+        <div className="space-y-2.5 max-w-xl text-center sm:text-left">
+          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
             Ready to start inspecting?
           </h2>
-          <p className="text-brand-100 text-xs sm:text-sm font-semibold leading-relaxed">
+          <p className="text-brand-100 text-sm sm:text-base font-semibold leading-relaxed">
             Create an inspection model using defect-free reference images, build its normality baseline, and start inspecting new products instantly.
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3.5">
+        <div className="flex flex-wrap items-center justify-center sm:justify-end gap-3.5">
           <Button
             variant="ghost"
             size="lg"

@@ -443,21 +443,21 @@ export const Inspection: React.FC = () => {
 
                     <div className="bg-industrial-50 p-4 rounded-xl border border-industrial-200 grid grid-cols-2 gap-3.5 text-xs font-mono">
                       <div>
-                        <span className="text-industrial-600 block text-[11px] uppercase tracking-wider font-extrabold mb-1">STATUS</span>
+                        <span className="text-industrial-600 block text-xs uppercase tracking-wider font-extrabold mb-1">STATUS</span>
                         <Badge status={selectedModel.status} size="sm" />
                       </div>
                       <div>
-                        <span className="text-industrial-600 block text-[11px] uppercase tracking-wider font-extrabold mb-1">REFERENCE BANK</span>
+                        <span className="text-industrial-600 block text-xs uppercase tracking-wider font-extrabold mb-1">REFERENCE BANK</span>
                         <span className="font-extrabold text-industrial-900 text-sm block">
                           {selectedModel.reference_image_count} normal images
                         </span>
                       </div>
                       <div>
-                        <span className="text-industrial-600 block text-[11px] uppercase tracking-wider font-extrabold mb-1">ALGORITHM</span>
+                        <span className="text-industrial-600 block text-xs uppercase tracking-wider font-extrabold mb-1">ALGORITHM</span>
                         <span className="font-extrabold text-brand-700 text-sm block">PatchCore WRN-50</span>
                       </div>
                       <div>
-                        <span className="text-industrial-600 block text-[11px] uppercase tracking-wider font-extrabold mb-1">ACTIVE VERSION</span>
+                        <span className="text-industrial-600 block text-xs uppercase tracking-wider font-extrabold mb-1">ACTIVE VERSION</span>
                         <span className="font-extrabold text-industrial-900 text-sm block font-mono">
                           {activeVersion
                             ? `v${activeVersion.version_number} (${activeVersion.status.toUpperCase()})`
@@ -496,7 +496,7 @@ export const Inspection: React.FC = () => {
                       <FileImage className="w-4 h-4 text-brand-600" />
                       <span>Single Product</span>
                     </div>
-                    <p className="text-[11px] text-industrial-500 mt-1.5 leading-snug">
+                    <p className="text-xs text-industrial-600 mt-1.5 leading-snug font-medium">
                       1 item per uploaded image. Standard PatchCore anomaly detection.
                     </p>
                   </button>
@@ -514,7 +514,7 @@ export const Inspection: React.FC = () => {
                       <Layers className="w-4 h-4 text-brand-600" />
                       <span>Multi-Product (Pure-Gemini Engine)</span>
                     </div>
-                    <p className="text-[11px] text-industrial-500 mt-1.5 leading-snug">
+                    <p className="text-xs text-industrial-600 mt-1.5 leading-snug font-medium">
                       Inspect multiple physical products in one image directly via Gemini VLM. No reference images or PatchCore required.
                     </p>
                   </button>
@@ -657,7 +657,7 @@ export const Inspection: React.FC = () => {
                           placeholder="e.g. 20.00"
                           className="w-36 px-3 py-1.5 bg-white border border-industrial-300 rounded-lg text-industrial-900 font-bold focus:ring-2 focus:ring-brand-500 outline-none text-sm shadow-xs"
                         />
-                        <span className="text-[11px] text-industrial-500 font-sans leading-tight">
+                        <span className="text-xs text-industrial-600 font-sans leading-tight font-medium">
                           Applied to this inspection run only (no new model version created).
                         </span>
                       </div>
@@ -665,8 +665,8 @@ export const Inspection: React.FC = () => {
                   </label>
 
                   {/* Sensitivity Guidance Note */}
-                  <div className="p-3 bg-brand-50/60 border border-brand-200 rounded-lg text-[11px] text-industrial-700 space-y-1">
-                    <p className="font-bold text-brand-900">Threshold Sensitivity Behavior:</p>
+                  <div className="p-3.5 bg-brand-50/60 border border-brand-200 rounded-lg text-xs text-industrial-800 space-y-1 font-medium">
+                    <p className="font-extrabold text-brand-900">Threshold Sensitivity Behavior:</p>
                     <p className="leading-relaxed">
                       • <strong>Higher threshold (e.g. 50.0)</strong> = Less sensitive (only stronger anomalies flagged as REJECT).<br />
                       • <strong>Lower threshold (e.g. 15.0)</strong> = More sensitive (weaker anomalies flagged as REJECT).<br />
@@ -1157,9 +1157,9 @@ export const Inspection: React.FC = () => {
                             <button
                               type="button"
                               onClick={() => setFeedbackType('correct')}
-                              className={`py-1.5 text-[11px] font-medium rounded border transition-colors ${
+                              className={`py-1.5 text-xs font-semibold rounded border transition-colors ${
                                 feedbackType === 'correct'
-                                  ? 'bg-pass-50 text-pass-700 border-pass-300 font-bold'
+                                  ? 'bg-pass-50 text-pass-700 border-pass-300 font-extrabold'
                                   : 'bg-industrial-50 text-industrial-600 border-industrial-200'
                               }`}
                             >
@@ -1168,9 +1168,9 @@ export const Inspection: React.FC = () => {
                             <button
                               type="button"
                               onClick={() => setFeedbackType('false_positive')}
-                              className={`py-1.5 text-[11px] font-medium rounded border transition-colors ${
+                              className={`py-1.5 text-xs font-semibold rounded border transition-colors ${
                                 feedbackType === 'false_positive'
-                                  ? 'bg-reject-50 text-reject-700 border-reject-300 font-bold'
+                                  ? 'bg-reject-50 text-reject-700 border-reject-300 font-extrabold'
                                   : 'bg-industrial-50 text-industrial-600 border-industrial-200'
                               }`}
                             >
@@ -1179,9 +1179,9 @@ export const Inspection: React.FC = () => {
                             <button
                               type="button"
                               onClick={() => setFeedbackType('wrong_severity')}
-                              className={`py-1.5 text-[11px] font-medium rounded border transition-colors ${
+                              className={`py-1.5 text-xs font-semibold rounded border transition-colors ${
                                 feedbackType === 'wrong_severity'
-                                  ? 'bg-review-50 text-review-700 border-review-300 font-bold'
+                                  ? 'bg-review-50 text-review-700 border-review-300 font-extrabold'
                                   : 'bg-industrial-50 text-industrial-600 border-industrial-200'
                               }`}
                             >

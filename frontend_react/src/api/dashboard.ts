@@ -110,11 +110,13 @@ export interface DashboardSummaryResponse {
 
 export async function getDashboardSummary(params?: {
   model_id?: string;
+  model_version_id?: string;
   start_date?: string;
   end_date?: string;
 }): Promise<DashboardSummaryResponse> {
   const queryParams = new URLSearchParams();
   if (params?.model_id && params.model_id !== 'all') queryParams.append('model_id', params.model_id);
+  if (params?.model_version_id && params.model_version_id !== 'all') queryParams.append('model_version_id', params.model_version_id);
   if (params?.start_date) queryParams.append('start_date', params.start_date);
   if (params?.end_date) queryParams.append('end_date', params.end_date);
 

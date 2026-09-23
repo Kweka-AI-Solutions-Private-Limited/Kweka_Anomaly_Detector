@@ -62,19 +62,19 @@ def create_notification(
     }
 
     try:
-        res = db.notifications.update_one(
+        res = db.ad_notifications.update_one(
             {"idempotency_key": idempotency_key},
             {"$setOnInsert": notif_doc},
             upsert=True
         )
         if res.upserted_id:
-            doc = db.notifications.find_one({"_id": res.upserted_id})
+            doc = db.ad_notifications.find_one({"_id": res.upserted_id})
             return serialize_notification(doc)
         else:
-            doc = db.notifications.find_one({"idempotency_key": idempotency_key})
+            doc = db.ad_notifications.find_one({"idempotency_key": idempotency_key})
             return serialize_notification(doc) if doc else None
     except DuplicateKeyError:
-        doc = db.notifications.find_one({"idempotency_key": idempotency_key})
+        doc = db.ad_notifications.find_one({"idempotency_key": idempotency_key})
         return serialize_notification(doc) if doc else None
 
 
@@ -172,13 +172,13 @@ def get_notifications(
     if unread_only:
         query["read"] = False
 
-    cursor = db.notifications.find(query).sort("created_at", -1).limit(limit)
+    cursor = db.ad_notifications.find(query).sort("created_at", -1).limit(limit)
     return [serialize_notification(doc) for doc in cursor]
 
 
 def get_unread_count(db: Database) -> int:
     """Returns total count of unread notifications."""
-    return db.notifications.count_documents({"read": False})
+    return db.ad_notifications.count_documents({"read": False})
 
 
 def mark_notification_read(db: Database, notification_id: str) -> Dict[str, Any]:
@@ -186,20 +186,20 @@ def mark_notification_read(db: Database, notification_id: str) -> Dict[str, Any]
     if not ObjectId.is_valid(notification_id):
         raise HTTPException(status_code=400, detail=f"Invalid notification_id format '{notification_id}'.")
 
-    res = db.notifications.update_one(
+    res = db.ad_notifications.update_one(
         {"_id": ObjectId(notification_id)},
         {"$set": {"read": True}}
     )
     if res.matched_count == 0:
         raise HTTPException(status_code=404, detail=f"Notification '{notification_id}' not found.")
 
-    doc = db.notifications.find_one({"_id": ObjectId(notification_id)})
+    doc = db.ad_notifications.find_one({"_id": ObjectId(notification_id)})
     return serialize_notification(doc)
 
 
 def mark_all_notifications_read(db: Database) -> Dict[str, Any]:
     """Marks all unread notifications as read."""
-    res = db.notifications.update_many(
+    res = db.ad_notifications.update_many(
         {"read": False},
         {"$set": {"read": True}}
     )

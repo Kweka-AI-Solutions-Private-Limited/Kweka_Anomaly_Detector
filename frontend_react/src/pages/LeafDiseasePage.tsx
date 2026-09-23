@@ -272,7 +272,7 @@ export const LeafDiseasePage: React.FC = () => {
       console.error('[ERROR] Leaf disease analysis failed:', err);
       setErrorMsg(
         err.response?.data?.detail ||
-          'Failed to complete leaf disease analysis. Please ensure backend server is active.'
+        'Failed to complete leaf disease analysis. Please ensure backend server is active.'
       );
     } finally {
       setIsAnalyzing(false);
@@ -353,11 +353,10 @@ export const LeafDiseasePage: React.FC = () => {
                   addFiles(Array.from(e.dataTransfer.files));
                 }
               }}
-              className={`border-2 border-dashed rounded-xl p-5 text-center cursor-pointer transition-all ${
-                selectedFiles.length >= 5
+              className={`border-2 border-dashed rounded-xl p-5 text-center cursor-pointer transition-all ${selectedFiles.length >= 5
                   ? 'border-industrial-300 bg-industrial-50 opacity-60 cursor-not-allowed'
                   : 'border-industrial-300 hover:border-emerald-500 hover:bg-emerald-50/30 bg-industrial-50/50'
-              }`}
+                }`}
             >
               <input
                 type="file"
@@ -458,11 +457,10 @@ export const LeafDiseasePage: React.FC = () => {
               type="button"
               onClick={handleAnalyze}
               disabled={isAnalyzing || selectedFiles.length === 0}
-              className={`w-full py-3.5 px-4 rounded-xl text-sm font-extrabold text-white flex items-center justify-center space-x-2 shadow-sm transition-all ${
-                isAnalyzing || selectedFiles.length === 0
+              className={`w-full py-3.5 px-4 rounded-xl text-sm font-extrabold text-white flex items-center justify-center space-x-2 shadow-sm transition-all ${isAnalyzing || selectedFiles.length === 0
                   ? 'bg-industrial-400 cursor-not-allowed opacity-60'
                   : 'bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99]'
-              }`}
+                }`}
             >
               {isAnalyzing ? (
                 <>
@@ -533,11 +531,10 @@ export const LeafDiseasePage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setFeedbackRating('UP')}
-                      className={`flex-1 py-2 px-3 rounded-xl border flex items-center justify-center space-x-2 text-xs font-mono font-bold transition-all ${
-                        feedbackRating === 'UP'
+                      className={`flex-1 py-2 px-3 rounded-xl border flex items-center justify-center space-x-2 text-xs font-mono font-bold transition-all ${feedbackRating === 'UP'
                           ? 'bg-emerald-600 text-white border-emerald-700 shadow-sm'
                           : 'bg-industrial-50 border-industrial-200 text-industrial-700 hover:bg-emerald-50 hover:border-emerald-300'
-                      }`}
+                        }`}
                     >
                       <ThumbsUp className="w-4 h-4" />
                       <span>Accurate AI</span>
@@ -545,11 +542,10 @@ export const LeafDiseasePage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setFeedbackRating('DOWN')}
-                      className={`flex-1 py-2 px-3 rounded-xl border flex items-center justify-center space-x-2 text-xs font-mono font-bold transition-all ${
-                        feedbackRating === 'DOWN'
+                      className={`flex-1 py-2 px-3 rounded-xl border flex items-center justify-center space-x-2 text-xs font-mono font-bold transition-all ${feedbackRating === 'DOWN'
                           ? 'bg-reject-600 text-white border-reject-700 shadow-sm'
                           : 'bg-industrial-50 border-industrial-200 text-industrial-700 hover:bg-reject-50 hover:border-reject-300'
-                      }`}
+                        }`}
                     >
                       <ThumbsDown className="w-4 h-4" />
                       <span>Needs Tuning</span>
@@ -622,7 +618,7 @@ export const LeafDiseasePage: React.FC = () => {
                   Ready for Leaf Analysis & NACL Treatment Advisory
                 </h3>
                 <p className="text-xs text-industrial-500 font-medium leading-relaxed">
-                  Upload leaf photos to identify plant species, diagnose pathology (e.g. European Pear Rust), and retrieve official NACL product recommendations with Gemini AI advisories.
+                  Upload leaf photos showing a single disease on a single plant to identify the species, diagnose pathology (e.g., European Pear Rust), and retrieve official NACL product recommendations with Gemini AI advisories.
                 </p>
               </div>
             </Card>
@@ -634,13 +630,12 @@ export const LeafDiseasePage: React.FC = () => {
               <Card className="p-4 bg-white border-industrial-200 shadow-sm flex items-center justify-between flex-wrap gap-2">
                 <div className="flex items-center space-x-3">
                   <span
-                    className={`px-3 py-1 rounded-full text-xs font-mono font-bold tracking-wider uppercase ${
-                      analysisResult.status === 'SUCCESS'
+                    className={`px-3 py-1 rounded-full text-xs font-mono font-bold tracking-wider uppercase ${analysisResult.status === 'SUCCESS'
                         ? 'bg-pass-100 text-pass-800 border border-pass-300'
                         : analysisResult.status === 'UNCERTAIN'
-                        ? 'bg-amber-100 text-amber-800 border border-amber-300'
-                        : 'bg-reject-100 text-reject-800 border border-reject-300'
-                    }`}
+                          ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                          : 'bg-reject-100 text-reject-800 border border-reject-300'
+                      }`}
                   >
                     STATUS: {analysisResult.status}
                   </span>
@@ -663,11 +658,10 @@ export const LeafDiseasePage: React.FC = () => {
                       <span>Identified Crop Species</span>
                     </span>
                     <span
-                      className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase ${
-                        analysisResult.crop.status === 'CONFIRMED'
+                      className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase ${analysisResult.crop.status === 'CONFIRMED'
                           ? 'bg-emerald-100 text-emerald-800'
                           : 'bg-amber-100 text-amber-800'
-                      }`}
+                        }`}
                     >
                       {analysisResult.crop.status}
                     </span>
@@ -688,50 +682,50 @@ export const LeafDiseasePage: React.FC = () => {
                   {(analysisResult.crop.status === 'UNCERTAIN' ||
                     analysisResult.diagnosis?.is_uncertain ||
                     analysisResult.crop.crop_name === 'Unknown') && (
-                    <div className="mt-3 p-3.5 rounded-xl bg-amber-50 border border-amber-300 space-y-2.5">
-                      <div className="flex items-start space-x-2 text-amber-900">
-                        <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                        <div className="space-y-1 text-xs">
-                          <p className="font-extrabold uppercase font-mono tracking-wide text-amber-950">
-                            Suggested Action: Select Plant Species
-                          </p>
-                          <p className="text-amber-800 leading-normal font-medium">
-                            Auto-detect confidence is low. Please select the exact crop species below to confirm diagnosis and unlock verified NACL agrochemical recommendations:
-                          </p>
+                      <div className="mt-3 p-3.5 rounded-xl bg-amber-50 border border-amber-300 space-y-2.5">
+                        <div className="flex items-start space-x-2 text-amber-900">
+                          <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                          <div className="space-y-1 text-xs">
+                            <p className="font-extrabold uppercase font-mono tracking-wide text-amber-950">
+                              Suggested Action: Select Plant Species
+                            </p>
+                            <p className="text-amber-800 leading-normal font-medium">
+                              Auto-detect confidence is low. Please select the exact crop species below to confirm diagnosis and unlock verified NACL agrochemical recommendations:
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center space-x-2">
+                          <select
+                            value={selectedCrop}
+                            onChange={(e) => setSelectedCrop(e.target.value)}
+                            className="flex-1 px-3 py-2 rounded-lg border border-amber-400 text-xs font-bold text-industrial-900 bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                          >
+                            <option value="">-- Select Plant Species --</option>
+                            {CROPS.filter((c) => c.value !== '').map((c) => (
+                              <option key={c.value} value={c.value}>
+                                {c.label}
+                              </option>
+                            ))}
+                          </select>
+                          <button
+                            type="button"
+                            onClick={() => handleAnalyze()}
+                            disabled={!selectedCrop || isAnalyzing}
+                            className="px-3.5 py-2 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold font-mono transition-all disabled:opacity-50 shrink-0 flex items-center space-x-1"
+                          >
+                            {isAnalyzing ? (
+                              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <>
+                                <Check className="w-3.5 h-3.5" />
+                                <span>Confirm Crop</span>
+                              </>
+                            )}
+                          </button>
                         </div>
                       </div>
-
-                      <div className="flex items-center space-x-2">
-                        <select
-                          value={selectedCrop}
-                          onChange={(e) => setSelectedCrop(e.target.value)}
-                          className="flex-1 px-3 py-2 rounded-lg border border-amber-400 text-xs font-bold text-industrial-900 bg-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                        >
-                          <option value="">-- Select Plant Species --</option>
-                          {CROPS.filter((c) => c.value !== '').map((c) => (
-                            <option key={c.value} value={c.value}>
-                              {c.label}
-                            </option>
-                          ))}
-                        </select>
-                        <button
-                          type="button"
-                          onClick={() => handleAnalyze()}
-                          disabled={!selectedCrop || isAnalyzing}
-                          className="px-3.5 py-2 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold font-mono transition-all disabled:opacity-50 shrink-0 flex items-center space-x-1"
-                        >
-                          {isAnalyzing ? (
-                            <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                          ) : (
-                            <>
-                              <Check className="w-3.5 h-3.5" />
-                              <span>Confirm Crop</span>
-                            </>
-                          )}
-                        </button>
-                      </div>
-                    </div>
-                  )}
+                    )}
                 </Card>
 
                 {/* Disease Card */}
@@ -787,13 +781,12 @@ export const LeafDiseasePage: React.FC = () => {
                       </h3>
                     </div>
                     <span
-                      className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase ${
-                        analysisResult.diagnosis.evidence_level === 'HIGH'
+                      className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold uppercase ${analysisResult.diagnosis.evidence_level === 'HIGH'
                           ? 'bg-pass-100 text-pass-800 border border-pass-300'
                           : analysisResult.diagnosis.evidence_level === 'MEDIUM'
-                          ? 'bg-amber-100 text-amber-800 border border-amber-300'
-                          : 'bg-reject-100 text-reject-800 border border-reject-300'
-                      }`}
+                            ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                            : 'bg-reject-100 text-reject-800 border border-reject-300'
+                        }`}
                     >
                       EVIDENCE: {analysisResult.diagnosis.evidence_level}
                     </span>
@@ -841,20 +834,18 @@ export const LeafDiseasePage: React.FC = () => {
 
                   {/* Gemini AI Agronomist Advisory Card */}
                   <Card
-                    className={`p-5 border text-white rounded-2xl shadow-xl space-y-3.5 ${
-                      analysisResult?.diagnosis?.crop_compatibility_status === 'MISMATCHED_HOST' || naclRecs.safety_disclaimer?.includes('CAUTION')
+                    className={`p-5 border text-white rounded-2xl shadow-xl space-y-3.5 ${analysisResult?.diagnosis?.crop_compatibility_status === 'MISMATCHED_HOST' || naclRecs.safety_disclaimer?.includes('CAUTION')
                         ? 'bg-gradient-to-br from-amber-950 via-industrial-900 to-industrial-950 border-amber-600/50'
                         : 'bg-gradient-to-br from-emerald-950 via-industrial-900 to-industrial-950 border-emerald-600/40'
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center justify-between flex-wrap gap-2">
                       <div className="flex items-center space-x-2.5">
                         <div
-                          className={`p-2 rounded-xl border ${
-                            analysisResult?.diagnosis?.crop_compatibility_status === 'MISMATCHED_HOST' || naclRecs.safety_disclaimer?.includes('CAUTION')
+                          className={`p-2 rounded-xl border ${analysisResult?.diagnosis?.crop_compatibility_status === 'MISMATCHED_HOST' || naclRecs.safety_disclaimer?.includes('CAUTION')
                               ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
                               : 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
-                          }`}
+                            }`}
                         >
                           {analysisResult?.diagnosis?.crop_compatibility_status === 'MISMATCHED_HOST' || naclRecs.safety_disclaimer?.includes('CAUTION') ? (
                             <AlertCircle className="w-5 h-5 text-amber-400" />
@@ -864,11 +855,10 @@ export const LeafDiseasePage: React.FC = () => {
                         </div>
                         <div>
                           <h4
-                            className={`text-sm font-extrabold font-mono uppercase tracking-wider ${
-                              analysisResult?.diagnosis?.crop_compatibility_status === 'MISMATCHED_HOST' || naclRecs.safety_disclaimer?.includes('CAUTION')
+                            className={`text-sm font-extrabold font-mono uppercase tracking-wider ${analysisResult?.diagnosis?.crop_compatibility_status === 'MISMATCHED_HOST' || naclRecs.safety_disclaimer?.includes('CAUTION')
                                 ? 'text-amber-300'
                                 : 'text-emerald-300'
-                            }`}
+                              }`}
                           >
                             {analysisResult?.diagnosis?.crop_compatibility_status === 'MISMATCHED_HOST'
                               ? 'Host Caution & Advisory'
@@ -882,11 +872,10 @@ export const LeafDiseasePage: React.FC = () => {
                     </div>
 
                     <div
-                      className={`p-3.5 rounded-xl text-xs leading-relaxed font-medium border ${
-                        analysisResult?.diagnosis?.crop_compatibility_status === 'MISMATCHED_HOST' || naclRecs.safety_disclaimer?.includes('CAUTION')
+                      className={`p-3.5 rounded-xl text-xs leading-relaxed font-medium border ${analysisResult?.diagnosis?.crop_compatibility_status === 'MISMATCHED_HOST' || naclRecs.safety_disclaimer?.includes('CAUTION')
                           ? 'bg-amber-950/80 border-amber-700/80 text-amber-100'
                           : 'bg-industrial-900/90 border-industrial-700 text-industrial-100'
-                      }`}
+                        }`}
                     >
                       {naclRecs.ai_advisory_summary}
                     </div>
@@ -1074,11 +1063,10 @@ export const LeafDiseasePage: React.FC = () => {
                       <div
                         key={run.analysis_id}
                         onClick={() => handleSelectHistoryRun(run)}
-                        className={`p-4 rounded-xl border transition-all cursor-pointer space-y-2.5 ${
-                          isSelected
+                        className={`p-4 rounded-xl border transition-all cursor-pointer space-y-2.5 ${isSelected
                             ? 'bg-emerald-50/80 border-emerald-500 ring-2 ring-emerald-500/20'
                             : 'bg-white border-industrial-200 hover:border-emerald-400 hover:shadow-md'
-                        }`}
+                          }`}
                       >
                         <div className="flex items-center justify-between flex-wrap gap-2">
                           <div className="flex items-center space-x-3">
@@ -1086,13 +1074,12 @@ export const LeafDiseasePage: React.FC = () => {
                               {run.analysis_id}
                             </span>
                             <span
-                              className={`px-2.5 py-0.5 rounded-full text-xs font-mono font-bold uppercase ${
-                                run.status === 'SUCCESS'
+                              className={`px-2.5 py-0.5 rounded-full text-xs font-mono font-bold uppercase ${run.status === 'SUCCESS'
                                   ? 'bg-pass-100 text-pass-800 border border-pass-300'
                                   : run.status === 'UNCERTAIN'
-                                  ? 'bg-amber-100 text-amber-800 border border-amber-300'
-                                  : 'bg-reject-100 text-reject-800 border border-reject-300'
-                              }`}
+                                    ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                                    : 'bg-reject-100 text-reject-800 border border-reject-300'
+                                }`}
                             >
                               {run.status}
                             </span>
@@ -1190,11 +1177,10 @@ export const LeafDiseasePage: React.FC = () => {
                       key={cat}
                       type="button"
                       onClick={() => setCatalogActiveCategory(cat)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold transition-all whitespace-nowrap ${
-                        catalogActiveCategory === cat
+                      className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold transition-all whitespace-nowrap ${catalogActiveCategory === cat
                           ? 'bg-emerald-700 text-white shadow-sm'
                           : 'bg-white border border-industrial-200 text-industrial-700 hover:bg-emerald-50 hover:border-emerald-300'
-                      }`}
+                        }`}
                     >
                       {cat}
                     </button>

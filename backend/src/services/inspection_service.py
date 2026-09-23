@@ -126,7 +126,7 @@ def run_single_image_inspection(
     )
 
     data = insp_doc.model_dump() if hasattr(insp_doc, "model_dump") else insp_doc.dict()
-    res = db.inspections.insert_one(data)
+    res = db.ad_inspections.insert_one(data)
     inspection_id = str(res.inserted_id)
 
     try:
@@ -134,7 +134,7 @@ def run_single_image_inspection(
         target_path, relative_uri, file_size, checksum = save_inspection_image(inspection_id, upload_file)
 
         # Update input storage_uri
-        db.inspections.update_one(
+        db.ad_inspections.update_one(
             {"_id": ObjectId(inspection_id)},
             {"$set": {"input.storage_uri": relative_uri}}
         )
@@ -189,10 +189,10 @@ def run_single_image_inspection(
         )
 
         res_data = res_doc.model_dump() if hasattr(res_doc, "model_dump") else res_doc.dict()
-        db.inspection_results.insert_one(res_data)
+        db.ad_inspections.insert_one(res_data)
 
         # 5. Update inspection to completed status
-        db.inspections.update_one(
+        db.ad_inspections.update_one(
             {"_id": ObjectId(inspection_id)},
             {"$set": {
                 "status": "completed",
@@ -201,11 +201,11 @@ def run_single_image_inspection(
             }}
         )
 
-        doc = db.inspections.find_one({"_id": ObjectId(inspection_id)})
+        doc = db.ad_inspections.find_one({"_id": ObjectId(inspection_id)})
         return normalize_inspection_payload(doc, res_data)
 
     except Exception as e:
-        db.inspections.update_one(
+        db.ad_inspections.update_one(
             {"_id": ObjectId(inspection_id)},
             {"$set": {"status": "failed"}}
         )
@@ -287,13 +287,13 @@ def run_multi_instance_inspection(
     )
 
     data = insp_doc.model_dump() if hasattr(insp_doc, "model_dump") else insp_doc.dict()
-    res = db.inspections.insert_one(data)
+    res = db.ad_inspections.insert_one(data)
     inspection_id = str(res.inserted_id)
 
     try:
         # 2. Save original uploaded image
         target_path, relative_uri, file_size, checksum = save_inspection_image(inspection_id, upload_file)
-        db.inspections.update_one(
+        db.ad_inspections.update_one(
             {"_id": ObjectId(inspection_id)},
             {"$set": {"input.storage_uri": relative_uri}}
         )
@@ -330,14 +330,14 @@ def run_multi_instance_inspection(
                 created_at=datetime.utcnow()
             )
             res_data = res_doc.model_dump() if hasattr(res_doc, "model_dump") else res_doc.dict()
-            db.inspection_results.insert_one(res_data)
+            db.ad_inspections.insert_one(res_data)
 
-            db.inspections.update_one(
+            db.ad_inspections.update_one(
                 {"_id": ObjectId(inspection_id)},
                 {"$set": {"status": "review", "completed_at": datetime.utcnow()}}
             )
 
-            doc = db.inspections.find_one({"_id": ObjectId(inspection_id)})
+            doc = db.ad_inspections.find_one({"_id": ObjectId(inspection_id)})
             return normalize_inspection_payload(doc, res_data)
 
         # Handle GEMINI_INSTANCE_LOCALIZATION_FAILED / INSTANCE_DETECTION_FAILED
@@ -357,14 +357,14 @@ def run_multi_instance_inspection(
                 created_at=datetime.utcnow()
             )
             res_data = res_doc.model_dump() if hasattr(res_doc, "model_dump") else res_doc.dict()
-            db.inspection_results.insert_one(res_data)
+            db.ad_inspections.insert_one(res_data)
 
-            db.inspections.update_one(
+            db.ad_inspections.update_one(
                 {"_id": ObjectId(inspection_id)},
                 {"$set": {"status": "failed", "completed_at": datetime.utcnow()}}
             )
 
-            doc = db.inspections.find_one({"_id": ObjectId(inspection_id)})
+            doc = db.ad_inspections.find_one({"_id": ObjectId(inspection_id)})
             return normalize_inspection_payload(doc, res_data)
 
         # 4. PatchCore Inference per Instance Crop
@@ -381,7 +381,7 @@ def run_multi_instance_inspection(
             orig_h, orig_w = 256, 256
 
         # Update inspection input with actual image dimensions
-        db.inspections.update_one(
+        db.ad_inspections.update_one(
             {"_id": ObjectId(inspection_id)},
             {"$set": {"input.width": orig_w, "input.height": orig_h}}
         )
@@ -563,11 +563,11 @@ def run_multi_instance_inspection(
         )
 
         res_data = res_doc.model_dump() if hasattr(res_doc, "model_dump") else res_doc.dict()
-        db.inspection_results.insert_one(res_data)
+        db.ad_inspections.insert_one(res_data)
 
         # Update inspection document status
         final_insp_status = "review" if overall_status == "REVIEW" else "completed"
-        db.inspections.update_one(
+        db.ad_inspections.update_one(
             {"_id": ObjectId(inspection_id)},
             {"$set": {
                 "status": final_insp_status,
@@ -576,11 +576,11 @@ def run_multi_instance_inspection(
             }}
         )
 
-        doc = db.inspections.find_one({"_id": ObjectId(inspection_id)})
+        doc = db.ad_inspections.find_one({"_id": ObjectId(inspection_id)})
         return normalize_inspection_payload(doc, res_data)
 
     except Exception as e:
-        db.inspections.update_one(
+        db.ad_inspections.update_one(
             {"_id": ObjectId(inspection_id)},
             {"$set": {"status": "failed"}}
         )
@@ -709,7 +709,7 @@ def get_inspections(
     if date_query:
         query["created_at"] = date_query
 
-    cursor_docs = list(db.inspections.find(query).sort("created_at", -1))
+    cursor_docs = list(db.ad_inspections.find(query).sort("created_at", -1))
     inspections = []
 
     if not cursor_docs:
@@ -723,7 +723,7 @@ def get_inspections(
     results_map: Dict[str, Dict[str, Any]] = {}
     if insp_obj_ids:
         all_insp_keys = insp_obj_ids + [str(i) for i in insp_obj_ids]
-        raw_results = list(db.inspection_results.find({"inspection_id": {"$in": all_insp_keys}}))
+        raw_results = list(db.ad_inspections.find({"inspection_id": {"$in": all_insp_keys}}))
         for r in raw_results:
             key = str(r.get("inspection_id"))
             results_map[key] = r
@@ -732,7 +732,7 @@ def get_inspections(
     feedback_map: Dict[str, Dict[str, Any]] = {}
     if insp_obj_ids:
         all_insp_keys = insp_obj_ids + [str(i) for i in insp_obj_ids]
-        raw_feedback = list(db.feedback.find({"inspection_id": {"$in": all_insp_keys}}))
+        raw_feedback = list(db.ad_feedback.find({"inspection_id": {"$in": all_insp_keys}}))
         for fb in raw_feedback:
             key = str(fb.get("inspection_id"))
             feedback_map[key] = fb
@@ -740,14 +740,14 @@ def get_inspections(
     # 4. Bulk fetch inspection_runs
     runs_map: Dict[str, Dict[str, Any]] = {}
     if run_obj_ids:
-        raw_runs = list(db.inspection_runs.find({"_id": {"$in": run_obj_ids}}))
+        raw_runs = list(db.ad_inspection_runs.find({"_id": {"$in": run_obj_ids}}))
         for r in raw_runs:
             key = str(r.get("_id"))
             runs_map[key] = r
 
     # Model map cache for name search & response metadata
     model_names: Dict[str, str] = {}
-    for m in db.models.find():
+    for m in db.ad_models.find():
         model_names[str(m["_id"])] = m.get("name", "")
 
     for doc in cursor_docs:
@@ -842,11 +842,11 @@ def get_inspection(db: Database, inspection_id: str) -> Dict[str, Any]:
     if not ObjectId.is_valid(inspection_id):
         raise HTTPException(status_code=400, detail=f"Invalid inspection_id format '{inspection_id}'.")
 
-    doc = db.inspections.find_one({"_id": ObjectId(inspection_id)})
+    doc = db.ad_inspections.find_one({"_id": ObjectId(inspection_id)})
     if not doc:
         raise HTTPException(status_code=404, detail=f"Inspection with ID '{inspection_id}' not found.")
 
-    res_doc = db.inspection_results.find_one({"inspection_id": ObjectId(inspection_id)})
+    res_doc = db.ad_inspections.find_one({"inspection_id": ObjectId(inspection_id)})
     return normalize_inspection_payload(doc, res_doc)
 
 
@@ -867,7 +867,7 @@ def submit_feedback(
     Updates existing feedback record if already submitted to prevent accidental duplicates.
     """
     insp = get_inspection(db, inspection_id)
-    res_doc = db.inspection_results.find_one({"inspection_id": ObjectId(inspection_id)})
+    res_doc = db.ad_inspections.find_one({"inspection_id": ObjectId(inspection_id)})
 
     # Handle legacy feedback_type parameter if passed
     if feedback_type and (not detection_feedback or detection_feedback == "correct"):
@@ -904,7 +904,7 @@ def submit_feedback(
     orig_vlm = insp.get("vlm_analysis", {})
 
     # Check for existing feedback submission to update rather than duplicate
-    existing = db.feedback.find_one({"inspection_id": ObjectId(inspection_id)})
+    existing = db.ad_feedback.find_one({"inspection_id": ObjectId(inspection_id)})
 
     fb_doc = FeedbackSchema(
         inspection_id=ObjectId(inspection_id),
@@ -926,11 +926,11 @@ def submit_feedback(
     data = fb_doc.model_dump() if hasattr(fb_doc, "model_dump") else fb_doc.dict()
 
     if existing:
-        db.feedback.update_one({"_id": existing["_id"]}, {"$set": data})
+        db.ad_feedback.update_one({"_id": existing["_id"]}, {"$set": data})
         data["id"] = str(existing["_id"])
         data["_id"] = str(existing["_id"])
     else:
-        res = db.feedback.insert_one(data)
+        res = db.ad_feedback.insert_one(data)
         data["id"] = str(res.inserted_id)
         data["_id"] = str(res.inserted_id)
 
@@ -941,7 +941,7 @@ def submit_feedback(
 def get_feedback(db: Database, inspection_id: str) -> List[Dict[str, Any]]:
     """Lists feedback records for a specific inspection."""
     get_inspection(db, inspection_id)  # Validate 404
-    cursor = db.feedback.find({"inspection_id": ObjectId(inspection_id)}).sort("created_at", -1)
+    cursor = db.ad_feedback.find({"inspection_id": ObjectId(inspection_id)}).sort("created_at", -1)
     feedbacks = []
     for doc in cursor:
         feedbacks.append(serialize_object_ids(doc))
@@ -974,7 +974,7 @@ def get_all_feedback(
             {"feedback_type": feedback_type}
         ]
 
-    cursor = db.feedback.find(query).sort("created_at", -1)
+    cursor = db.ad_feedback.find(query).sort("created_at", -1)
     feedbacks = []
     for doc in cursor:
         serialized = serialize_object_ids(doc)
@@ -998,7 +998,7 @@ def retry_vlm_analysis(db: Database, inspection_id: str, force: bool = False) ->
     Includes backend concurrency protection ('generating' status lock) and returns cached completed analysis unless forced.
     """
     insp = get_inspection(db, inspection_id)
-    insp_res_doc = db.inspection_results.find_one({"inspection_id": ObjectId(inspection_id)})
+    insp_res_doc = db.ad_inspections.find_one({"inspection_id": ObjectId(inspection_id)})
     if not insp_res_doc:
         raise HTTPException(status_code=404, detail=f"No inspection result found for inspection '{inspection_id}'.")
 
@@ -1013,7 +1013,7 @@ def retry_vlm_analysis(db: Database, inspection_id: str, force: bool = False) ->
         raise HTTPException(status_code=409, detail="AI analysis is currently generating for this inspection.")
 
     # Atomically lock state to 'generating'
-    db.inspection_results.update_one(
+    db.ad_inspections.update_one(
         {"inspection_id": ObjectId(inspection_id)},
         {"$set": {
             "vlm_analysis": {
@@ -1032,7 +1032,7 @@ def retry_vlm_analysis(db: Database, inspection_id: str, force: bool = False) ->
         target_path = get_storage_base_dir() / input_info.get("storage_uri", "") if input_info.get("storage_uri") else None
         heatmap_path = get_storage_base_dir() / loc.get("heatmap_uri", "") if loc.get("heatmap_uri") else None
 
-        model_doc = db.models.find_one({"_id": ObjectId(insp.get("model_id"))}) if insp.get("model_id") and ObjectId.is_valid(insp.get("model_id")) else None
+        model_doc = db.ad_models.find_one({"_id": ObjectId(insp.get("model_id"))}) if insp.get("model_id") and ObjectId.is_valid(insp.get("model_id")) else None
         model_name = model_doc.get("name") if model_doc else None
 
         vlm_dict = analyze_inspection_evidence(
@@ -1044,12 +1044,12 @@ def retry_vlm_analysis(db: Database, inspection_id: str, force: bool = False) ->
             model_context=model_name
         )
 
-        db.inspection_results.update_one(
+        db.ad_inspections.update_one(
             {"inspection_id": ObjectId(inspection_id)},
             {"$set": {"vlm_analysis": vlm_dict}}
         )
     except Exception as e:
-        db.inspection_results.update_one(
+        db.ad_inspections.update_one(
             {"inspection_id": ObjectId(inspection_id)},
             {"$set": {
                 "vlm_analysis": {
@@ -1072,7 +1072,7 @@ def retry_instance_vlm_analysis(db: Database, inspection_id: str, instance_id: i
         raise HTTPException(status_code=400, detail=f"Invalid inspection_id '{inspection_id}'.")
 
     insp = get_inspection(db, inspection_id)
-    insp_res_doc = db.inspection_results.find_one({"inspection_id": {"$in": [ObjectId(inspection_id), str(inspection_id)]}})
+    insp_res_doc = db.ad_inspections.find_one({"inspection_id": {"$in": [ObjectId(inspection_id), str(inspection_id)]}})
     if not insp_res_doc:
         raise HTTPException(status_code=404, detail=f"No result found for inspection '{inspection_id}'.")
 
@@ -1097,7 +1097,7 @@ def retry_instance_vlm_analysis(db: Database, inspection_id: str, instance_id: i
         raise HTTPException(status_code=409, detail=f"AI analysis is currently generating for Instance {instance_id}.")
 
     # Lock state
-    db.inspection_results.update_one(
+    db.ad_inspections.update_one(
         {"_id": insp_res_doc["_id"], "instances.instance_id": instance_id},
         {"$set": {
             f"instances.{target_idx}.vlm_analysis": {
@@ -1118,7 +1118,7 @@ def retry_instance_vlm_analysis(db: Database, inspection_id: str, instance_id: i
         crop_path = storage_root / crop_rel_uri if crop_rel_uri else None
         heat_path = storage_root / heat_rel_uri if heat_rel_uri else None
 
-        model_doc = db.models.find_one({"_id": ObjectId(insp.get("model_id"))}) if insp.get("model_id") and ObjectId.is_valid(insp.get("model_id")) else None
+        model_doc = db.ad_models.find_one({"_id": ObjectId(insp.get("model_id"))}) if insp.get("model_id") and ObjectId.is_valid(insp.get("model_id")) else None
         model_name = model_doc.get("name") if model_doc else None
 
         vlm_dict = analyze_inspection_evidence(
@@ -1130,13 +1130,13 @@ def retry_instance_vlm_analysis(db: Database, inspection_id: str, instance_id: i
             model_context=f"{model_name} (Instance {instance_id})"
         )
 
-        db.inspection_results.update_one(
+        db.ad_inspections.update_one(
             {"inspection_id": ObjectId(inspection_id), "instances.instance_id": instance_id},
             {"$set": {f"instances.{target_idx}.vlm_analysis": vlm_dict}}
         )
 
     except Exception as e:
-        db.inspection_results.update_one(
+        db.ad_inspections.update_one(
             {"inspection_id": ObjectId(inspection_id), "instances.instance_id": instance_id},
             {"$set": {
                 f"instances.{target_idx}.vlm_analysis": {

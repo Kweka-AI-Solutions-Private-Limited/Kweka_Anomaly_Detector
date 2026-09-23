@@ -100,7 +100,7 @@ async def analyze_leaf_disease(
             doc_data = resp.model_dump()
             doc_data["created_at"] = datetime.now(timezone.utc)
             doc_data["filenames"] = [f[0] for f in file_tuples]
-            db.leaf_disease_runs.insert_one(doc_data)
+            db.ad_inspections.insert_one(doc_data)
         except Exception as e:
             print(f"[WARN] Failed to save leaf disease run history: {e}")
         return resp
@@ -189,7 +189,7 @@ async def analyze_leaf_disease(
         doc_data = resp.model_dump(mode="json")
         doc_data["created_at"] = datetime.now(timezone.utc)
         doc_data["filenames"] = [f[0] for f in file_tuples]
-        db.leaf_disease_runs.insert_one(doc_data)
+        db.ad_inspections.insert_one(doc_data)
         print(f"[INFO] Saved leaf disease run '{analysis_id}' to MongoDB history.")
     except Exception as e:
         print(f"[WARN] Failed to persist leaf disease run history: {e}")
@@ -246,7 +246,7 @@ def get_leaf_disease_history(
     if crop_name:
         query["crop.crop_name"] = crop_name
 
-    cursor = db.leaf_disease_runs.find(query).sort("created_at", -1).limit(limit)
+    cursor = db.ad_inspections.find(query).sort("created_at", -1).limit(limit)
     runs = [_serialize_leaf_run(doc) for doc in cursor]
     return runs
 
@@ -256,7 +256,7 @@ def get_leaf_disease_run(analysis_id: str, db: Database = Depends(get_db)):
     """
     Retrieves a single historical Leaf Disease Analysis run by analysis_id.
     """
-    doc = db.leaf_disease_runs.find_one({"$or": [{"analysis_id": analysis_id}, {"_id": analysis_id}]})
+    doc = db.ad_inspections.find_one({"$or": [{"analysis_id": analysis_id}, {"_id": analysis_id}]})
     if not doc:
         raise HTTPException(status_code=404, detail=f"Leaf disease run with ID '{analysis_id}' not found.")
     return _serialize_leaf_run(doc)
@@ -267,7 +267,7 @@ def delete_leaf_disease_run(analysis_id: str, db: Database = Depends(get_db)):
     """
     Deletes a specific Leaf Disease Analysis run record from history.
     """
-    res = db.leaf_disease_runs.delete_one({"$or": [{"analysis_id": analysis_id}, {"_id": analysis_id}]})
+    res = db.ad_inspections.delete_one({"$or": [{"analysis_id": analysis_id}, {"_id": analysis_id}]})
     if res.deleted_count == 0:
         raise HTTPException(status_code=404, detail=f"Leaf disease run '{analysis_id}' not found.")
     return {"status": "deleted", "analysis_id": analysis_id}
@@ -278,6 +278,6 @@ def clear_leaf_disease_history(db: Database = Depends(get_db)):
     """
     Clears all historical Leaf Disease Analysis runs.
     """
-    res = db.leaf_disease_runs.delete_many({})
+    res = db.ad_inspections.delete_many({})
     return {"status": "cleared", "deleted_count": res.deleted_count}
 

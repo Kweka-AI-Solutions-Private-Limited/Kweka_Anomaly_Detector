@@ -28,13 +28,13 @@ def validate_group_name(db: Database, name: str, current_group_id: Optional[str]
     if len(trimmed) > 100:
         raise HTTPException(status_code=400, detail="Group name cannot exceed 100 characters.")
 
-    # Case-insensitive duplicate check
+    # Case-insensitive duplicate check among group documents in ad_models
     regex_pattern = f"^{regex_escape(trimmed)}$"
-    query: Dict[str, Any] = {"name": {"$regex": regex_pattern, "$options": "i"}}
+    query: Dict[str, Any] = {"is_group": True, "name": {"$regex": regex_pattern, "$options": "i"}}
     if current_group_id and ObjectId.is_valid(current_group_id):
         query["_id"] = {"$ne": ObjectId(current_group_id)}
 
-    existing = db.model_groups.find_one(query)
+    existing = db.ad_models.find_one(query)
     if existing:
         raise HTTPException(status_code=400, detail=f"A model group with the name '{trimmed}' already exists.")
 
@@ -59,9 +59,10 @@ def create_model_group(db: Database, name: str, description: Optional[str] = Non
     )
 
     data = doc.model_dump() if hasattr(doc, "model_dump") else doc.dict()
+    data["is_group"] = True
 
     try:
-        res = db.model_groups.insert_one(data)
+        res = db.ad_models.insert_one(data)
     except DuplicateKeyError:
         raise HTTPException(status_code=400, detail=f"A model group with the name '{trimmed_name}' already exists.")
 
@@ -76,16 +77,16 @@ def get_model_groups(db: Database) -> List[Dict[str, Any]]:
     Returns all model groups sorted by name ASC, with aggregated model_count
     excluding deleted models (status == 'deleted').
     """
-    # 1. Single aggregation query for model counts by group_id (excludes status=='deleted')
+    # 1. Single aggregation query for model counts by group_id (excludes status=='deleted' and is_group==True)
     pipeline = [
-        {"$match": {"status": {"$ne": "deleted"}, "group_id": {"$ne": None}}},
+        {"$match": {"status": {"$ne": "deleted"}, "group_id": {"$ne": None}, "is_group": {"$ne": True}}},
         {"$group": {"_id": "$group_id", "count": {"$sum": 1}}}
     ]
-    counts_cursor = db.models.aggregate(pipeline)
+    counts_cursor = db.ad_models.aggregate(pipeline)
     count_map = {str(item["_id"]): item["count"] for item in counts_cursor if item.get("_id")}
 
     # 2. Query groups
-    cursor = db.model_groups.find().sort("name", 1)
+    cursor = db.ad_models.find({"is_group": True}).sort("name", 1)
     groups = []
     for doc in cursor:
         g_id = str(doc["_id"])
@@ -101,7 +102,7 @@ def get_model_group(db: Database, group_id: str) -> Dict[str, Any]:
     if not group_id or not ObjectId.is_valid(group_id):
         raise HTTPException(status_code=400, detail=f"Invalid group_id format '{group_id}'.")
 
-    doc = db.model_groups.find_one({"_id": ObjectId(group_id)})
+    doc = db.ad_models.find_one({"_id": ObjectId(group_id), "is_group": True})
     if not doc:
         raise HTTPException(status_code=404, detail=f"Model group with ID '{group_id}' not found.")
 
@@ -109,8 +110,12 @@ def get_model_group(db: Database, group_id: str) -> Dict[str, Any]:
     doc["id"] = g_id
     doc["_id"] = g_id
 
-    # Fetch member models (excluding deleted)
-    models_cursor = db.models.find({"group_id": ObjectId(group_id), "status": {"$ne": "deleted"}}).sort("name", 1)
+    # Fetch member models (excluding deleted and groups)
+    models_cursor = db.ad_models.find({
+        "group_id": ObjectId(group_id),
+        "status": {"$ne": "deleted"},
+        "is_group": {"$ne": True}
+    }).sort("name", 1)
     member_models = []
     for m in models_cursor:
         m["id"] = str(m["_id"])
@@ -136,7 +141,7 @@ def update_model_group(
     if not group_id or not ObjectId.is_valid(group_id):
         raise HTTPException(status_code=400, detail=f"Invalid group_id format '{group_id}'.")
 
-    group = db.model_groups.find_one({"_id": ObjectId(group_id)})
+    group = db.ad_models.find_one({"_id": ObjectId(group_id), "is_group": True})
     if not group:
         raise HTTPException(status_code=404, detail=f"Model group with ID '{group_id}' not found.")
 
@@ -150,7 +155,7 @@ def update_model_group(
         updates["description"] = description.strip() if description and description.strip() else None
 
     try:
-        db.model_groups.update_one({"_id": ObjectId(group_id)}, {"$set": updates})
+        db.ad_models.update_one({"_id": ObjectId(group_id), "is_group": True}, {"$set": updates})
     except DuplicateKeyError:
         raise HTTPException(status_code=400, detail="A model group with that name already exists.")
 
@@ -166,18 +171,18 @@ def delete_model_group(db: Database, group_id: str) -> Dict[str, Any]:
     if not group_id or not ObjectId.is_valid(group_id):
         raise HTTPException(status_code=400, detail=f"Invalid group_id format '{group_id}'.")
 
-    group = db.model_groups.find_one({"_id": ObjectId(group_id)})
+    group = db.ad_models.find_one({"_id": ObjectId(group_id), "is_group": True})
     if not group:
         raise HTTPException(status_code=404, detail=f"Model group with ID '{group_id}' not found.")
 
     # 1. Unassign all models belonging to this group
-    db.models.update_many(
-        {"group_id": ObjectId(group_id)},
+    db.ad_models.update_many(
+        {"group_id": ObjectId(group_id), "is_group": {"$ne": True}},
         {"$set": {"group_id": None, "updated_at": datetime.utcnow()}}
     )
 
     # 2. Delete group document
-    db.model_groups.delete_one({"_id": ObjectId(group_id)})
+    db.ad_models.delete_one({"_id": ObjectId(group_id), "is_group": True})
 
     return {
         "message": f"Model group '{group.get('name')}' deleted successfully. Associated models have been ungrouped.",

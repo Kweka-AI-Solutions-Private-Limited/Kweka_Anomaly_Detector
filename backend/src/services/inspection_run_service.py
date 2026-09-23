@@ -34,7 +34,7 @@ def get_next_run_number(db: Database, model_id: str) -> int:
     Returns the next sequential, chronological run_number for a specific model.
     Sequence starts at 1 per model.
     """
-    latest_run = db.inspection_runs.find_one(
+    latest_run = db.ad_inspection_runs.find_one(
         {"model_id": ObjectId(model_id)},
         sort=[("run_number", -1)]
     )
@@ -129,7 +129,7 @@ def _process_inspection_run_background(
             })
 
         # Dynamically update progress in MongoDB after EACH image finishes
-        db.inspection_runs.update_one(
+        db.ad_inspection_runs.update_one(
             {"_id": ObjectId(run_id)},
             {"$set": {
                 "completed_images": completed_images,
@@ -154,7 +154,7 @@ def _process_inspection_run_background(
         final_status = "failed"
 
     completed_time = datetime.utcnow()
-    db.inspection_runs.update_one(
+    db.ad_inspection_runs.update_one(
         {"_id": ObjectId(run_id)},
         {"$set": {
             "status": final_status,
@@ -174,7 +174,7 @@ def _process_inspection_run_background(
 
     # Trigger Inspection Run Notification
     try:
-        run_doc = db.inspection_runs.find_one({"_id": ObjectId(run_id)})
+        run_doc = db.ad_inspection_runs.find_one({"_id": ObjectId(run_id)})
         run_number = run_doc.get("run_number", 1) if run_doc else 1
         create_run_notification(
             db,
@@ -257,7 +257,7 @@ def create_inspection_run(
     )
 
     run_data = run_doc.model_dump() if hasattr(run_doc, "model_dump") else run_doc.dict()
-    res = db.inspection_runs.insert_one(run_data)
+    res = db.ad_inspection_runs.insert_one(run_data)
     run_id = str(res.inserted_id)
 
     # 5. Execute in background if background_tasks is supplied, or synchronously if not
@@ -293,7 +293,7 @@ def create_inspection_run(
 
 
     # Re-fetch updated run document
-    updated_run = db.inspection_runs.find_one({"_id": ObjectId(run_id)}) or run_data
+    updated_run = db.ad_inspection_runs.find_one({"_id": ObjectId(run_id)}) or run_data
     serialized = serialize_object_ids(updated_run)
     run_resp_id = serialized.get("id") or str(serialized.get("_id", run_id))
     serialized["run_id"] = run_resp_id
@@ -322,7 +322,7 @@ def get_inspection_runs(
     if status:
         query["status"] = status
 
-    cursor = db.inspection_runs.find(query).sort("created_at", -1)
+    cursor = db.ad_inspection_runs.find(query).sort("created_at", -1)
     runs = []
     for doc in cursor:
         serialized = serialize_object_ids(doc)
@@ -337,7 +337,7 @@ def get_inspection_run(db: Database, run_id: str) -> Dict[str, Any]:
     if not ObjectId.is_valid(run_id):
         raise HTTPException(status_code=400, detail=f"Invalid run_id format '{run_id}'.")
 
-    doc = db.inspection_runs.find_one({"_id": ObjectId(run_id)})
+    doc = db.ad_inspection_runs.find_one({"_id": ObjectId(run_id)})
     if not doc:
         raise HTTPException(status_code=404, detail=f"Inspection run with ID '{run_id}' not found.")
 
@@ -345,11 +345,11 @@ def get_inspection_run(db: Database, run_id: str) -> Dict[str, Any]:
     serialized_run["run_id"] = str(serialized_run.get("_id", run_id))
 
     # Fetch associated inspections in chronological order (1-to-1 batch upload order)
-    cursor = db.inspections.find({"run_id": ObjectId(run_id)}).sort("created_at", 1)
+    cursor = db.ad_inspections.find({"run_id": ObjectId(run_id)}).sort("created_at", 1)
     inspections = []
     for insp_doc in cursor:
         insp_id = str(insp_doc["_id"])
-        res_doc = db.inspection_results.find_one({"inspection_id": ObjectId(insp_id)})
+        res_doc = db.ad_inspections.find_one({"inspection_id": ObjectId(insp_id)})
         inspections.append(normalize_inspection_payload(insp_doc, res_doc))
 
     serialized_run["inspections"] = inspections

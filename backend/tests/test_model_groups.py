@@ -54,12 +54,10 @@ def setup_teardown_db():
     """Cleans up test records created during test execution."""
     db = get_db()
     ensure_indexes(db)
-    # Delete test groups and test models
-    db.model_groups.delete_many({"name": {"$regex": "^TEST_MG_"}})
-    db.models.delete_many({"name": {"$regex": "^TEST_MG_"}})
+    # Delete test groups and test models from ad_models
+    db.ad_models.delete_many({"name": {"$regex": "^TEST_MG_"}})
     yield
-    db.model_groups.delete_many({"name": {"$regex": "^TEST_MG_"}})
-    db.models.delete_many({"name": {"$regex": "^TEST_MG_"}})
+    db.ad_models.delete_many({"name": {"$regex": "^TEST_MG_"}})
 
 
 def test_model_groups_full_suite():
@@ -160,7 +158,7 @@ def test_model_groups_full_suite():
 
     # 18. Historical Inspection Unchanged
     insp_id = "TEST_MG_INSP_999"
-    db.inspections.insert_one({
+    db.ad_inspections.insert_one({
         "id": insp_id,
         "model_id": m4["id"],
         "status": "REJECT",
@@ -168,17 +166,17 @@ def test_model_groups_full_suite():
         "category": "Screw"
     })
     delete_model_group(db, g3["id"])
-    insp_doc = db.inspections.find_one({"id": insp_id})
+    insp_doc = db.ad_inspections.find_one({"id": insp_id})
     assert insp_doc is not None
     assert insp_doc["status"] == "REJECT"
-    db.inspections.delete_one({"id": insp_id})
+    db.ad_inspections.delete_one({"id": insp_id})
 
     # 19. Deleted Model Cannot Be Assigned
     res_del_assign = client.patch(f"/api/models/{m3['id']}", json={"group_id": g1['id']})
     assert res_del_assign.status_code == 404
 
     # 20. Legacy Models without group_id behave as Ungrouped
-    legacy_res = db.models.insert_one({"name": "TEST_MG_Legacy", "status": "draft"})
+    legacy_res = db.ad_models.insert_one({"name": "TEST_MG_Legacy", "status": "draft"})
     legacy_model = get_model(db, str(legacy_res.inserted_id))
     assert legacy_model["group_id"] is None
     assert legacy_model["group"] is None

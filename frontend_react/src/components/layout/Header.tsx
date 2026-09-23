@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Bell, User, Settings, LogOut, ChevronDown } from 'lucide-react';
+import { Bell, User, Settings, LogOut, ChevronDown, Menu } from 'lucide-react';
 import {
   NotificationItem as NotificationModel,
   getNotifications,
@@ -10,7 +10,11 @@ import {
 } from '../../api/notifications';
 import { NotificationPanel } from '../notifications/NotificationPanel';
 
-export const Header: React.FC = () => {
+interface HeaderProps {
+  onToggleMobileMenu?: () => void;
+}
+
+export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu }) => {
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -175,14 +179,24 @@ export const Header: React.FC = () => {
   };
 
   return (
-    <header className="h-[70px] bg-white border-b border-industrial-200 px-7 flex items-center justify-between flex-shrink-0 z-20 shadow-sm">
-      {/* Breadcrumb Title */}
+    <header className="h-[70px] bg-white border-b border-industrial-200 px-4 sm:px-7 flex items-center justify-between flex-shrink-0 z-20 shadow-xs">
+      {/* Left: Mobile Menu Button & Breadcrumb Title */}
       <div className="flex items-center space-x-3 text-xs font-mono">
-        <span className="text-industrial-400 uppercase tracking-wider font-bold text-xs">
+        {onToggleMobileMenu && (
+          <button
+            type="button"
+            onClick={onToggleMobileMenu}
+            aria-label="Toggle Navigation Menu"
+            className="lg:hidden p-2 text-industrial-600 hover:text-industrial-900 hover:bg-industrial-100 rounded-lg transition-colors"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+        )}
+        <span className="text-industrial-400 uppercase tracking-wider font-bold text-xs hidden sm:inline">
           ANOMALY DETECTOR
         </span>
-        <span className="text-industrial-300">/</span>
-        <span className="text-industrial-900 font-extrabold text-lg tracking-tight font-sans">
+        <span className="text-industrial-300 hidden sm:inline">/</span>
+        <span className="text-industrial-900 font-extrabold text-base sm:text-lg tracking-tight font-sans truncate">
           {getPageTitle(location.pathname)}
         </span>
       </div>

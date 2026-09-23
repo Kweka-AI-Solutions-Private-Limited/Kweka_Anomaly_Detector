@@ -15,6 +15,14 @@ Validates:
 11. No dosage is generated when crop identity is unresolved.
 """
 
+import sys
+from pathlib import Path
+
+# Add src to path
+src_dir = Path(__file__).resolve().parent.parent / "src"
+if str(src_dir) not in sys.path:
+    sys.path.insert(0, str(src_dir))
+
 import unittest
 from schemas.leaf_disease import (
     OverallImageValidationResult,

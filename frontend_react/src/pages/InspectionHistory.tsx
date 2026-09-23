@@ -668,7 +668,6 @@ export const InspectionHistory: React.FC = () => {
                   <th className="py-3.5 px-4">Version</th>
                   <th className="py-3.5 px-4">Run</th>
                   <th className="py-3.5 px-4">Verdict</th>
-                  <th className="py-3.5 px-4">Defect Type</th>
                   <th className="py-3.5 px-4">Severity</th>
                   <th className="py-3.5 px-4 font-mono">Score</th>
                   <th className="py-3.5 px-4">Timestamp</th>
@@ -691,7 +690,6 @@ export const InspectionHistory: React.FC = () => {
                   const isPass = predStatus === 'normal' || predStatus === 'pass';
 
                   // VLM metadata extraction
-                  const defectType = isPass ? 'N/A' : (vlm?.defect_type || 'N/A');
                   const severityVal = isPass ? 'N/A' : (vlm?.severity || pred?.severity || 'N/A');
 
                   return (
@@ -733,9 +731,6 @@ export const InspectionHistory: React.FC = () => {
                       </td>
                       <td className="py-3 px-4">
                         <Badge status={pred?.status || 'normal'} size="sm" />
-                      </td>
-                      <td className="py-3 px-4 font-sans font-medium text-industrial-700 max-w-[130px] truncate">
-                        {defectType}
                       </td>
                       <td className="py-3 px-4 font-sans text-xs font-semibold text-industrial-700">
                         {severityVal}

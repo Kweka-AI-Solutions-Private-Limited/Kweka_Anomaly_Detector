@@ -36,12 +36,12 @@ export const VLMDefectAnalysisCard: React.FC<VLMDefectAnalysisCardProps> = ({
       <div className="pt-4 border-t border-industrial-200 mt-4">
         <div className="flex items-center space-x-2 text-industrial-900 font-bold mb-2">
           <Sparkles className="w-4 h-4 text-accent-500" />
-          <h4 className="text-xs uppercase tracking-wider text-industrial-500">AI DEFECT ANALYSIS</h4>
-          <span className="text-[10px] bg-industrial-100 text-industrial-600 px-1.5 py-0.5 rounded font-normal">
+          <h4 className="text-xs font-bold uppercase tracking-wider text-industrial-600">AI DEFECT ANALYSIS</h4>
+          <span className="text-xs bg-industrial-100 text-industrial-700 px-2 py-0.5 rounded font-medium">
             Powered by Gemini
           </span>
         </div>
-        <div className="p-3 bg-industrial-50 rounded-lg border border-industrial-200 flex items-center space-x-2 text-industrial-600 text-xs">
+        <div className="p-3 bg-industrial-50 rounded-lg border border-industrial-200 flex items-center space-x-2 text-industrial-700 text-sm">
           <CheckCircle className="w-4 h-4 text-pass-500 shrink-0" />
           <span>Not required — PatchCore classified this image as normal.</span>
         </div>
@@ -59,10 +59,10 @@ export const VLMDefectAnalysisCard: React.FC<VLMDefectAnalysisCardProps> = ({
           <div className="p-1 rounded bg-brand-50 text-brand-600 border border-brand-200">
             <Sparkles className="w-4 h-4 text-brand-600" />
           </div>
-          <h4 className="text-xs font-bold uppercase tracking-wider text-industrial-900 flex items-center gap-1.5">
+          <h4 className="text-xs font-extrabold uppercase tracking-wider text-industrial-900 flex items-center gap-1.5">
             AI DEFECT ANALYSIS
           </h4>
-          <span className="text-[10px] bg-brand-50 text-brand-700 border border-brand-200 px-2 py-0.5 rounded font-semibold">
+          <span className="text-xs bg-brand-50 text-brand-800 border border-brand-200 px-2 py-0.5 rounded font-bold">
             Powered by Gemini
           </span>
         </div>
@@ -74,9 +74,9 @@ export const VLMDefectAnalysisCard: React.FC<VLMDefectAnalysisCardProps> = ({
             size="sm"
             onClick={() => onGenerate(true)}
             disabled={isLoading}
-            className="text-[11px] h-6 px-2 py-0"
+            className="text-xs h-7 px-2.5 py-0.5 font-bold"
           >
-            <RefreshCw className={`w-3 h-3 mr-1 ${isLoading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-3.5 h-3.5 mr-1 ${isLoading ? 'animate-spin' : ''}`} />
             Retry
           </Button>
         )}
@@ -85,7 +85,7 @@ export const VLMDefectAnalysisCard: React.FC<VLMDefectAnalysisCardProps> = ({
       {/* 1. Un-generated initial state (Show prominent Generate button) */}
       {!vlmAnalysis && status === 'not_generated' && !isLoading && (
         <div className="p-4 bg-industrial-50 rounded-xl border border-industrial-200 text-center space-y-3">
-          <p className="text-xs text-industrial-600 font-medium">
+          <p className="text-sm text-industrial-700 font-semibold">
             PatchCore flagged an anomaly. Click below to analyze visual evidence with Google Gemini AI.
           </p>
           {onGenerate && (
@@ -94,7 +94,7 @@ export const VLMDefectAnalysisCard: React.FC<VLMDefectAnalysisCardProps> = ({
               size="sm"
               onClick={() => onGenerate(false)}
               icon={<Play className="w-3.5 h-3.5" />}
-              className="mx-auto"
+              className="mx-auto text-xs sm:text-sm font-bold"
             >
               Generate AI Defect Analysis
             </Button>
@@ -104,42 +104,42 @@ export const VLMDefectAnalysisCard: React.FC<VLMDefectAnalysisCardProps> = ({
 
       {/* 2. Generating / Loading state */}
       {isLoading && (
-        <div className="p-4 bg-slate-900 text-white rounded-xl border border-slate-800 flex items-center justify-center space-x-3 text-xs">
+        <div className="p-4 bg-slate-900 text-white rounded-xl border border-slate-800 flex items-center justify-center space-x-3 text-sm">
           <RefreshCw className="w-4 h-4 text-accent-400 animate-spin shrink-0" />
-          <span className="font-medium text-slate-200">Analyzing visual evidence with Gemini AI...</span>
+          <span className="font-semibold text-slate-200">Analyzing visual evidence with Gemini AI...</span>
         </div>
       )}
 
       {/* 3. Completed State (Structured Card) */}
       {status === 'completed' && vlmAnalysis && !isLoading && (
-        <div className="bg-slate-900 text-white rounded-lg p-3 space-y-3 border border-slate-800 text-xs">
-          <div className="grid grid-cols-2 gap-2 pb-2 border-b border-slate-800">
+        <div className="bg-slate-900 text-white rounded-xl p-4 space-y-3.5 border border-slate-800 text-sm">
+          <div className="grid grid-cols-2 gap-3 pb-2.5 border-b border-slate-800">
             <div>
-              <span className="text-slate-400 block text-[10px] uppercase font-medium">Defect Type</span>
-              <span className="font-semibold text-white">
+              <span className="text-slate-400 block text-xs uppercase font-bold tracking-wide">Defect Type</span>
+              <span className="font-bold text-white text-sm">
                 {vlmAnalysis.defect_type || 'Unknown'}
               </span>
             </div>
             <div>
-              <span className="text-slate-400 block text-[10px] uppercase font-medium">Location</span>
-              <span className="font-semibold text-white">
+              <span className="text-slate-400 block text-xs uppercase font-bold tracking-wide">Location</span>
+              <span className="font-bold text-white text-sm">
                 {vlmAnalysis.location || 'Unspecified'}
               </span>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 pb-2 border-b border-slate-800">
+          <div className="grid grid-cols-2 gap-3 pb-2.5 border-b border-slate-800">
             <div>
-              <span className="text-slate-400 block text-[10px] uppercase font-medium">Severity</span>
-              <div className="mt-0.5">
+              <span className="text-slate-400 block text-xs uppercase font-bold tracking-wide">Severity</span>
+              <div className="mt-1">
                 <Badge type={getSeverityBadgeType(vlmAnalysis.severity)}>
                   {vlmAnalysis.severity || 'Medium'}
                 </Badge>
               </div>
             </div>
             <div>
-              <span className="text-slate-400 block text-[10px] uppercase font-medium">Prominence</span>
-              <span className="font-semibold text-slate-200">
+              <span className="text-slate-400 block text-xs uppercase font-bold tracking-wide">Prominence</span>
+              <span className="font-bold text-slate-200 text-sm">
                 {vlmAnalysis.prominence || 'Moderate'}
               </span>
             </div>
@@ -147,8 +147,8 @@ export const VLMDefectAnalysisCard: React.FC<VLMDefectAnalysisCardProps> = ({
 
           {vlmAnalysis.visual_evidence && (
             <div>
-              <span className="text-slate-400 block text-[10px] uppercase font-medium mb-0.5">Visual Evidence</span>
-              <p className="text-slate-300 text-[11px] leading-relaxed bg-slate-950/60 p-2 rounded border border-slate-800/80">
+              <span className="text-slate-400 block text-xs uppercase font-bold tracking-wide mb-1">Visual Evidence</span>
+              <p className="text-slate-200 text-xs sm:text-sm leading-relaxed bg-slate-950/70 p-3 rounded-lg border border-slate-800/90 font-medium">
                 {vlmAnalysis.visual_evidence}
               </p>
             </div>
@@ -156,17 +156,17 @@ export const VLMDefectAnalysisCard: React.FC<VLMDefectAnalysisCardProps> = ({
 
           {vlmAnalysis.explanation && (
             <div>
-              <span className="text-slate-400 block text-[10px] uppercase font-medium mb-0.5">Explanation</span>
-              <p className="text-slate-300 text-[11px] leading-relaxed bg-slate-950/60 p-2 rounded border border-slate-800/80">
+              <span className="text-slate-400 block text-xs uppercase font-bold tracking-wide mb-1">Explanation</span>
+              <p className="text-slate-200 text-xs sm:text-sm leading-relaxed bg-slate-950/70 p-3 rounded-lg border border-slate-800/90 font-medium">
                 {vlmAnalysis.explanation}
               </p>
             </div>
           )}
 
           {vlmAnalysis.confidence !== undefined && vlmAnalysis.confidence !== null && (
-            <div className="flex items-center justify-between text-[10px] text-slate-400 pt-1">
-              <span>Interpretation Confidence</span>
-              <span className="font-mono text-accent-400 font-bold">
+            <div className="flex items-center justify-between text-xs text-slate-400 pt-1 font-mono">
+              <span className="font-semibold text-slate-400">Interpretation Confidence:</span>
+              <span className="text-accent-400 font-extrabold text-sm">
                 {(vlmAnalysis.confidence * 100).toFixed(0)}%
               </span>
             </div>
@@ -176,12 +176,12 @@ export const VLMDefectAnalysisCard: React.FC<VLMDefectAnalysisCardProps> = ({
 
       {/* 4. Unavailable State */}
       {status === 'unavailable' && !isLoading && (
-        <div className="p-3 bg-amber-50 rounded-lg border border-amber-200 text-xs space-y-2">
-          <div className="flex items-center space-x-1.5 text-amber-800 font-medium">
-            <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+        <div className="p-4 bg-amber-50 rounded-xl border border-amber-200 text-sm space-y-2">
+          <div className="flex items-center space-x-1.5 text-amber-900 font-bold">
+            <AlertCircle className="w-4.5 h-4.5 text-amber-600 shrink-0" />
             <span>Analysis Unavailable</span>
           </div>
-          <p className="text-amber-700 text-[11px] pl-5.5">
+          <p className="text-amber-800 text-xs sm:text-sm pl-6 leading-relaxed font-medium">
             {vlmAnalysis?.explanation || 'GEMINI_API_KEY is not configured or service is temporarily unreachable.'}
           </p>
           {onGenerate && (
@@ -189,9 +189,9 @@ export const VLMDefectAnalysisCard: React.FC<VLMDefectAnalysisCardProps> = ({
               variant="outline"
               size="sm"
               onClick={() => onGenerate(true)}
-              className="text-[11px] h-6 px-2 py-0 ml-5.5"
+              className="text-xs h-7 px-3 py-1 ml-6 font-bold"
             >
-              <RefreshCw className="w-3 h-3 mr-1" />
+              <RefreshCw className="w-3.5 h-3.5 mr-1" />
               Generate AI Defect Analysis Again
             </Button>
           )}
@@ -200,12 +200,12 @@ export const VLMDefectAnalysisCard: React.FC<VLMDefectAnalysisCardProps> = ({
 
       {/* 5. Failed State */}
       {status === 'failed' && !isLoading && (
-        <div className="p-3 bg-reject-50 rounded-lg border border-reject-200 text-xs space-y-2">
-          <div className="flex items-center space-x-1.5 text-reject-800 font-medium">
-            <AlertCircle className="w-4 h-4 text-reject-600 shrink-0" />
+        <div className="p-4 bg-reject-50 rounded-xl border border-reject-200 text-sm space-y-2">
+          <div className="flex items-center space-x-1.5 text-reject-900 font-bold">
+            <AlertCircle className="w-4.5 h-4.5 text-reject-600 shrink-0" />
             <span>Analysis Failed</span>
           </div>
-          <p className="text-reject-700 text-[11px] pl-5.5">
+          <p className="text-reject-800 text-xs sm:text-sm pl-6 leading-relaxed font-medium">
             {vlmAnalysis?.explanation || 'Gemini VLM analysis encountered an error while processing.'}
           </p>
           {onGenerate && (
@@ -213,9 +213,9 @@ export const VLMDefectAnalysisCard: React.FC<VLMDefectAnalysisCardProps> = ({
               variant="outline"
               size="sm"
               onClick={() => onGenerate(true)}
-              className="text-[11px] h-6 px-2 py-0 ml-5.5"
+              className="text-xs h-7 px-3 py-1 ml-6 font-bold"
             >
-              <RefreshCw className="w-3 h-3 mr-1" />
+              <RefreshCw className="w-3.5 h-3.5 mr-1" />
               Generate AI Defect Analysis Again
             </Button>
           )}

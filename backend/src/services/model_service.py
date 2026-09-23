@@ -52,7 +52,7 @@ def validate_model_artifacts_and_version(db: Database, model: Dict[str, Any]) ->
         return False, f"Invalid active_version_id format '{active_v_id}'."
 
     m_id = str(model.get("_id") or model.get("id"))
-    v_doc = db.model_versions.find_one({"_id": ObjectId(str(active_v_id)), "model_id": ObjectId(m_id)})
+    v_doc = db.ad_models.find_one({"_id": ObjectId(str(active_v_id)), "model_id": ObjectId(m_id)})
     if not v_doc:
         return False, f"Referenced model version '{active_v_id}' was not found for model '{m_id}'."
 
@@ -103,7 +103,7 @@ def sync_model_usability_status(db: Database, doc: Dict[str, Any]) -> Dict[str, 
         else:
             new_status = "error"
 
-    db.models.update_one(
+    db.ad_models.update_one(
         {"_id": ObjectId(model_id)},
         {"$set": {"status": new_status, "updated_at": datetime.utcnow()}}
     )
@@ -129,7 +129,7 @@ def validate_and_parse_group_id(db: Database, group_id: Optional[str]) -> Option
         raise HTTPException(status_code=400, detail=f"Invalid group_id format '{group_id_str}'.")
 
     group_obj_id = ObjectId(group_id_str)
-    group_doc = db.model_groups.find_one({"_id": group_obj_id})
+    group_doc = db.ad_models.find_one({"_id": group_obj_id, "is_group": True})
     if not group_doc:
         raise HTTPException(status_code=404, detail=f"Model group with ID '{group_id_str}' not found.")
 
@@ -164,19 +164,19 @@ def create_model(
     )
 
     data = doc.model_dump() if hasattr(doc, "model_dump") else doc.dict()
-    res = db.models.insert_one(data)
+    res = db.ad_models.insert_one(data)
     return get_model(db, str(res.inserted_id))
 
 
 def get_models(db: Database) -> List[Dict[str, Any]]:
     """Returns all models (excluding deleted) sorted by updated_at DESC."""
-    cursor = list(db.models.find({"status": {"$ne": "deleted"}}).sort("updated_at", -1))
+    cursor = list(db.ad_models.find({"status": {"$ne": "deleted"}, "is_group": {"$ne": True}}).sort("updated_at", -1))
 
     # Single bulk lookup for referenced model_groups to avoid N+1 queries
     group_ids = [doc["group_id"] for doc in cursor if doc.get("group_id") and ObjectId.is_valid(str(doc["group_id"]))]
     groups_map = {}
     if group_ids:
-        groups_cursor = db.model_groups.find({"_id": {"$in": group_ids}})
+        groups_cursor = db.ad_models.find({"_id": {"$in": group_ids}, "is_group": True})
         for g in groups_cursor:
             groups_map[str(g["_id"])] = {
                 "id": str(g["_id"]),
@@ -206,7 +206,7 @@ def get_model(db: Database, model_id: str) -> Dict[str, Any]:
     if not ObjectId.is_valid(model_id):
         raise HTTPException(status_code=400, detail=f"Invalid model_id format '{model_id}'.")
 
-    doc = db.models.find_one({"_id": ObjectId(model_id), "status": {"$ne": "deleted"}})
+    doc = db.ad_models.find_one({"_id": ObjectId(model_id), "status": {"$ne": "deleted"}, "is_group": {"$ne": True}})
     if not doc:
         raise HTTPException(status_code=404, detail=f"Model with ID '{model_id}' not found.")
 
@@ -220,7 +220,7 @@ def get_model(db: Database, model_id: str) -> Dict[str, Any]:
     g_id = str(doc["group_id"]) if doc.get("group_id") else None
     doc["group_id"] = g_id
     if g_id and ObjectId.is_valid(g_id):
-        g_doc = db.model_groups.find_one({"_id": ObjectId(g_id)})
+        g_doc = db.ad_models.find_one({"_id": ObjectId(g_id)})
         doc["group"] = {
             "id": str(g_doc["_id"]),
             "name": g_doc.get("name", ""),
@@ -260,7 +260,7 @@ def update_model(
         parsed_group_id = validate_and_parse_group_id(db, group_id)
         updates["group_id"] = parsed_group_id
 
-    db.models.update_one({"_id": ObjectId(model_id)}, {"$set": updates})
+    db.ad_models.update_one({"_id": ObjectId(model_id)}, {"$set": updates})
     return get_model(db, model_id)
 
 
@@ -275,13 +275,13 @@ def activate_model(db: Database, model_id: str) -> Dict[str, Any]:
     if not is_valid:
         # Update model status to error if checkpoint is missing or unloadable
         if error_msg and ("missing" in error_msg.lower() or "failed" in error_msg.lower() or "empty" in error_msg.lower()):
-            db.models.update_one(
+            db.ad_models.update_one(
                 {"_id": ObjectId(model_id)},
                 {"$set": {"status": "error", "error_reason": error_msg, "updated_at": datetime.utcnow()}}
             )
         raise HTTPException(status_code=400, detail=f"Cannot activate model: {error_msg}")
 
-    db.models.update_one(
+    db.ad_models.update_one(
         {"_id": ObjectId(model_id)},
         {"$set": {
             "status": "active",
@@ -300,7 +300,7 @@ def deactivate_model(db: Database, model_id: str) -> Dict[str, Any]:
     """
     model = get_model(db, model_id)
 
-    db.models.update_one(
+    db.ad_models.update_one(
         {"_id": ObjectId(model_id)},
         {"$set": {
             "status": "inactive",
@@ -337,7 +337,7 @@ def add_reference_images(db: Database, model_id: str, files: List[UploadFile]) -
         )
 
         data = ref_doc.model_dump() if hasattr(ref_doc, "model_dump") else ref_doc.dict()
-        res = db.reference_images.insert_one(data)
+        res = db.ad_models.insert_one(data)
         data["id"] = str(res.inserted_id)
         data["_id"] = str(res.inserted_id)
         data["model_id"] = str(data["model_id"])
@@ -345,8 +345,8 @@ def add_reference_images(db: Database, model_id: str, files: List[UploadFile]) -
         uploaded_records.append(data)
 
     # Update reference image count on model
-    new_count = db.reference_images.count_documents({"model_id": ObjectId(model_id)})
-    db.models.update_one(
+    new_count = db.ad_models.count_documents({"model_id": ObjectId(model_id)})
+    db.ad_models.update_one(
         {"_id": ObjectId(model_id)},
         {"$set": {"reference_image_count": new_count, "updated_at": datetime.utcnow()}}
     )
@@ -357,7 +357,7 @@ def add_reference_images(db: Database, model_id: str, files: List[UploadFile]) -
 def get_reference_images(db: Database, model_id: str) -> List[Dict[str, Any]]:
     """Lists metadata for reference images of a model."""
     get_model(db, model_id)  # Validate 404
-    cursor = db.reference_images.find({"model_id": ObjectId(model_id)}).sort("uploaded_at", -1)
+    cursor = db.ad_models.find({"model_id": ObjectId(model_id)}).sort("uploaded_at", -1)
     refs = []
     for doc in cursor:
         doc["id"] = str(doc["_id"])
@@ -373,18 +373,18 @@ def build_model_version(db: Database, model_id: str) -> Dict[str, Any]:
     model = get_model(db, model_id)
 
     # Fetch reference image docs
-    ref_cursor = list(db.reference_images.find({"model_id": ObjectId(model_id)}))
+    ref_cursor = list(db.ad_models.find({"model_id": ObjectId(model_id)}))
     if len(ref_cursor) == 0:
         raise HTTPException(status_code=400, detail="Insufficient reference images. Please upload GOOD reference images first.")
 
     # Mark model status as building
-    db.models.update_one(
+    db.ad_models.update_one(
         {"_id": ObjectId(model_id)},
         {"$set": {"status": "building", "error_reason": None, "updated_at": datetime.utcnow()}}
     )
 
     # Determine next version number
-    latest_v = db.model_versions.find_one({"model_id": ObjectId(model_id)}, sort=[("version_number", -1)])
+    latest_v = db.ad_models.find_one({"model_id": ObjectId(model_id)}, sort=[("version_number", -1)])
     next_version_num = (latest_v["version_number"] + 1) if latest_v else 1
 
     # Create model version record in building status
@@ -401,7 +401,7 @@ def build_model_version(db: Database, model_id: str) -> Dict[str, Any]:
     )
 
     v_data = v_doc.model_dump() if hasattr(v_doc, "model_dump") else v_doc.dict()
-    v_res = db.model_versions.insert_one(v_data)
+    v_res = db.ad_models.insert_one(v_data)
     version_id = v_res.inserted_id
 
     # Gather reference image file paths
@@ -418,7 +418,7 @@ def build_model_version(db: Database, model_id: str) -> Dict[str, Any]:
             calibrated_threshold, build_time_ms, artifact_uris = build_patchcore_version(ref_paths, artifacts_dir)
 
         # Update version document to ready
-        db.model_versions.update_one(
+        db.ad_models.update_one(
             {"_id": version_id},
             {"$set": {
                 "status": "ready",
@@ -432,13 +432,13 @@ def build_model_version(db: Database, model_id: str) -> Dict[str, Any]:
         )
 
         # Associate used reference images with this new version
-        db.reference_images.update_many(
+        db.ad_models.update_many(
             {"_id": {"$in": [ObjectId(r) for r in ref_ids]}},
             {"$set": {"version_id": version_id}}
         )
 
         # Update model's active_version_id and set status to INACTIVE (user must explicitly activate)
-        db.models.update_one(
+        db.ad_models.update_one(
             {"_id": ObjectId(model_id)},
             {"$set": {
                 "active_version_id": version_id,
@@ -461,7 +461,7 @@ def build_model_version(db: Database, model_id: str) -> Dict[str, Any]:
         except Exception as n_err:
             print(f"[WARN] Failed to create model build notification: {n_err}")
 
-        completed_version = db.model_versions.find_one({"_id": version_id})
+        completed_version = db.ad_models.find_one({"_id": version_id})
         completed_version["id"] = str(completed_version["_id"])
         completed_version["_id"] = str(completed_version["_id"])
         completed_version["model_id"] = str(completed_version["model_id"])
@@ -469,8 +469,8 @@ def build_model_version(db: Database, model_id: str) -> Dict[str, Any]:
 
     except Exception as e:
         err_msg = str(e)
-        db.model_versions.update_one({"_id": version_id}, {"$set": {"status": "failed"}})
-        db.models.update_one(
+        db.ad_models.update_one({"_id": version_id}, {"$set": {"status": "failed"}})
+        db.ad_models.update_one(
             {"_id": ObjectId(model_id)},
             {"$set": {"status": "error", "error_reason": err_msg, "updated_at": datetime.utcnow()}}
         )
@@ -496,7 +496,7 @@ def build_model_version(db: Database, model_id: str) -> Dict[str, Any]:
 def get_model_versions(db: Database, model_id: str) -> List[Dict[str, Any]]:
     """Returns all non-deleted versions for a model sorted newest first."""
     get_model(db, model_id)  # Validate 404
-    cursor = db.model_versions.find({
+    cursor = db.ad_models.find({
         "model_id": ObjectId(model_id),
         "status": {"$ne": "deleted"}
     }).sort("version_number", -1)
@@ -515,7 +515,7 @@ def get_model_version(db: Database, model_id: str, version_id: str) -> Dict[str,
     if not ObjectId.is_valid(version_id):
         raise HTTPException(status_code=400, detail=f"Invalid version_id format '{version_id}'.")
 
-    doc = db.model_versions.find_one({
+    doc = db.ad_models.find_one({
         "_id": ObjectId(version_id),
         "model_id": ObjectId(model_id),
         "status": {"$ne": "deleted"}
@@ -548,7 +548,7 @@ def delete_model_version(db: Database, model_id: str, version_id: str) -> Dict[s
         )
 
     # Soft delete in DB
-    db.model_versions.update_one(
+    db.ad_models.update_one(
         {"_id": ObjectId(version_id)},
         {"$set": {"status": "deleted", "updated_at": datetime.utcnow()}}
     )
@@ -556,12 +556,12 @@ def delete_model_version(db: Database, model_id: str, version_id: str) -> Dict[s
     # If deleted version was active_version_id on an inactive model, clear active_version_id
     if is_active_v:
         # Find latest ready/inactive version to fallback to, or None
-        fallback_v = db.model_versions.find_one(
+        fallback_v = db.ad_models.find_one(
             {"model_id": ObjectId(model_id), "status": {"$ne": "deleted"}},
             sort=[("version_number", -1)]
         )
         new_active_id = fallback_v["_id"] if fallback_v else None
-        db.models.update_one(
+        db.ad_models.update_one(
             {"_id": ObjectId(model_id)},
             {"$set": {"active_version_id": new_active_id, "updated_at": datetime.utcnow()}}
         )
@@ -589,19 +589,19 @@ def delete_model(db: Database, model_id: str) -> Dict[str, Any]:
     model = get_model(db, model_id)  # Raises 404 if missing or already deleted
 
     # Mark model as deleted
-    db.models.update_one(
+    db.ad_models.update_one(
         {"_id": ObjectId(model_id)},
         {"$set": {"status": "deleted", "updated_at": datetime.utcnow()}}
     )
 
     # Soft-delete all associated versions
-    db.model_versions.update_many(
+    db.ad_models.update_many(
         {"model_id": ObjectId(model_id)},
         {"$set": {"status": "deleted", "updated_at": datetime.utcnow()}}
     )
 
     # Archive reference image records for historical auditing
-    db.reference_images.update_many(
+    db.ad_models.update_many(
         {"model_id": ObjectId(model_id)},
         {"$set": {"status": "archived"}}
     )
@@ -636,7 +636,7 @@ def activate_model_version(db: Database, model_id: str, version_id: str) -> Dict
     if v_doc.get("status") != "ready":
         raise HTTPException(status_code=400, detail=f"Version '{version_id}' is not in 'ready' status.")
 
-    db.models.update_one(
+    db.ad_models.update_one(
         {"_id": ObjectId(model_id)},
         {"$set": {
             "active_version_id": ObjectId(version_id),
@@ -666,7 +666,7 @@ def get_version_reference_images(db: Database, model_id: str, version_id: str) -
         # Fallback for legacy version documents
         query = {"model_id": ObjectId(model_id), "version_id": ObjectId(version_id)}
 
-    cursor = db.reference_images.find(query).sort("uploaded_at", -1)
+    cursor = db.ad_models.find(query).sort("uploaded_at", -1)
     refs = []
     for doc in cursor:
         doc["id"] = str(doc["_id"])
@@ -698,12 +698,12 @@ def create_custom_threshold_version(db: Database, model_id: str, custom_threshol
     # 2. Locate active version or latest valid parent version to copy detector config from
     parent_version = None
     if model.get("active_version_id") and ObjectId.is_valid(str(model["active_version_id"])):
-        parent_version = db.model_versions.find_one({
+        parent_version = db.ad_models.find_one({
             "_id": ObjectId(str(model["active_version_id"])),
             "model_id": ObjectId(model_id)
         })
     if not parent_version:
-        parent_version = db.model_versions.find_one(
+        parent_version = db.ad_models.find_one(
             {"model_id": ObjectId(model_id)},
             sort=[("version_number", -1)]
         )
@@ -722,7 +722,7 @@ def create_custom_threshold_version(db: Database, model_id: str, custom_threshol
         )
 
     # 3. Determine next version number
-    latest_v = db.model_versions.find_one({"model_id": ObjectId(model_id)}, sort=[("version_number", -1)])
+    latest_v = db.ad_models.find_one({"model_id": ObjectId(model_id)}, sort=[("version_number", -1)])
     next_version_num = (latest_v["version_number"] + 1) if latest_v else 1
 
     # 4. Determine auto_calibrated_threshold from parent version
@@ -751,11 +751,11 @@ def create_custom_threshold_version(db: Database, model_id: str, custom_threshol
     )
 
     v_data = v_doc.model_dump() if hasattr(v_doc, "model_dump") else v_doc.dict()
-    v_res = db.model_versions.insert_one(v_data)
+    v_res = db.ad_models.insert_one(v_data)
     new_version_id = v_res.inserted_id
 
     # 6. Activate new version for model
-    db.models.update_one(
+    db.ad_models.update_one(
         {"_id": ObjectId(model_id)},
         {"$set": {
             "active_version_id": new_version_id,
@@ -765,7 +765,7 @@ def create_custom_threshold_version(db: Database, model_id: str, custom_threshol
         }}
     )
 
-    completed_version = db.model_versions.find_one({"_id": new_version_id})
+    completed_version = db.ad_models.find_one({"_id": new_version_id})
     completed_version["id"] = str(completed_version["_id"])
     completed_version["_id"] = str(completed_version["_id"])
     completed_version["model_id"] = str(completed_version["model_id"])

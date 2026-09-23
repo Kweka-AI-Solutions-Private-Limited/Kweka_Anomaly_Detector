@@ -264,13 +264,13 @@ def run_gemini_only_multi_instance_inspection(
     )
 
     data = insp_doc.model_dump() if hasattr(insp_doc, "model_dump") else insp_doc.dict()
-    res = db.inspections.insert_one(data)
+    res = db.ad_inspections.insert_one(data)
     inspection_id = str(res.inserted_id)
 
     try:
         # 2. Save original uploaded multi-product image
         target_path, relative_uri, file_size, checksum = save_inspection_image(inspection_id, upload_file)
-        db.inspections.update_one(
+        db.ad_inspections.update_one(
             {"_id": ObjectId(inspection_id)},
             {"$set": {"input.storage_uri": relative_uri}}
         )
@@ -280,7 +280,7 @@ def run_gemini_only_multi_instance_inspection(
             raise HTTPException(status_code=400, detail="Failed to decode uploaded image.")
         orig_h, orig_w = img_bgr.shape[:2]
 
-        db.inspections.update_one(
+        db.ad_inspections.update_one(
             {"_id": ObjectId(inspection_id)},
             {"$set": {"input.width": orig_w, "input.height": orig_h}}
         )
@@ -472,9 +472,9 @@ def run_gemini_only_multi_instance_inspection(
         )
 
         res_data = res_doc.model_dump() if hasattr(res_doc, "model_dump") else res_doc.dict()
-        db.inspection_results.insert_one(res_data)
+        db.ad_inspections.insert_one(res_data)
 
-        db.inspections.update_one(
+        db.ad_inspections.update_one(
             {"_id": ObjectId(inspection_id)},
             {"$set": {
                 "status": "completed",
@@ -484,13 +484,13 @@ def run_gemini_only_multi_instance_inspection(
         )
 
         from services.inspection_service import normalize_inspection_payload
-        doc = db.inspections.find_one({"_id": ObjectId(inspection_id)})
+        doc = db.ad_inspections.find_one({"_id": ObjectId(inspection_id)})
         if not doc:
             raise HTTPException(status_code=500, detail="Failed to retrieve completed inspection document.")
         return normalize_inspection_payload(doc, res_data)
 
     except Exception as e:
-        db.inspections.update_one(
+        db.ad_inspections.update_one(
             {"_id": ObjectId(inspection_id)},
             {"$set": {"status": "failed"}}
         )

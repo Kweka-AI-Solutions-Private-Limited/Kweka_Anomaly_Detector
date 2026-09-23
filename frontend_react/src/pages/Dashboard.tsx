@@ -22,9 +22,9 @@ import {
   Target,
 } from 'lucide-react';
 import { getDashboardSummary, DashboardSummaryResponse, DailyTrendItem, AnomalyHotspotAnalysis } from '../api/dashboard';
-import { getModels } from '../api/models';
+import { getModels, getModelVersions } from '../api/models';
 import { getStorageUrl } from '../api/client';
-import { Model } from '../types';
+import { Model, ModelVersion } from '../types';
 import { StatCard } from '../components/common/StatCard';
 import { Card } from '../components/common/Card';
 import { Badge } from '../components/common/Badge';
@@ -50,24 +50,24 @@ const SectionHeader: React.FC<{
         onMouseLeave={() => setShowTooltip(false)}
       >
         {icon}
-        <h2 className="text-xs font-mono font-black uppercase tracking-wider text-industrial-900 group-hover:text-brand-600 transition-colors">
+        <h2 className="text-sm font-mono font-black uppercase tracking-wider text-industrial-900 group-hover:text-brand-600 transition-colors">
           {title}
         </h2>
-        <Info className="w-3.5 h-3.5 text-industrial-400 group-hover:text-brand-600 transition-colors" />
+        <Info className="w-4 h-4 text-industrial-400 group-hover:text-brand-600 transition-colors" />
       </div>
 
       {showTooltip && (
-        <div className="absolute z-30 left-0 top-8 w-80 bg-industrial-900 text-white text-xs font-sans p-3.5 rounded-xl shadow-2xl border border-industrial-700 pointer-events-none space-y-2 animate-in fade-in duration-200">
-          <div className="font-mono font-bold text-brand-300 uppercase tracking-wider text-[10px] border-b border-industrial-800 pb-1">
+        <div className="absolute z-30 left-0 top-8 w-80 bg-industrial-900 text-white text-xs font-sans p-4 rounded-xl shadow-2xl border border-industrial-700 pointer-events-none space-y-2.5 animate-in fade-in duration-200">
+          <div className="font-mono font-bold text-brand-300 uppercase tracking-wider text-xs border-b border-industrial-800 pb-1">
             {title} Component Info
           </div>
           <div>
-            <span className="font-mono font-bold text-industrial-400 text-[10px] block uppercase mb-0.5">Definition:</span>
-            <span className="text-industrial-200 text-[11px] leading-relaxed block">{definition}</span>
+            <span className="font-mono font-bold text-industrial-400 text-xs block uppercase mb-0.5">Definition:</span>
+            <span className="text-industrial-200 text-xs leading-relaxed block font-medium">{definition}</span>
           </div>
           {formula && (
-            <div className="bg-industrial-950 p-2 rounded-lg border border-industrial-800 font-mono text-[11px] text-amber-300">
-              <span className="font-bold text-industrial-400 text-[10px] block uppercase mb-0.5">Formula:</span>
+            <div className="bg-industrial-950 p-2.5 rounded-lg border border-industrial-800 font-mono text-xs text-amber-300 font-medium">
+              <span className="font-bold text-industrial-400 text-xs block uppercase mb-0.5">Formula:</span>
               <code>{formula}</code>
             </div>
           )}
@@ -153,15 +153,54 @@ const LineChart: React.FC<{ trend: DailyTrendItem[] }> = ({ trend }) => {
         <path d={passPathD} fill="none" stroke="#10b981" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
         <path d={rejectPathD} fill="none" stroke="#f43f5e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
 
-        {points.map((p) => (
-          <g key={p.idx} onMouseEnter={() => setHoveredIdx(p.idx)} onMouseLeave={() => setHoveredIdx(null)}>
-            <text x={p.x} y={height - 5} textAnchor="middle" className="text-[10px] fill-industrial-500 font-mono font-black">
-              {p.item.date}
-            </text>
-            <circle cx={p.x} cy={p.yPass} r={hoveredIdx === p.idx ? 5 : 3.5} fill="#10b981" stroke="#ffffff" strokeWidth="2" className="transition-all cursor-pointer" />
-            <circle cx={p.x} cy={p.yReject} r={hoveredIdx === p.idx ? 5 : 3.5} fill="#f43f5e" stroke="#ffffff" strokeWidth="2" className="transition-all cursor-pointer" />
-          </g>
-        ))}
+        {points.map((p) => {
+          // Format "2026-09-22" -> "09/22" to prevent date string overflow
+          let displayDate = p.item.date;
+          if (displayDate && displayDate.includes('-')) {
+            const parts = displayDate.split('-');
+            if (parts.length === 3) {
+              displayDate = `${parts[1]}/${parts[2]}`;
+            }
+          }
+
+          // If there are many data points, show every Nth date label plus first & last
+          const totalPoints = points.length;
+          const step = totalPoints > 10 ? 3 : totalPoints > 6 ? 2 : 1;
+          const showText = p.idx === 0 || p.idx === totalPoints - 1 || p.idx % step === 0;
+
+          return (
+            <g key={p.idx} onMouseEnter={() => setHoveredIdx(p.idx)} onMouseLeave={() => setHoveredIdx(null)}>
+              {showText && (
+                <text
+                  x={p.x}
+                  y={height - 4}
+                  textAnchor="middle"
+                  className="text-[10px] sm:text-xs fill-industrial-600 font-mono font-black"
+                >
+                  {displayDate}
+                </text>
+              )}
+              <circle
+                cx={p.x}
+                cy={p.yPass}
+                r={hoveredIdx === p.idx ? 5.5 : 4}
+                fill="#10b981"
+                stroke="#ffffff"
+                strokeWidth="2"
+                className="transition-all cursor-pointer"
+              />
+              <circle
+                cx={p.x}
+                cy={p.yReject}
+                r={hoveredIdx === p.idx ? 5.5 : 4}
+                fill="#f43f5e"
+                stroke="#ffffff"
+                strokeWidth="2"
+                className="transition-all cursor-pointer"
+              />
+            </g>
+          );
+        })}
       </svg>
 
       {hoveredIdx !== null && points[hoveredIdx] && (
@@ -242,7 +281,7 @@ const DonutChart: React.FC<{ passCount: number; rejectCount: number; passPct: nu
 
         <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
           <span className="text-2xl font-black font-mono text-industrial-900 tracking-tight">{passPct}%</span>
-          <span className="text-[10px] font-mono font-black uppercase tracking-wider text-industrial-500">PASS RATE</span>
+          <span className="text-xs font-mono font-black uppercase tracking-wider text-industrial-600">PASS RATE</span>
         </div>
       </div>
 
@@ -254,7 +293,7 @@ const DonutChart: React.FC<{ passCount: number; rejectCount: number; passPct: nu
           </div>
           <div className="text-right">
             <span className="font-black text-pass-900">{passCount}</span>
-            <span className="text-pass-700 text-[11px] ml-1.5 font-bold">({passPct}%)</span>
+            <span className="text-pass-700 text-xs ml-1.5 font-bold">({passPct}%)</span>
           </div>
         </div>
 
@@ -265,7 +304,7 @@ const DonutChart: React.FC<{ passCount: number; rejectCount: number; passPct: nu
           </div>
           <div className="text-right">
             <span className="font-black text-reject-900">{rejectCount}</span>
-            <span className="text-reject-700 text-[11px] ml-1.5 font-bold">({rejectPct}%)</span>
+            <span className="text-reject-700 text-xs ml-1.5 font-bold">({rejectPct}%)</span>
           </div>
         </div>
       </div>
@@ -390,6 +429,9 @@ export const Dashboard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const [selectedModel, setSelectedModel] = useState<string>('all');
+  const [selectedVersion, setSelectedVersion] = useState<string>('all');
+  const [availableVersions, setAvailableVersions] = useState<ModelVersion[]>([]);
+  const [isLoadingVersions, setIsLoadingVersions] = useState<boolean>(false);
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
 
@@ -405,12 +447,38 @@ export const Dashboard: React.FC = () => {
     loadModels();
   }, []);
 
+  // Fetch available versions whenever a specific model is selected
+  useEffect(() => {
+    if (selectedModel === 'all') {
+      setAvailableVersions([]);
+      setSelectedVersion('all');
+      return;
+    }
+
+    async function loadVersions() {
+      try {
+        setIsLoadingVersions(true);
+        setSelectedVersion('all');
+        const vList = await getModelVersions(selectedModel);
+        const sorted = [...vList].sort((a, b) => b.version_number - a.version_number);
+        setAvailableVersions(sorted);
+      } catch (err) {
+        console.error('Failed to load model versions:', err);
+        setAvailableVersions([]);
+      } finally {
+        setIsLoadingVersions(false);
+      }
+    }
+    loadVersions();
+  }, [selectedModel]);
+
   const fetchDashboardMetrics = async () => {
     try {
       setIsLoading(true);
       setError(null);
       const data = await getDashboardSummary({
         model_id: selectedModel,
+        model_version_id: selectedVersion,
         start_date: startDate || undefined,
         end_date: endDate || undefined,
       });
@@ -425,10 +493,11 @@ export const Dashboard: React.FC = () => {
 
   useEffect(() => {
     fetchDashboardMetrics();
-  }, [selectedModel, startDate, endDate]);
+  }, [selectedModel, selectedVersion, startDate, endDate]);
 
   const handleResetFilters = () => {
     setSelectedModel('all');
+    setSelectedVersion('all');
     setStartDate('');
     setEndDate('');
   };
@@ -522,6 +591,31 @@ export const Dashboard: React.FC = () => {
               ))}
             </select>
 
+            <select
+              value={selectedVersion}
+              onChange={(e) => setSelectedVersion(e.target.value)}
+              disabled={selectedModel === 'all' || isLoadingVersions}
+              title={selectedModel === 'all' ? 'Select a specific model to filter by version' : 'Filter by model version'}
+              className={`px-3.5 py-1.5 text-xs border rounded-xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none font-black shadow-2xs transition-colors ${
+                selectedModel === 'all'
+                  ? 'bg-industrial-100 text-industrial-400 border-industrial-200 cursor-not-allowed'
+                  : 'bg-white text-industrial-900 border-industrial-300 cursor-pointer'
+              }`}
+            >
+              <option value="all">
+                {selectedModel === 'all'
+                  ? 'All Versions'
+                  : isLoadingVersions
+                  ? 'Loading versions...'
+                  : `All Versions (${availableVersions.length})`}
+              </option>
+              {availableVersions.map((v) => (
+                <option key={v.id || v._id} value={v.id || v._id}>
+                  V{v.version_number} ({v.status})
+                </option>
+              ))}
+            </select>
+
             <div className="flex items-center space-x-1.5">
               <span className="text-[11px] font-mono text-industrial-700 font-black">From:</span>
               <input
@@ -542,7 +636,7 @@ export const Dashboard: React.FC = () => {
               />
             </div>
 
-            {(selectedModel !== 'all' || startDate || endDate) && (
+            {(selectedModel !== 'all' || selectedVersion !== 'all' || startDate || endDate) && (
               <button
                 type="button"
                 onClick={handleResetFilters}
@@ -858,19 +952,18 @@ export const Dashboard: React.FC = () => {
           </div>
         ) : (
           <div className="overflow-x-auto border border-industrial-200 rounded-xl shadow-2xs">
-            <table className="w-full text-left font-mono text-xs">
-              <thead className="bg-industrial-50 text-industrial-800 uppercase border-b border-industrial-200 font-black">
+            <table className="w-full text-left font-mono text-xs sm:text-sm">
+              <thead className="bg-industrial-50 text-industrial-800 uppercase border-b border-industrial-200 font-black text-xs sm:text-sm">
                 <tr>
-                  <th className="py-3 px-4">Thumbnail</th>
-                  <th className="py-3 px-4">Filename</th>
-                  <th className="py-3 px-4 font-black text-industrial-900">Model</th>
-                  <th className="py-3 px-4">Version</th>
-                  <th className="py-3 px-4">Run</th>
-                  <th className="py-3 px-4">Verdict</th>
-                  <th className="py-3 px-4">Defect Type</th>
-                  <th className="py-3 px-4">Severity</th>
-                  <th className="py-3 px-4">Timestamp</th>
-                  <th className="py-3 px-4 text-center">Action</th>
+                  <th className="py-3.5 px-4">Thumbnail</th>
+                  <th className="py-3.5 px-4">Filename</th>
+                  <th className="py-3.5 px-4 font-black text-industrial-900">Model</th>
+                  <th className="py-3.5 px-4">Version</th>
+                  <th className="py-3.5 px-4">Run</th>
+                  <th className="py-3.5 px-4">Verdict</th>
+                  <th className="py-3.5 px-4">Severity</th>
+                  <th className="py-3.5 px-4">Timestamp</th>
+                  <th className="py-3.5 px-4 text-center">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-industrial-200 bg-white">
@@ -882,57 +975,54 @@ export const Dashboard: React.FC = () => {
                       onClick={() => navigate(`/inspections/${item.id}`)}
                       className="hover:bg-brand-50/40 cursor-pointer transition-colors"
                     >
-                      <td className="py-3 px-4">
+                      <td className="py-3.5 px-4">
                         {storageUrl ? (
                           <img
                             src={storageUrl}
                             alt="Sample"
-                            className="w-9 h-9 object-cover rounded-lg border border-industrial-200 bg-industrial-100"
+                            className="w-10 h-10 object-cover rounded-lg border border-industrial-200 bg-industrial-100"
                           />
                         ) : (
-                          <div className="w-9 h-9 rounded-lg bg-industrial-100 border border-industrial-200 flex items-center justify-center text-[10px] text-industrial-400 font-sans">
+                          <div className="w-10 h-10 rounded-lg bg-industrial-100 border border-industrial-200 flex items-center justify-center text-xs text-industrial-400 font-sans font-medium">
                             N/A
                           </div>
                         )}
                       </td>
-                      <td className="py-3 px-4 font-black text-industrial-900 truncate max-w-[140px]">
+                      <td className="py-3.5 px-4 font-black text-industrial-900 truncate max-w-[140px] text-xs sm:text-sm">
                         {item.filename}
                       </td>
-                      <td className="py-3 px-4 font-sans font-black text-industrial-900 truncate max-w-[140px]">
+                      <td className="py-3.5 px-4 font-sans font-black text-industrial-900 truncate max-w-[140px] text-xs sm:text-sm">
                         {item.model_name}
                       </td>
-                      <td className="py-3 px-4 text-industrial-800 font-bold">
+                      <td className="py-3.5 px-4 text-industrial-800 font-bold text-xs sm:text-sm">
                         {item.model_version_number != null ? `V${item.model_version_number}` : '—'}
                       </td>
-                      <td className="py-3 px-4">
+                      <td className="py-3.5 px-4 text-xs sm:text-sm">
                         {item.run_number != null ? (
                           <span className="font-black text-brand-700">Run #{item.run_number}</span>
                         ) : (
-                          <span className="text-industrial-400 italic font-sans text-xs">Standalone</span>
+                          <span className="text-industrial-400 italic font-sans text-xs sm:text-sm">Standalone</span>
                         )}
                       </td>
-                      <td className="py-3 px-4">
+                      <td className="py-3.5 px-4">
                         <Badge status={item.verdict === 'PASS' ? 'normal' : 'anomalous'} size="sm" />
                       </td>
-                      <td className="py-3 px-4 font-sans font-bold text-industrial-800 max-w-[120px] truncate">
-                        {item.defect_type}
-                      </td>
-                      <td className="py-3 px-4 font-sans text-xs font-black text-industrial-800">
+                      <td className="py-3.5 px-4 font-sans font-black text-industrial-800 text-xs sm:text-sm">
                         {item.severity}
                       </td>
-                      <td className="py-3 px-4 text-industrial-600 text-[11px] whitespace-nowrap font-bold">
+                      <td className="py-3.5 px-4 text-industrial-700 text-xs sm:text-sm whitespace-nowrap font-bold">
                         {item.created_at ? new Date(item.created_at).toLocaleString() : 'Just now'}
                       </td>
-                      <td className="py-3 px-4 text-center">
+                      <td className="py-3.5 px-4 text-center">
                         <button
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
                             navigate(`/inspections/${item.id}`);
                           }}
-                          className="text-brand-600 hover:text-brand-700 hover:underline inline-flex items-center space-x-1 font-sans font-black text-xs"
+                          className="text-brand-600 hover:text-brand-700 hover:underline inline-flex items-center space-x-1 font-sans font-black text-xs sm:text-sm"
                         >
-                          <Eye className="w-3.5 h-3.5" />
+                          <Eye className="w-4 h-4" />
                           <span>View</span>
                         </button>
                       </td>

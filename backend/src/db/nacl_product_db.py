@@ -18,7 +18,7 @@ from db.connection import get_db
 
 logger = logging.getLogger(__name__)
 
-COLLECTION_NAME = "nacl_products"
+COLLECTION_NAME = "ad_nacl_products"
 
 
 def init_nacl_product_indexes(db: Optional[Database] = None) -> None:

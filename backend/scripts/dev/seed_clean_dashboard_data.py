@@ -60,13 +60,13 @@ def seed_data():
     print("Connecting to MongoDB...")
 
     # 1. Clean existing dummy test collections
-    db.inspections.delete_many({})
-    db.inspection_results.delete_many({})
-    db.inspection_runs.delete_many({})
-    db.models.delete_many({})
-    db.model_versions.delete_many({})
-    db.feedback.delete_many({})
-    db.reference_images.delete_many({})
+    db.ad_inspections.delete_many({})
+    db.ad_inspections.delete_many({})
+    db.ad_inspection_runs.delete_many({})
+    db.ad_models.delete_many({})
+    db.ad_models.delete_many({})
+    db.ad_feedback.delete_many({})
+    db.ad_models.delete_many({})
     print("✓ Cleared legacy dummy collections.")
 
     # 2. Setup storage directory for real images
@@ -100,7 +100,7 @@ def seed_data():
 
     now = datetime.utcnow()
 
-    db.models.insert_many([
+    db.ad_models.insert_many([
         {
             "_id": m1_id,
             "name": "PCB Assembly Inspector",
@@ -139,7 +139,7 @@ def seed_data():
         }
     ])
 
-    db.model_versions.insert_many([
+    db.ad_models.insert_many([
         {
             "_id": v1_1_id,
             "model_id": m1_id,
@@ -188,7 +188,7 @@ def seed_data():
     r2_id = ObjectId()
     r3_id = ObjectId()
 
-    db.inspection_runs.insert_many([
+    db.ad_inspection_runs.insert_many([
         {
             "_id": r1_id,
             "model_id": m1_id,
@@ -402,9 +402,9 @@ def seed_data():
         }
         results_data.append(res_doc)
 
-    db.inspections.insert_many(inspections_data)
-    db.inspection_results.insert_many(results_data)
-    db.feedback.insert_many(feedback_data)
+    db.ad_inspections.insert_many(inspections_data)
+    db.ad_inspections.insert_many(results_data)
+    db.ad_feedback.insert_many(feedback_data)
 
     print(f"✓ Successfully seeded {len(inspections_data)} clean, 100% valid inspection records.")
     print("✓ Seeding complete!")

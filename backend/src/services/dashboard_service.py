@@ -6,12 +6,12 @@ for the Point 7B Dashboard. Performs database-side query filtering and structure
 KPI computation.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any, Optional, List
 from bson import ObjectId
 
 
-def parse_date(date_str: str) -> Optional[datetime]:
+def parse_date(date_str: Optional[str]) -> Optional[datetime]:
     if not date_str:
         return None
     try:
@@ -26,12 +26,13 @@ def parse_date(date_str: str) -> Optional[datetime]:
 def get_dashboard_summary(
     db: Any,
     model_id: Optional[str] = None,
+    model_version_id: Optional[str] = None,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None
 ) -> Dict[str, Any]:
     """
     Returns structured dashboard metrics aggregated across inspections, runs, models, and feedback.
-    Supports scope filters: model_id, start_date, end_date.
+    Supports scope filters: model_id, model_version_id, start_date, end_date.
     """
     # 1. Build Query for Inspections
     query: Dict[str, Any] = {}
@@ -42,6 +43,16 @@ def get_dashboard_summary(
             query["$or"] = [{"model_id": m_obj_id}, {"model_id": model_id}]
         except Exception:
             query["model_id"] = model_id
+
+    if model_version_id and model_version_id != "all":
+        try:
+            v_obj_id = ObjectId(model_version_id)
+            if "$or" in query:
+                query["model_version_id"] = {"$in": [v_obj_id, model_version_id]}
+            else:
+                query["$or"] = [{"model_version_id": v_obj_id}, {"model_version_id": model_version_id}]
+        except Exception:
+            query["model_version_id"] = model_version_id
 
     dt_start = parse_date(start_date)
     dt_end = parse_date(end_date)
@@ -54,22 +65,22 @@ def get_dashboard_summary(
         query["created_at"] = date_q
 
     # 2. Fetch Matching Inspections
-    raw_inspections = list(db.inspections.find(query).sort("created_at", -1))
+    raw_inspections = list(db.ad_inspections.find(query).sort("created_at", -1))
 
     # Build Metadata Maps
-    models_list = list(db.models.find())
+    models_list = list(db.ad_models.find())
     model_map = {}
     for m in models_list:
         m_id = str(m.get("_id") or m.get("id"))
         model_map[m_id] = m.get("name", "Unknown Model")
 
-    versions_list = list(db.model_versions.find())
+    versions_list = list(db.ad_models.find())
     version_map = {}
     for v in versions_list:
         v_id = str(v.get("_id") or v.get("id"))
         version_map[v_id] = v.get("version_number", 1)
 
-    runs_list = list(db.inspection_runs.find())
+    runs_list = list(db.ad_inspection_runs.find())
     run_map = {}
     for r in runs_list:
         r_id = str(r.get("_id") or r.get("id"))
@@ -77,7 +88,7 @@ def get_dashboard_summary(
 
     # Fetch Inspection Results
     inspection_ids = [insp.get("_id") for insp in raw_inspections if insp.get("_id")]
-    results_list = list(db.inspection_results.find({"inspection_id": {"$in": inspection_ids}}))
+    results_list = list(db.ad_inspections.find({"inspection_id": {"$in": inspection_ids}}))
     results_map = {}
     for res in results_list:
         insp_ref = str(res.get("inspection_id"))
@@ -138,7 +149,7 @@ def get_dashboard_summary(
         if isinstance(c_at, datetime):
             day_str = c_at.strftime("%Y-%m-%d")
         else:
-            day_str = datetime.utcnow().strftime("%Y-%m-%d")
+            day_str = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
         if day_str not in daily_trend:
             daily_trend[day_str] = {"date": day_str, "total": 0, "pass": 0, "reject": 0}
@@ -244,7 +255,7 @@ def get_dashboard_summary(
     valid_denom = pass_count + reject_count
     pass_rate = round((pass_count / valid_denom) * 100, 1) if valid_denom > 0 else 0.0
 
-    # 4. Runs Summary (Filtered by Model / Date scope)
+    # 4. Runs Summary (Filtered by Model / Version / Date scope)
     run_query: Dict[str, Any] = {}
     if model_id and model_id != "all":
         try:
@@ -253,7 +264,17 @@ def get_dashboard_summary(
         except Exception:
             run_query["model_id"] = model_id
 
-    matching_runs = list(db.inspection_runs.find(run_query).sort("created_at", -1))
+    if model_version_id and model_version_id != "all":
+        try:
+            v_obj_id = ObjectId(model_version_id)
+            if "$or" in run_query:
+                run_query["model_version_id"] = {"$in": [v_obj_id, model_version_id]}
+            else:
+                run_query["$or"] = [{"model_version_id": v_obj_id}, {"model_version_id": model_version_id}]
+        except Exception:
+            run_query["model_version_id"] = model_version_id
+
+    matching_runs = list(db.ad_inspection_runs.find(run_query).sort("created_at", -1))
     total_runs = len(matching_runs)
     completed_runs = sum(1 for r in matching_runs if r.get("status") == "completed")
     failed_runs = sum(1 for r in matching_runs if r.get("status") in ["failed", "error"])
@@ -274,7 +295,8 @@ def get_dashboard_summary(
     # Active Models Count
     active_models = len(set(str(insp.get("model_id")) for insp in raw_inspections if insp.get("model_id")))
     if active_models == 0:
-        active_models = len(models_list)
+        active_models_count = len([m for m in models_list if m.get("status") == "active"])
+        active_models = active_models_count if active_models_count > 0 else len(models_list)
 
     # 5. Feedback Summary (Scoped to Model & Date via matching inspection IDs - Requirement 4!)
     matched_insp_obj_ids = [insp.get("_id") for insp in raw_inspections if insp.get("_id")]
@@ -282,7 +304,7 @@ def get_dashboard_summary(
     all_matched_ids = matched_insp_obj_ids + matched_insp_str_ids
 
     feedback_query = {"inspection_id": {"$in": all_matched_ids}} if all_matched_ids else {"inspection_id": "__none__"}
-    scoped_feedback = list(db.feedback.find(feedback_query))
+    scoped_feedback = list(db.ad_feedback.find(feedback_query))
 
     fb_total = len(scoped_feedback)
     fb_categories = {

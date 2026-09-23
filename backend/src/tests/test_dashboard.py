@@ -45,9 +45,9 @@ class MockCollection:
                     if not or_match:
                         match = False
                         break
-                elif k == "inspection_id" and isinstance(v, dict) and "$in" in v:
+                elif isinstance(v, dict) and "$in" in v:
                     val_set = {str(x) for x in v["$in"]}
-                    if str(doc.get("inspection_id")) not in val_set:
+                    if str(doc.get(k)) not in val_set:
                         match = False
                         break
                 elif k == "created_at" and isinstance(v, dict):
@@ -375,3 +375,21 @@ def test_reconciliation_with_history(mock_db):
     dash_m1 = get_dashboard_summary(db, model_id=str(m1_id))
     history_m1 = get_inspections(db, model_id=str(m1_id))
     assert dash_m1["kpi"]["total_inspections"] == len(history_m1)
+
+
+# 21. Model version filter works independently and in combination
+def test_model_version_filter(mock_db):
+    db, m1_id, m2_id, v1_id, v2_id, *_ = mock_db
+
+    # Version 1 scope for Model 1 (i1, i2)
+    res_v1 = get_dashboard_summary(db, model_id=str(m1_id), model_version_id=str(v1_id))
+    assert res_v1["kpi"]["total_inspections"] == 2
+
+    # Version 2 scope for Model 1 (i3)
+    res_v2 = get_dashboard_summary(db, model_id=str(m1_id), model_version_id=str(v2_id))
+    assert res_v2["kpi"]["total_inspections"] == 1
+
+    # Version 1 scope without explicit model_id
+    res_v1_only = get_dashboard_summary(db, model_version_id=str(v1_id))
+    assert res_v1_only["kpi"]["total_inspections"] == 3  # i1, i2, i4
+
