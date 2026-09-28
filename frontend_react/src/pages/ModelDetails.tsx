@@ -18,6 +18,7 @@ import { Button } from '../components/common/Button';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
 import { EmptyState } from '../components/common/EmptyState';
 import { ReferenceImagesModal } from '../components/models/ReferenceImagesModal';
+import { getStorageUrl } from '../api/client';
 
 export const ModelDetails: React.FC = () => {
   const { modelId } = useParams<{ modelId: string }>();
@@ -655,7 +656,7 @@ export const ModelDetails: React.FC = () => {
                             <div className="relative aspect-video bg-industrial-900 rounded-xl overflow-hidden flex items-center justify-center border border-industrial-200">
                               {insp.storage_uri ? (
                                 <img
-                                  src={`http://localhost:8000/${insp.storage_uri.replace(/^\//, '')}`}
+                                  src={getStorageUrl(insp.storage_uri)}
                                   alt={filename}
                                   className="object-cover w-full h-full"
                                   onError={(e) => {

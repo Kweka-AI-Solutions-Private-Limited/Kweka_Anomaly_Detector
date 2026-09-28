@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { ModelVersion, ReferenceImage } from '../../types';
 import { getVersionReferenceImages } from '../../api/models';
+import { getStorageUrl } from '../../api/client';
 import { Button } from '../common/Button';
 import { Badge } from '../common/Badge';
 import { LoadingSpinner } from '../common/LoadingSpinner';
@@ -75,8 +76,8 @@ export const ReferenceImagesModal: React.FC<ReferenceImagesModalProps> = ({
   const getImageUrl = (uri?: string, relPath?: string): string => {
     const rawPath = uri || relPath || '';
     if (!rawPath) return '';
-    const cleanPath = rawPath.replace(/^\//, '');
-    return `http://localhost:8000/${cleanPath}`;
+    // Uses configured VITE_API_BASE_URL (production) or Vite proxy (local dev)
+    return getStorageUrl(rawPath);
   };
 
   return (

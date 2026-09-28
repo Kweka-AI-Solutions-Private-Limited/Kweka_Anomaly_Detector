@@ -1,36 +1,34 @@
 # Virtual environments
-venv/
-env/
-ENV/
-.venv
-backend/venv/
-backend/venv_old/
+**/venv/
+**/env/
+**/ENV/
+**/.venv/
 *venv*/
 
-# Node / Frontend
-node_modules/
-frontend_react/node_modules/
-dist/
-dist-ssr/
-frontend_dist/
-.vite/
+# Node / Frontend Dependencies & Builds
+**/node_modules/
+**/dist/
+**/dist-ssr/
+**/frontend_dist/
+**/.vite/
 npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
 # Python Caches & Compiled Files
-__pycache__/
+**/__pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
-.pytest_cache/
-backend/.pytest_cache/
+**/.pytest_cache/
 
 # Environment Files with Secrets
 .env
 .env.local
 .env.*
 *.env
-backend/.env
+**/.env
 
 # IDE / OS
 .vscode/
@@ -38,16 +36,20 @@ backend/.env
 .DS_Store
 Thumbs.db
 
-# Storage, Artifacts & Models
-storage/
-backend/storage/
-artifacts/
-results/
-backend/results/
-backend/data/
-backend/datasets/
-backend/outputs/
+# Heavy Data, Storage, Datasets, Artifacts & Weights
+**/storage/
+**/artifacts/
+**/results/
+**/data/
+**/dataset/
+**/datasets/
+**/outputs/
+**/runs/
+**/weights/
 *.ckpt
 *.pth
 *.pt
 *.onnx
+*.weights
+*.h5
+*.engine

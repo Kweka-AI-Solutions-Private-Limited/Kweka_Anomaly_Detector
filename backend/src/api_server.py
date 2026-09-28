@@ -86,11 +86,14 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
 # Enable CORS for Frontend Development Server and configured origins
+# Production: set CORS_ORIGINS in environment (e.g. https://your-app.run.app)
+# Local dev: set CORS_ORIGINS in backend/.env
 cors_origins_env = os.getenv("CORS_ORIGINS", "")
 if cors_origins_env:
     cors_origins = [o.strip() for o in cors_origins_env.split(",") if o.strip()]
 else:
-    cors_origins = ["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:3000", "http://localhost:8000", "*"]
+    # Fallback for local development only — never used in production (CORS_ORIGINS must be set)
+    cors_origins = ["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:3000"]
 
 app.add_middleware(
     CORSMiddleware,
@@ -320,4 +323,6 @@ if _frontend_dist.exists() and _frontend_dist.is_dir():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("api_server:app", host="0.0.0.0", port=8000, reload=True)
+    # Local development runner. Production uses the CMD in Dockerfile (reads $PORT).
+    _port = int(os.getenv("PORT", "8000"))
+    uvicorn.run("api_server:app", host="0.0.0.0", port=_port, reload=True)

@@ -87,25 +87,25 @@ RUN mkdir -p \
 # ---------------------------------------------------------------
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH=/app/backend/src
-ENV PORT=8000
+# Default port 8080 matches Cloud Run convention.
+# Override at runtime: docker run -e PORT=8001 ... or Cloud Run injects PORT automatically.
+ENV PORT=8080
 ENV HOST=0.0.0.0
 ENV ENV=production
 
 # ---------------------------------------------------------------
-# Expose application port
+# Expose application port (documentation only — Cloud Run ignores EXPOSE)
 # ---------------------------------------------------------------
-EXPOSE 8000
+EXPOSE 8080
 
 # ---------------------------------------------------------------
-# Health check (uses CMD form within HEALTHCHECK block)
+# Health check — uses ${PORT} so it works whether PORT=8080 or overridden
 # ---------------------------------------------------------------
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost:8000/api/health || exit 1
+    CMD curl -f http://localhost:${PORT}/api/health || exit 1
 
 # ---------------------------------------------------------------
 # Single application startup command
+# Reads $PORT at runtime — compatible with Cloud Run and local docker run
 # ---------------------------------------------------------------
-CMD ["python", "-m", "uvicorn", "api_server:app", \
-     "--host", "0.0.0.0", \
-     "--port", "8000", \
-     "--workers", "1"]
+CMD ["sh", "-c", "uvicorn api_server:app --host 0.0.0.0 --port ${PORT} --workers 1"]
