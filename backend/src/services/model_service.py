@@ -27,6 +27,28 @@ from services.notification_service import create_model_build_notification
 
 
 
+def clean_mongo_doc(doc: Any) -> Any:
+    """Recursively converts MongoDB ObjectIds and datetime objects to strings for FastAPI JSON serialization."""
+    if doc is None:
+        return None
+    if isinstance(doc, ObjectId):
+        return str(doc)
+    if isinstance(doc, datetime):
+        return doc.isoformat()
+    if isinstance(doc, dict):
+        cleaned = {}
+        for k, v in doc.items():
+            if k == "_id":
+                cleaned["_id"] = str(v)
+                cleaned["id"] = str(v)
+            else:
+                cleaned[k] = clean_mongo_doc(v)
+        return cleaned
+    if isinstance(doc, list):
+        return [clean_mongo_doc(item) for item in doc]
+    return doc
+
+
 VALID_USABILITY_STATUSES = {"draft", "building", "inactive", "active", "error"}
 
 
@@ -41,74 +63,93 @@ def validate_model_artifacts_and_version(db: Database, model: Dict[str, Any]) ->
       6. Artifact can be loaded successfully
     Returns: (is_valid, error_explanation)
     """
-    if not model:
-        return False, "Model document does not exist."
-
-    active_v_id = model.get("active_version_id")
-    if not active_v_id:
-        return False, "Model does not have an active version. Build a model version first."
-
-    if not ObjectId.is_valid(str(active_v_id)):
-        return False, f"Invalid active_version_id format '{active_v_id}'."
-
-    m_id = str(model.get("_id") or model.get("id"))
-    v_doc = db.ad_models.find_one({"_id": ObjectId(str(active_v_id)), "model_id": ObjectId(m_id)})
-    if not v_doc:
-        return False, f"Referenced model version '{active_v_id}' was not found for model '{m_id}'."
-
-    v_status = v_doc.get("status")
-    if v_status not in ["ready", "active"]:
-        return False, f"Referenced version status is '{v_status}'. Only ready versions can be activated."
-
-    artifacts = v_doc.get("artifacts", {})
-    ckpt_uri = artifacts.get("checkpoint_uri") or artifacts.get("memory_bank_uri")
-    if not ckpt_uri:
-        return False, "Model version metadata does not contain a checkpoint URI."
-
-    resolved_path = resolve_checkpoint_path(ckpt_uri)
-    if not resolved_path or not resolved_path.exists():
-        return False, f"PatchCore checkpoint file missing from disk at '{ckpt_uri}'."
-
     try:
-        import torch
-        state_dict = torch.load(resolved_path, map_location="cpu")
-        if state_dict is None:
-            return False, f"Checkpoint file at '{resolved_path}' is empty or invalid."
-    except Exception as e:
-        return False, f"Failed to load PatchCore checkpoint from disk: {str(e)}"
+        if not model:
+            return False, "Model document does not exist."
 
-    return True, None
+        active_v_id = model.get("active_version_id")
+        if not active_v_id:
+            return False, "Model does not have an active version. Build a model version first."
+
+        active_v_str = str(active_v_id)
+        if not ObjectId.is_valid(active_v_str):
+            return False, f"Invalid active_version_id format '{active_v_str}'."
+
+        m_id = str(model.get("_id") or model.get("id"))
+        v_doc = None
+        if ObjectId.is_valid(m_id):
+            v_doc = db.ad_models.find_one({"_id": ObjectId(active_v_str), "model_id": ObjectId(m_id)})
+        
+        if not v_doc:
+            v_doc = db.ad_models.find_one({"_id": ObjectId(active_v_str)})
+
+        if not v_doc:
+            return False, f"Referenced model version '{active_v_str}' was not found for model '{m_id}'."
+
+        v_status = v_doc.get("status")
+        if v_status not in ["ready", "active"]:
+            return False, f"Referenced version status is '{v_status}'. Only ready versions can be activated."
+
+        artifacts = v_doc.get("artifacts", {})
+        ckpt_uri = artifacts.get("checkpoint_uri") or artifacts.get("memory_bank_uri")
+        if not ckpt_uri:
+            return False, "Model version metadata does not contain a checkpoint URI."
+
+        resolved_path = resolve_checkpoint_path(ckpt_uri)
+        if not resolved_path or not resolved_path.exists():
+            return False, f"PatchCore checkpoint file missing from disk at '{ckpt_uri}'."
+
+        try:
+            import torch
+            try:
+                state_dict = torch.load(resolved_path, map_location="cpu", weights_only=False)
+            except Exception:
+                state_dict = torch.load(resolved_path, map_location="cpu")
+
+            if state_dict is None:
+                return False, f"Checkpoint file at '{resolved_path}' is empty or invalid."
+        except Exception as e:
+            return False, f"Failed to load PatchCore checkpoint from disk: {str(e)}"
+
+        return True, None
+    except Exception as exc:
+        return False, f"Validation exception: {str(exc)}"
 
 
 def sync_model_usability_status(db: Database, doc: Dict[str, Any]) -> Dict[str, Any]:
     """
     Migrates legacy model statuses (e.g. 'ready') and enforces valid usability status.
     """
-    current_status = doc.get("status", "").lower()
-    
-    # If already a valid new status, return
-    if current_status in VALID_USABILITY_STATUSES and current_status != "ready":
-        return doc
+    try:
+        current_status = doc.get("status", "").lower()
+        
+        # If already a valid new status, return
+        if current_status in VALID_USABILITY_STATUSES and current_status != "ready":
+            return doc
 
-    model_id = str(doc["_id"])
-    active_v_id = doc.get("active_version_id")
+        model_id = str(doc["_id"])
+        active_v_id = doc.get("active_version_id")
 
-    if not active_v_id:
-        new_status = "draft"
-    else:
-        is_valid, _ = validate_model_artifacts_and_version(db, doc)
-        if is_valid:
-            # Legacy 'ready' migrates to 'inactive' so user can explicitly activate
-            new_status = "inactive"
+        if not active_v_id:
+            new_status = "draft"
         else:
-            new_status = "error"
+            is_valid, _ = validate_model_artifacts_and_version(db, doc)
+            if is_valid:
+                # Legacy 'ready' migrates to 'inactive' so user can explicitly activate
+                new_status = "inactive"
+            else:
+                new_status = "error"
 
-    db.ad_models.update_one(
-        {"_id": ObjectId(model_id)},
-        {"$set": {"status": new_status, "updated_at": datetime.utcnow()}}
-    )
-    doc["status"] = new_status
-    return doc
+        if ObjectId.is_valid(model_id):
+            db.ad_models.update_one(
+                {"_id": ObjectId(model_id)},
+                {"$set": {"status": new_status, "updated_at": datetime.utcnow()}}
+            )
+        doc["status"] = new_status
+        return doc
+    except Exception as err:
+        print(f"[WARN] Error syncing model usability status: {err}")
+        return doc
 
 
 def validate_and_parse_group_id(db: Database, group_id: Optional[str]) -> Optional[ObjectId]:
@@ -165,40 +206,53 @@ def create_model(
 
     data = doc.model_dump() if hasattr(doc, "model_dump") else doc.dict()
     res = db.ad_models.insert_one(data)
-    return get_model(db, str(res.inserted_id))
+    return clean_mongo_doc(get_model(db, str(res.inserted_id)))
 
 
 def get_models(db: Database) -> List[Dict[str, Any]]:
     """Returns all models (excluding deleted) sorted by updated_at DESC."""
-    cursor = list(db.ad_models.find({"status": {"$ne": "deleted"}, "is_group": {"$ne": True}}).sort("updated_at", -1))
+    try:
+        cursor = list(db.ad_models.find({"status": {"$ne": "deleted"}, "is_group": {"$ne": True}}).sort("updated_at", -1))
 
-    # Single bulk lookup for referenced model_groups to avoid N+1 queries
-    group_ids = [doc["group_id"] for doc in cursor if doc.get("group_id") and ObjectId.is_valid(str(doc["group_id"]))]
-    groups_map = {}
-    if group_ids:
-        groups_cursor = db.ad_models.find({"_id": {"$in": group_ids}, "is_group": True})
-        for g in groups_cursor:
-            groups_map[str(g["_id"])] = {
-                "id": str(g["_id"]),
-                "name": g.get("name", ""),
-                "description": g.get("description")
-            }
+        group_ids = [doc["group_id"] for doc in cursor if doc.get("group_id") and ObjectId.is_valid(str(doc["group_id"]))]
+        groups_map = {}
+        if group_ids:
+            try:
+                groups_cursor = db.ad_models.find({"_id": {"$in": group_ids}, "is_group": True})
+                for g in groups_cursor:
+                    groups_map[str(g["_id"])] = {
+                        "id": str(g["_id"]),
+                        "name": g.get("name", ""),
+                        "description": g.get("description")
+                    }
+            except Exception as g_err:
+                print(f"[WARN] Error fetching model groups in get_models: {g_err}")
 
-    models = []
-    for doc in cursor:
-        doc = sync_model_usability_status(db, doc)
-        m_id = str(doc["_id"])
-        doc["id"] = m_id
-        doc["_id"] = m_id
-        if doc.get("active_version_id"):
-            doc["active_version_id"] = str(doc["active_version_id"])
+        models = []
+        for doc in cursor:
+            try:
+                doc = sync_model_usability_status(db, doc)
+                m_id = str(doc["_id"])
+                doc["id"] = m_id
+                doc["_id"] = m_id
+                if doc.get("active_version_id"):
+                    doc["active_version_id"] = str(doc["active_version_id"])
 
-        g_id = str(doc["group_id"]) if doc.get("group_id") else None
-        doc["group_id"] = g_id
-        doc["group"] = groups_map.get(g_id) if g_id else None
-        models.append(doc)
+                g_id = str(doc["group_id"]) if doc.get("group_id") else None
+                doc["group_id"] = g_id
+                doc["group"] = groups_map.get(g_id) if g_id else None
+                models.append(clean_mongo_doc(doc))
+            except Exception as item_err:
+                print(f"[WARN] Error formatting model doc: {item_err}")
+                m_id = str(doc.get("_id", ""))
+                doc["id"] = m_id
+                doc["_id"] = m_id
+                models.append(clean_mongo_doc(doc))
 
-    return models
+        return clean_mongo_doc(models)
+    except Exception as exc:
+        print(f"[ERROR] Error listing models: {exc}")
+        return []
 
 
 def get_model(db: Database, model_id: str) -> Dict[str, Any]:
@@ -229,7 +283,7 @@ def get_model(db: Database, model_id: str) -> Dict[str, Any]:
     else:
         doc["group"] = None
 
-    return doc
+    return clean_mongo_doc(doc)
 
 
 def update_model(

@@ -35,15 +35,28 @@ router = APIRouter(prefix="/leaf-disease", tags=["Leaf Disease Analysis"])
 GEMINI_DISEASE_CONFIDENCE_THRESHOLD = 0.15
 
 
+from bson import ObjectId
+
 def _serialize_leaf_run(doc: dict) -> dict:
-    """Helper to convert BSON ObjectId to string for FastAPI responses."""
+    """Helper to convert BSON ObjectId and datetime to string for FastAPI responses."""
     if not doc:
         return doc
-    res = dict(doc)
-    if "_id" in res:
-        res["_id"] = str(res["_id"])
-        res["id"] = res["_id"]
-    return res
+    
+    def _clean(val):
+        if isinstance(val, ObjectId):
+            return str(val)
+        if isinstance(val, datetime):
+            return val.isoformat()
+        if isinstance(val, dict):
+            return {k: _clean(v) for k, v in val.items()}
+        if isinstance(val, list):
+            return [_clean(v) for v in val]
+        return val
+
+    cleaned = _clean(doc)
+    if isinstance(cleaned, dict) and "_id" in cleaned and "id" not in cleaned:
+        cleaned["id"] = cleaned["_id"]
+    return cleaned
 
 
 @router.post("/analyze", response_model=LeafDiseaseAnalysisResponse)

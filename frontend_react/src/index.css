@@ -4,23 +4,23 @@
 
 @layer base {
   html {
-    font-size: 17.5px; /* Increased font size for main application content */
+    font-size: 14px;
   }
   
   body {
-    @apply bg-industrial-100 text-industrial-900 font-sans antialiased text-base leading-relaxed;
+    @apply bg-industrial-100 text-industrial-900 font-sans antialiased text-sm leading-relaxed;
     background-image: radial-gradient(circle at 50% 0%, rgba(224, 106, 38, 0.05) 0%, transparent 65%);
   }
 
   /* Headings scale */
   h1 {
-    @apply text-3xl font-extrabold tracking-tight text-industrial-900;
+    @apply text-2xl font-extrabold tracking-tight text-industrial-900;
   }
   h2 {
-    @apply text-2xl font-bold tracking-tight text-industrial-900;
+    @apply text-xl font-bold tracking-tight text-industrial-900;
   }
   h3 {
-    @apply text-xl font-bold text-industrial-900;
+    @apply text-lg font-bold text-industrial-900;
   }
 }
 
