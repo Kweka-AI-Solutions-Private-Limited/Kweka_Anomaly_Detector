@@ -718,6 +718,7 @@ def run_patchcore_inference(
     if not ANOMALIB_AVAILABLE:
         raise RuntimeError("Anomalib library is not installed or available.")
 
+    if ckpt_uri:
         if ckpt_uri not in _MODEL_CACHE:
             resolved_path = resolve_checkpoint_path(ckpt_uri, storage_base)
             if resolved_path and resolved_path.exists():
@@ -746,83 +747,83 @@ def run_patchcore_inference(
                     except Exception as fb_err:
                         print(f"[WARN] Fallback PatchCore initialization error: {fb_err}")
 
-        if ckpt_uri in _MODEL_CACHE:
-            model, cached_thr = _MODEL_CACHE[ckpt_uri]
+    if ckpt_uri and ckpt_uri in _MODEL_CACHE:
+        model, cached_thr = _MODEL_CACHE[ckpt_uri]
+        model.post_processor = None
+
+        try:
+            if is_instance_crop:
+                test_loader = DataLoader(
+                    InstanceCropDataset([test_image_path], target_size=DEFAULT_INSTANCE_TARGET_SIZE),
+                    batch_size=1, shuffle=False, num_workers=0, collate_fn=generic_collate_fn
+                )
+            else:
+                test_loader = DataLoader(
+                    GenericFolderDataset([test_image_path]),
+                    batch_size=1, shuffle=False, num_workers=0, collate_fn=generic_collate_fn
+                )
+
+            model.eval()
             model.post_processor = None
-
-            try:
-                if is_instance_crop:
-                    test_loader = DataLoader(
-                        InstanceCropDataset([test_image_path], target_size=DEFAULT_INSTANCE_TARGET_SIZE),
-                        batch_size=1, shuffle=False, num_workers=0, collate_fn=generic_collate_fn
-                    )
-                else:
-                    test_loader = DataLoader(
-                        GenericFolderDataset([test_image_path]),
-                        batch_size=1, shuffle=False, num_workers=0, collate_fn=generic_collate_fn
-                    )
-
-                model.eval()
-                model.post_processor = None
-                with torch.no_grad():
-                    for batch in test_loader:
-                        inp = batch.image if hasattr(batch, "image") else (batch["image"] if isinstance(batch, dict) and "image" in batch else batch)
-                        preds = model(inp)
-                        if preds is not None:
-                            if isinstance(preds, torch.Tensor):
-                                raw_distance = float(preds.max().item())
-                                am = preds[0].detach().cpu().numpy()
+            with torch.no_grad():
+                for batch in test_loader:
+                    inp = batch.image if hasattr(batch, "image") else (batch["image"] if isinstance(batch, dict) and "image" in batch else batch)
+                    preds = model(inp)
+                    if preds is not None:
+                        if isinstance(preds, torch.Tensor):
+                            raw_distance = float(preds.max().item())
+                            am = preds[0].detach().cpu().numpy()
+                            if am.ndim == 3:
+                                am = am[0]
+                            anomaly_map = am
+                        else:
+                            raw_score = getattr(preds, "pred_score", None)
+                            am_tensor = getattr(preds, "anomaly_map", None)
+                            if am_tensor is not None:
+                                am = am_tensor[0].detach().cpu().numpy()
                                 if am.ndim == 3:
                                     am = am[0]
                                 anomaly_map = am
-                            else:
-                                raw_score = getattr(preds, "pred_score", None)
-                                am_tensor = getattr(preds, "anomaly_map", None)
-                                if am_tensor is not None:
-                                    am = am_tensor[0].detach().cpu().numpy()
-                                    if am.ndim == 3:
-                                        am = am[0]
-                                    anomaly_map = am
 
-                                if anomaly_map is not None:
-                                    # Product Surface Mask Extraction (Otsu + Saturation + Eroded Boundary)
-                                    img_bgr = cv2.imread(str(test_image_path))
-                                    fg_mask_eroded = None
-                                    if img_bgr is not None:
-                                        gray = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)
-                                        _, thresh_inv = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
-                                        hsv = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2HSV)
-                                        sat = hsv[:, :, 1]
-                                        _, sat_thresh = cv2.threshold(sat, 30, 255, cv2.THRESH_BINARY)
-                                        bg_white = (img_bgr[:, :, 0] > 210) & (img_bgr[:, :, 1] > 210) & (img_bgr[:, :, 2] > 210)
-                                        fg_white = (~bg_white).astype(np.uint8) * 255
+                            if anomaly_map is not None:
+                                # Product Surface Mask Extraction (Otsu + Saturation + Eroded Boundary)
+                                img_bgr = cv2.imread(str(test_image_path))
+                                fg_mask_eroded = None
+                                if img_bgr is not None:
+                                    gray = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)
+                                    _, thresh_inv = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+                                    hsv = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2HSV)
+                                    sat = hsv[:, :, 1]
+                                    _, sat_thresh = cv2.threshold(sat, 30, 255, cv2.THRESH_BINARY)
+                                    bg_white = (img_bgr[:, :, 0] > 210) & (img_bgr[:, :, 1] > 210) & (img_bgr[:, :, 2] > 210)
+                                    fg_white = (~bg_white).astype(np.uint8) * 255
 
-                                        fg_mask = cv2.bitwise_or(thresh_inv, sat_thresh)
-                                        fg_mask = cv2.bitwise_or(fg_mask, fg_white)
+                                    fg_mask = cv2.bitwise_or(thresh_inv, sat_thresh)
+                                    fg_mask = cv2.bitwise_or(fg_mask, fg_white)
 
-                                        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (15, 15))
-                                        fg_mask = cv2.morphologyEx(fg_mask, cv2.MORPH_CLOSE, kernel)
+                                    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (15, 15))
+                                    fg_mask = cv2.morphologyEx(fg_mask, cv2.MORPH_CLOSE, kernel)
 
-                                        # Erode boundary by 3 pixels to isolate pure product surface
-                                        erode_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
-                                        fg_mask_eroded = cv2.erode(fg_mask, erode_kernel, iterations=1)
+                                    # Erode boundary by 3 pixels to isolate pure product surface
+                                    erode_kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+                                    fg_mask_eroded = cv2.erode(fg_mask, erode_kernel, iterations=1)
 
-                                        am_h, am_w = anomaly_map.shape[:2]
-                                        mask_spatial = cv2.resize(fg_mask_eroded, (am_w, am_h), interpolation=cv2.INTER_NEAREST)
-                                        product_scores = anomaly_map[mask_spatial > 0]
-                                        if product_scores.size > 20:
-                                            raw_distance = float(np.percentile(product_scores, 98.5))
-                                        elif product_scores.size > 0:
-                                            raw_distance = float(product_scores.max())
-                                        else:
-                                            raw_distance = float(anomaly_map.max())
+                                    am_h, am_w = anomaly_map.shape[:2]
+                                    mask_spatial = cv2.resize(fg_mask_eroded, (am_w, am_h), interpolation=cv2.INTER_NEAREST)
+                                    product_scores = anomaly_map[mask_spatial > 0]
+                                    if product_scores.size > 20:
+                                        raw_distance = float(np.percentile(product_scores, 98.5))
+                                    elif product_scores.size > 0:
+                                        raw_distance = float(product_scores.max())
                                     else:
                                         raw_distance = float(anomaly_map.max())
-                                elif raw_score is not None:
-                                    raw_distance = float(raw_score[0]) if hasattr(raw_score, "__getitem__") else float(raw_score)
-            except Exception as e:
-                import traceback
-                raise RuntimeError(f"PatchCore PyTorch inference execution failed for '{test_image_path}': {e}\n{traceback.format_exc()}")
+                                else:
+                                    raw_distance = float(anomaly_map.max())
+                            elif raw_score is not None:
+                                raw_distance = float(raw_score[0]) if hasattr(raw_score, "__getitem__") else float(raw_score)
+        except Exception as e:
+            import traceback
+            raise RuntimeError(f"PatchCore PyTorch inference execution failed for '{test_image_path}': {e}\n{traceback.format_exc()}")
 
     # Strict check: NO synthetic or random score fallback allowed!
     if raw_distance is None:
