@@ -212,7 +212,12 @@ def create_model(
 def get_models(db: Database) -> List[Dict[str, Any]]:
     """Returns all models (excluding deleted) sorted by updated_at DESC."""
     try:
-        cursor = list(db.ad_models.find({"status": {"$ne": "deleted"}, "is_group": {"$ne": True}}).sort("updated_at", -1))
+        cursor = list(db.ad_models.find({
+            "name": {"$exists": True},
+            "status": {"$ne": "deleted"},
+            "is_group": {"$ne": True},
+            "model_id": {"$exists": False}
+        }).sort("updated_at", -1))
 
         group_ids = [doc["group_id"] for doc in cursor if doc.get("group_id") and ObjectId.is_valid(str(doc["group_id"]))]
         groups_map = {}
