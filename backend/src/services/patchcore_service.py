@@ -170,57 +170,32 @@ def calibrate_out_of_sample_good(
     set_seed(seed)
     calib_scores = []
 
-    if n_train < 10:
-        calib_mode = f"Leave-One-Out (LOO, N={n_train})"
-        for i in range(n_train):
-            sub_train = [valid_paths[j] for j in range(n_train) if j != i]
-            val_sample = [valid_paths[i]]
+    calib_mode = f"Optimized Fast Calibration (N={n_train})"
+    rng = random.Random(seed)
+    shuffled = list(valid_paths)
+    rng.shuffle(shuffled)
 
-            m = Patchcore(
-                backbone=PATCHCORE_CONFIG["backbone"],
-                layers=PATCHCORE_CONFIG["layers"],
-                pre_trained=PATCHCORE_CONFIG["pretrained"],
-                coreset_sampling_ratio=PATCHCORE_CONFIG["coreset_sampling_ratio"],
-                num_neighbors=PATCHCORE_CONFIG["num_neighbors"],
-            )
-            e = Engine(accelerator="auto", devices=1, enable_progress_bar=False)
+    split_idx = max(1, int(n_train * 0.8))
+    ref_images = shuffled[:split_idx] if n_train >= 4 else shuffled
+    val_images = shuffled[split_idx:] if n_train >= 4 else shuffled[:2]
 
-            tr_loader = DataLoader(GenericFolderDataset(sub_train, target_size), batch_size=min(2, max(1, len(sub_train))), shuffle=False, num_workers=0, collate_fn=generic_collate_fn)
-            val_loader = DataLoader(GenericFolderDataset(val_sample, target_size), batch_size=1, shuffle=False, num_workers=0, collate_fn=generic_collate_fn)
+    m = Patchcore(
+        backbone=PATCHCORE_CONFIG["backbone"],
+        layers=PATCHCORE_CONFIG["layers"],
+        pre_trained=PATCHCORE_CONFIG["pretrained"],
+        coreset_sampling_ratio=PATCHCORE_CONFIG["coreset_sampling_ratio"],
+        num_neighbors=PATCHCORE_CONFIG["num_neighbors"],
+    )
+    e = Engine(accelerator="auto", devices=1, enable_progress_bar=False)
 
-            e.fit(model=m, train_dataloaders=tr_loader)
-            m.post_processor = None  # Disable MinMax clipping
+    tr_loader = DataLoader(GenericFolderDataset(ref_images, target_size), batch_size=2, shuffle=False, num_workers=0, collate_fn=generic_collate_fn)
+    val_loader = DataLoader(GenericFolderDataset(val_images, target_size), batch_size=1, shuffle=False, num_workers=0, collate_fn=generic_collate_fn)
 
-            preds = e.predict(model=m, dataloaders=val_loader)
-            if preds and hasattr(preds[0], "pred_score"):
-                score = float(preds[0].pred_score[0])
-                calib_scores.append(score)
-    else:
-        calib_mode = f"Split-Sample (80/20, N={n_train})"
-        rng = random.Random(seed)
-        shuffled = list(valid_paths)
-        rng.shuffle(shuffled)
+    e.fit(model=m, train_dataloaders=tr_loader)
+    m.post_processor = None
 
-        split_idx = max(1, int(n_train * 0.8))
-        ref_images = shuffled[:split_idx]
-        val_images = shuffled[split_idx:]
-
-        m = Patchcore(
-            backbone=PATCHCORE_CONFIG["backbone"],
-            layers=PATCHCORE_CONFIG["layers"],
-            pre_trained=PATCHCORE_CONFIG["pretrained"],
-            coreset_sampling_ratio=PATCHCORE_CONFIG["coreset_sampling_ratio"],
-            num_neighbors=PATCHCORE_CONFIG["num_neighbors"],
-        )
-        e = Engine(accelerator="auto", devices=1, enable_progress_bar=False)
-
-        tr_loader = DataLoader(GenericFolderDataset(ref_images, target_size), batch_size=2, shuffle=False, num_workers=0, collate_fn=generic_collate_fn)
-        val_loader = DataLoader(GenericFolderDataset(val_images, target_size), batch_size=1, shuffle=False, num_workers=0, collate_fn=generic_collate_fn)
-
-        e.fit(model=m, train_dataloaders=tr_loader)
-        m.post_processor = None
-
-        preds = e.predict(model=m, dataloaders=val_loader)
+    preds = e.predict(model=m, dataloaders=val_loader)
+    if preds:
         for b in preds:
             if hasattr(b, "pred_score"):
                 for s in b.pred_score:
