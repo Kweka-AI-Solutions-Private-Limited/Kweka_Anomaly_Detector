@@ -10,7 +10,35 @@ export const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 45000,
 });
+
+// Automatic retry interceptor for handling Cloud Run cold starts and transient 502/503/504 errors
+apiClient.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const config = error.config;
+    if (!config) return Promise.reject(error);
+
+    config.__retryCount = config.__retryCount || 0;
+    const MAX_RETRIES = 3;
+
+    const isRetryable =
+      !error.response ||
+      error.response.status === 503 ||
+      error.response.status === 502 ||
+      error.response.status === 504;
+
+    if (isRetryable && config.__retryCount < MAX_RETRIES) {
+      config.__retryCount += 1;
+      const delayMs = config.__retryCount * 1500;
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+      return apiClient(config);
+    }
+
+    return Promise.reject(error);
+  }
+);
 
 export function getStorageUrl(path?: string | null): string {
   if (!path) return '';
