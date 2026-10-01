@@ -87,7 +87,9 @@ def _process_inspection_run_background(
         except Exception:
             raise HTTPException(status_code=400, detail="Threshold must be a finite numeric value greater than 0.")
     else:
-        threshold = version.get("calibration", {}).get("threshold", 27.0)
+        threshold = version.get("calibration", {}).get("threshold")
+        if threshold is None:
+            raise HTTPException(status_code=400, detail="Active model version does not have a calibrated threshold. Please build/calibrate the model version first.")
 
     artifacts = version.get("artifacts", {})
     total_files = len(file_payloads)
