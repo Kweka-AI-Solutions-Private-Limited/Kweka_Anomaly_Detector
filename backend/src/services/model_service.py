@@ -555,18 +555,16 @@ def build_model_version(db: Database, model_id: str) -> Dict[str, Any]:
 def get_model_versions(db: Database, model_id: str) -> List[Dict[str, Any]]:
     """Returns all non-deleted versions for a model sorted newest first."""
     get_model(db, model_id)  # Validate 404
+    m_obj_id = ObjectId(model_id) if ObjectId.is_valid(model_id) else model_id
     cursor = db.ad_models.find({
-        "model_id": ObjectId(model_id),
+        "model_id": {"$in": [m_obj_id, str(model_id)]},
         "version_number": {"$exists": True},
         "status": {"$ne": "deleted"}
     }).sort("version_number", -1)
     versions = []
     for doc in cursor:
-        doc["id"] = str(doc["_id"])
-        doc["_id"] = str(doc["_id"])
-        doc["model_id"] = str(doc["model_id"])
         versions.append(clean_mongo_doc(doc))
-    return clean_mongo_doc(versions)
+    return versions
 
 
 def get_model_version(db: Database, model_id: str, version_id: str) -> Dict[str, Any]:
@@ -575,18 +573,18 @@ def get_model_version(db: Database, model_id: str, version_id: str) -> Dict[str,
     if not ObjectId.is_valid(version_id):
         raise HTTPException(status_code=400, detail=f"Invalid version_id format '{version_id}'.")
 
+    v_obj_id = ObjectId(version_id)
+    m_obj_id = ObjectId(model_id) if ObjectId.is_valid(model_id) else model_id
+
     doc = db.ad_models.find_one({
-        "_id": ObjectId(version_id),
-        "model_id": ObjectId(model_id),
+        "_id": v_obj_id,
+        "model_id": {"$in": [m_obj_id, str(model_id)]},
         "status": {"$ne": "deleted"}
     })
     if not doc:
         raise HTTPException(status_code=404, detail=f"Version '{version_id}' for model '{model_id}' not found.")
 
-    doc["id"] = str(doc["_id"])
-    doc["_id"] = str(doc["_id"])
-    doc["model_id"] = str(doc["model_id"])
-    return doc
+    return clean_mongo_doc(doc)
 
 
 def delete_model_version(db: Database, model_id: str, version_id: str) -> Dict[str, Any]:
