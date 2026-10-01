@@ -1,6 +1,10 @@
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
+import dns from 'node:dns';
+
+// Ensure Node.js proxy uses IPv4 resolution first to prevent ENOTFOUND errors
+dns.setDefaultResultOrder('ipv4first');
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
