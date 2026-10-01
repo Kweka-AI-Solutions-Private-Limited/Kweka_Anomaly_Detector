@@ -399,7 +399,7 @@ def add_reference_images(db: Database, model_id: str, files: List[UploadFile]) -
         uploaded_records.append(data)
 
     # Update reference image count on model
-    new_count = db.ad_models.count_documents({"model_id": ObjectId(model_id)})
+    new_count = db.ad_models.count_documents({"model_id": ObjectId(model_id), "filename": {"$exists": True}})
     db.ad_models.update_one(
         {"_id": ObjectId(model_id)},
         {"$set": {"reference_image_count": new_count, "updated_at": datetime.utcnow()}}
@@ -411,7 +411,7 @@ def add_reference_images(db: Database, model_id: str, files: List[UploadFile]) -
 def get_reference_images(db: Database, model_id: str) -> List[Dict[str, Any]]:
     """Lists metadata for reference images of a model."""
     get_model(db, model_id)  # Validate 404
-    cursor = db.ad_models.find({"model_id": ObjectId(model_id)}).sort("uploaded_at", -1)
+    cursor = db.ad_models.find({"model_id": ObjectId(model_id), "filename": {"$exists": True}}).sort("uploaded_at", -1)
     refs = []
     for doc in cursor:
         doc["id"] = str(doc["_id"])
@@ -427,7 +427,7 @@ def build_model_version(db: Database, model_id: str) -> Dict[str, Any]:
     model = get_model(db, model_id)
 
     # Fetch reference image docs
-    ref_cursor = list(db.ad_models.find({"model_id": ObjectId(model_id)}))
+    ref_cursor = list(db.ad_models.find({"model_id": ObjectId(model_id), "filename": {"$exists": True}}))
     if len(ref_cursor) == 0:
         raise HTTPException(status_code=400, detail="Insufficient reference images. Please upload GOOD reference images first.")
 
@@ -438,8 +438,8 @@ def build_model_version(db: Database, model_id: str) -> Dict[str, Any]:
     )
 
     # Determine next version number
-    latest_v = db.ad_models.find_one({"model_id": ObjectId(model_id)}, sort=[("version_number", -1)])
-    next_version_num = (latest_v["version_number"] + 1) if latest_v else 1
+    latest_v = db.ad_models.find_one({"model_id": ObjectId(model_id), "version_number": {"$exists": True}}, sort=[("version_number", -1)])
+    next_version_num = (latest_v.get("version_number", 0) + 1) if (latest_v and isinstance(latest_v, dict) and "version_number" in latest_v) else 1
 
     # Create model version record in building status
     ref_ids = [str(r["_id"]) for r in ref_cursor]
