@@ -43,21 +43,31 @@ export async function getReferenceImages(modelId: string): Promise<ReferenceImag
 }
 
 export async function uploadReferenceImages(modelId: string, files: File[]): Promise<ReferenceImage[]> {
-  const formData = new FormData();
-  files.forEach((file) => {
-    formData.append('files', file);
-  });
+  const BATCH_SIZE = 5;
+  const allResults: ReferenceImage[] = [];
 
-  const response = await apiClient.post(
-    `/api/models/${modelId}/references`,
-    formData,
-    {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
+  for (let i = 0; i < files.length; i += BATCH_SIZE) {
+    const chunk = files.slice(i, i + BATCH_SIZE);
+    const formData = new FormData();
+    chunk.forEach((file) => {
+      formData.append('files', file);
+    });
+
+    const response = await apiClient.post(
+      `/api/models/${modelId}/references`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+    if (Array.isArray(response.data)) {
+      allResults.push(...response.data);
     }
-  );
-  return response.data;
+  }
+
+  return allResults;
 }
 
 export async function buildModelVersion(modelId: string): Promise<ModelVersion> {
