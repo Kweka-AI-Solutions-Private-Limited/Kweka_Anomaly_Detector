@@ -17,8 +17,9 @@ from db.schemas import (
     InspectionResultSchema, PredictionOutput, LocalizationOutput, BoundingBox,
     VLMAnalysisSchema
 )
+from pathlib import Path
 from services.storage_service import save_inspection_image, get_storage_base_dir
-from services.patchcore_service import run_patchcore_inference
+from services.patchcore_service import run_patchcore_inference, _MODEL_CACHE
 from services.model_service import get_model, get_model_version
 from services.inspection_service import (
     serialize_object_ids, normalize_inspection_payload, run_inspection,
@@ -93,6 +94,42 @@ def _process_inspection_run_background(
 
     artifacts = version.get("artifacts", {})
     total_files = len(file_payloads)
+
+    # Pre-warm PatchCore model in memory cache to ensure fast batch processing (<300ms) and eliminate 503 gateway timeouts
+    ckpt_uri = artifacts.get("checkpoint_uri", "") or artifacts.get("memory_bank_uri", "")
+    if ckpt_uri and ckpt_uri not in _MODEL_CACHE:
+        try:
+            from services.patchcore_service import resolve_checkpoint_path, load_patchcore_model, ANOMALIB_AVAILABLE, Patchcore, PATCHCORE_CONFIG
+            import base64, io, torch
+            storage_base = Path(__file__).resolve().parent.parent.parent
+            resolved_path = resolve_checkpoint_path(ckpt_uri, storage_base)
+            if resolved_path and resolved_path.exists():
+                try:
+                    m_loaded = load_patchcore_model(resolved_path)
+                    if m_loaded is not None:
+                        _MODEL_CACHE[ckpt_uri] = (m_loaded, threshold)
+                except Exception:
+                    pass
+            if ckpt_uri not in _MODEL_CACHE:
+                mb_b64 = artifacts.get("memory_bank_b64")
+                if mb_b64 and ANOMALIB_AVAILABLE:
+                    try:
+                        raw_bytes = base64.b64decode(mb_b64)
+                        mb_tensor = torch.load(io.BytesIO(raw_bytes), map_location="cpu")
+                        restored_model = Patchcore(
+                            backbone=PATCHCORE_CONFIG["backbone"],
+                            layers=PATCHCORE_CONFIG["layers"],
+                            pre_trained=False,
+                            coreset_sampling_ratio=PATCHCORE_CONFIG["coreset_sampling_ratio"],
+                            num_neighbors=PATCHCORE_CONFIG["num_neighbors"],
+                        )
+                        restored_model.model.memory_bank = mb_tensor
+                        restored_model.eval()
+                        _MODEL_CACHE[ckpt_uri] = (restored_model, threshold)
+                    except Exception as res_err:
+                        print(f"[WARN] Pre-warm memory bank B64 restoration failed: {res_err}")
+        except Exception as prewarm_err:
+            print(f"[WARN] Pre-warming model cache failed: {prewarm_err}")
 
     for filename, file_bytes in file_payloads:
         upload_wrapper = BytesUploadFile(filename, file_bytes)
