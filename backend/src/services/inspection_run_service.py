@@ -122,6 +122,15 @@ def _process_inspection_run_background(
             inspection_records.append(insp_res)
         except Exception as e:
             error_count += 1
+            completed_images += 1
+            print(f"[WARN] Inspection item '{filename}' in run '{run_id}' failed: {e}")
+            try:
+                db.ad_inspections.update_many(
+                    {"run_id": ObjectId(run_id), "input.filename": filename, "status": "processing"},
+                    {"$set": {"status": "failed", "error": str(e)}}
+                )
+            except Exception:
+                pass
             inspection_records.append({
                 "filename": filename,
                 "status": "failed",

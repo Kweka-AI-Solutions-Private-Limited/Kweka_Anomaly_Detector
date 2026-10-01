@@ -496,12 +496,12 @@ def build_model_version(db: Database, model_id: str) -> Dict[str, Any]:
             {"$set": {"version_id": version_id}}
         )
 
-        # Update model's active_version_id and set status to INACTIVE (user must explicitly activate)
+        # Update model's active_version_id and set status to ACTIVE automatically
         db.ad_models.update_one(
             {"_id": ObjectId(model_id)},
             {"$set": {
                 "active_version_id": version_id,
-                "status": "inactive",
+                "status": "active",
                 "error_reason": None,
                 "updated_at": datetime.utcnow()
             }}
