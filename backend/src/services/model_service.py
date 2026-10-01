@@ -557,6 +557,7 @@ def get_model_versions(db: Database, model_id: str) -> List[Dict[str, Any]]:
     get_model(db, model_id)  # Validate 404
     cursor = db.ad_models.find({
         "model_id": ObjectId(model_id),
+        "version_number": {"$exists": True},
         "status": {"$ne": "deleted"}
     }).sort("version_number", -1)
     versions = []
@@ -564,8 +565,8 @@ def get_model_versions(db: Database, model_id: str) -> List[Dict[str, Any]]:
         doc["id"] = str(doc["_id"])
         doc["_id"] = str(doc["_id"])
         doc["model_id"] = str(doc["model_id"])
-        versions.append(doc)
-    return versions
+        versions.append(clean_mongo_doc(doc))
+    return clean_mongo_doc(versions)
 
 
 def get_model_version(db: Database, model_id: str, version_id: str) -> Dict[str, Any]:
