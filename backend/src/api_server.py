@@ -120,52 +120,39 @@ app.include_router(model_groups_router, prefix="/api")
 app.include_router(model_groups_router)
 
 
-@app.on_event("startup")
-def startup_db_init():
-    """Initializes MongoDB, creates indexes, and pre-warms active model memory banks into _MODEL_CACHE."""
+import threading as _threading
+
+def _prewarm_models_background():
+    """Loads all active PatchCore models from MongoDB B64 into _MODEL_CACHE in a background thread.
+    Runs AFTER the server is already listening so Cloud Run health checks pass immediately."""
+    import time as _time
+    _time.sleep(3)  # Small delay to let the server fully bind and pass health checks first
     try:
         db = get_db()
-        db.command("ping")
-        ensure_indexes(db)
-        print(f"[INFO] InspectAI Database Initialized! Connected to '{MONGODB_DATABASE}'.")
-    except Exception as e:
-        print(f"[WARN] MongoDB startup initialization notice: {e}")
-        return
-
-    # Pre-warm all active model PatchCore memory banks from MongoDB into _MODEL_CACHE
-    # This runs ONCE on container start so first inspection request is instant (no cold-load latency)
-    try:
         from services.patchcore_service import _MODEL_CACHE, Patchcore, PATCHCORE_CONFIG, ANOMALIB_AVAILABLE
-        import base64
-        import io as _io
+        import base64, io as _io
         import torch as _torch
+        from bson import ObjectId as _ObjId
 
         active_models = list(db.ad_models.find({"status": "active", "active_version_id": {"$exists": True, "$ne": None}}))
-        print(f"[STARTUP] Pre-warming {len(active_models)} active model(s) into PatchCore memory cache...")
+        print(f"[PREWARM] Warming {len(active_models)} active model(s) in background...")
 
         for m in active_models:
             try:
                 v_id = m.get("active_version_id")
                 if not v_id:
                     continue
-                from bson import ObjectId as _ObjId
                 version = db.ad_models.find_one({"_id": _ObjId(str(v_id))})
                 if not version:
                     continue
-
                 artifacts = version.get("artifacts") or {}
                 ckpt_uri = artifacts.get("checkpoint_uri") or artifacts.get("memory_bank_uri")
                 mb_b64 = artifacts.get("memory_bank_b64")
                 threshold = (version.get("calibration") or {}).get("threshold")
-
                 if not ckpt_uri or not mb_b64 or threshold is None:
-                    print(f"[STARTUP] Model '{m.get('name')}' skipped — missing artifacts or threshold.")
                     continue
-
                 if ckpt_uri in _MODEL_CACHE:
-                    print(f"[STARTUP] Model '{m.get('name')}' already in cache, skipping.")
                     continue
-
                 if ANOMALIB_AVAILABLE:
                     raw_bytes = base64.b64decode(mb_b64)
                     mb_tensor = _torch.load(_io.BytesIO(raw_bytes), map_location="cpu")
@@ -179,13 +166,29 @@ def startup_db_init():
                     restored_model.model.memory_bank = mb_tensor
                     restored_model.eval()
                     _MODEL_CACHE[ckpt_uri] = (restored_model, threshold)
-                    print(f"[STARTUP] ✓ Pre-warmed model '{m.get('name')}' (ckpt: {ckpt_uri})")
+                    print(f"[PREWARM] ✓ Model '{m.get('name')}' loaded into cache.")
             except Exception as model_err:
-                print(f"[STARTUP] ✗ Failed to pre-warm model '{m.get('name', '?')}': {model_err}")
+                print(f"[PREWARM] ✗ Model '{m.get('name', '?')}' failed: {model_err}")
 
-        print(f"[STARTUP] Model pre-warming complete. {len(_MODEL_CACHE)} model(s) cached.")
+        print(f"[PREWARM] Done. {len(_MODEL_CACHE)} model(s) in cache.")
     except Exception as prewarm_err:
-        print(f"[STARTUP] Model pre-warming failed (non-fatal): {prewarm_err}")
+        print(f"[PREWARM] Background pre-warming failed (non-fatal): {prewarm_err}")
+
+
+@app.on_event("startup")
+def startup_db_init():
+    """Initializes MongoDB and creates indexes. Model pre-warming runs in a background thread."""
+    try:
+        db = get_db()
+        db.command("ping")
+        ensure_indexes(db)
+        print(f"[INFO] InspectAI Database Initialized! Connected to '{MONGODB_DATABASE}'.")
+    except Exception as e:
+        print(f"[WARN] MongoDB startup initialization notice: {e}")
+
+    # Launch model pre-warming in a daemon background thread so container starts instantly
+    t = _threading.Thread(target=_prewarm_models_background, daemon=True)
+    t.start()
 
 
 @app.get("/api/health")
