@@ -432,7 +432,16 @@ def build_model_version(db: Database, model_id: str) -> Dict[str, Any]:
     model = get_model(db, model_id)
 
     # Fetch reference image docs
-    ref_cursor = list(db.ad_models.find({"model_id": ObjectId(model_id), "filename": {"$exists": True}}))
+    ref_cursor = list(db.ad_models.find({
+        "model_id": ObjectId(model_id),
+        "type": "reference_image"
+    }))
+
+    if len(ref_cursor) < 2:
+        raise HTTPException(
+            status_code=400,
+            detail="Cannot build model version. Please upload at least 2 GOOD reference images first so PatchCore can learn normal product features."
+        )
     if len(ref_cursor) == 0:
         raise HTTPException(status_code=400, detail="Insufficient reference images. Please upload GOOD reference images first.")
 

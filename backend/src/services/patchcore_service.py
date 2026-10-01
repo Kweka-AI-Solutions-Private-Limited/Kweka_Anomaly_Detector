@@ -15,6 +15,8 @@ Production service connecting FastAPI / MongoDB to the validated PatchCore engin
 
 import os
 import json
+import io
+import base64
 import time
 import random
 from datetime import datetime
@@ -293,10 +295,21 @@ def build_patchcore_version(
     build_time_ms = round((time.time() - start_time) * 1000, 1)
     storage_base = artifacts_dir.parent.parent.parent
 
+    # Serialize memory bank tensor to base64 for persistent cloud deployment
+    memory_bank_b64 = None
+    if ANOMALIB_AVAILABLE and len(valid_paths) >= 2 and 'm' in locals():
+        try:
+            mb_buf = io.BytesIO()
+            torch.save(m.model.memory_bank, mb_buf)
+            memory_bank_b64 = base64.b64encode(mb_buf.getvalue()).decode("ascii")
+        except Exception as mb_err:
+            print(f"[WARN] Failed to serialize PatchCore memory bank to B64: {mb_err}")
+
     artifact_uris = {
         "checkpoint_uri": str(checkpoint_file.relative_to(storage_base)).replace("\\", "/"),
         "memory_bank_uri": str(checkpoint_file.relative_to(storage_base)).replace("\\", "/"),
-        "metadata_uri": str(metadata_file.relative_to(storage_base)).replace("\\", "/")
+        "metadata_uri": str(metadata_file.relative_to(storage_base)).replace("\\", "/"),
+        "memory_bank_b64": memory_bank_b64
     }
 
     return p95_thr, build_time_ms, artifact_uris
@@ -731,21 +744,23 @@ def run_patchcore_inference(
                     print(f"[WARN] Failed to load PatchCore model from artifact '{resolved_path}': {e}\n{traceback.format_exc()}")
             
             if ckpt_uri not in _MODEL_CACHE:
-                # Cloud Run ephemeral disk fallback: instantiate operational PatchCore model
-                if ANOMALIB_AVAILABLE:
+                mb_b64 = artifacts.get("memory_bank_b64")
+                if mb_b64 and ANOMALIB_AVAILABLE:
                     try:
-                        fallback_model = Patchcore(
+                        raw_bytes = base64.b64decode(mb_b64)
+                        mb_tensor = torch.load(io.BytesIO(raw_bytes), map_location="cpu")
+                        restored_model = Patchcore(
                             backbone=PATCHCORE_CONFIG["backbone"],
                             layers=PATCHCORE_CONFIG["layers"],
                             pre_trained=False,
                             coreset_sampling_ratio=PATCHCORE_CONFIG["coreset_sampling_ratio"],
                             num_neighbors=PATCHCORE_CONFIG["num_neighbors"],
                         )
-                        fallback_model.model.memory_bank = torch.randn(100, 512)
-                        fallback_model.eval()
-                        _MODEL_CACHE[ckpt_uri] = (fallback_model, threshold)
-                    except Exception as fb_err:
-                        print(f"[WARN] Fallback PatchCore initialization error: {fb_err}")
+                        restored_model.model.memory_bank = mb_tensor
+                        restored_model.eval()
+                        _MODEL_CACHE[ckpt_uri] = (restored_model, threshold)
+                    except Exception as res_err:
+                        print(f"[WARN] Memory bank B64 restoration failed: {res_err}")
 
     if ckpt_uri and ckpt_uri in _MODEL_CACHE:
         model, cached_thr = _MODEL_CACHE[ckpt_uri]
