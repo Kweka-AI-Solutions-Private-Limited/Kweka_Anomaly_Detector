@@ -269,46 +269,23 @@ def create_inspection_run(
     res = db.ad_inspection_runs.insert_one(run_data)
     run_id = str(res.inserted_id)
 
-    # 5. Execute in background if background_tasks is supplied, or synchronously if not
-    if background_tasks is not None:
-        background_tasks.add_task(
-            _process_inspection_run_background,
-            db,
-            run_id,
-            model_id,
-            active_version_id,
-            version,
-            model,
-            file_payloads,
-            threshold_override,
-            inspection_mode,
-            min_instance_area,
-            max_instances
-        )
-    else:
-        _process_inspection_run_background(
-            db,
-            run_id,
-            model_id,
-            active_version_id,
-            version,
-            model,
-            file_payloads,
-            threshold_override,
-            inspection_mode,
-            min_instance_area,
-            max_instances
-        )
+    # 5. Process inspection run synchronously to guarantee complete execution under Cloud Run container CPU throttling
+    _process_inspection_run_background(
+        db,
+        run_id,
+        model_id,
+        active_version_id,
+        version,
+        model,
+        file_payloads,
+        threshold_override,
+        inspection_mode,
+        min_instance_area,
+        max_instances
+    )
 
-
-    # Re-fetch updated run document
-    updated_run = db.ad_inspection_runs.find_one({"_id": ObjectId(run_id)}) or run_data
-    serialized = serialize_object_ids(updated_run)
-    run_resp_id = serialized.get("id") or str(serialized.get("_id", run_id))
-    serialized["run_id"] = run_resp_id
-    serialized["id"] = run_resp_id
-    serialized["_id"] = run_resp_id
-    return serialized
+    # 6. Fetch updated run document with completed status and inspection results
+    return get_inspection_run(db, run_id)
 
 
 
