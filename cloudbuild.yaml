@@ -16,12 +16,7 @@ steps:
       - '--all-tags'
       - 'gcr.io/$PROJECT_ID/kweka-anomaly-detector'
 
-  # Step 3: Deploy to Cloud Run with production settings
-  # --min-instances=1  : keeps 1 container warm at all times (prevents cold-start 503s)
-  # --timeout=3600     : allows up to 60min per request (covers any model size)
-  # --memory=4Gi       : enough for PatchCore WideResNet50_2 memory bank
-  # --cpu=2            : 2 vCPUs for fast inference
-  # --cpu-throttling=false: CPU never throttled between requests (enables background tasks if needed)
+  # Step 3: Deploy to Cloud Run
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: gcloud
     args:
@@ -31,12 +26,6 @@ steps:
       - '--image=gcr.io/$PROJECT_ID/kweka-anomaly-detector:$COMMIT_SHA'
       - '--region=asia-south1'
       - '--platform=managed'
-      - '--timeout=3600'
-      - '--min-instances=1'
-      - '--max-instances=4'
-      - '--memory=4Gi'
-      - '--cpu=2'
-      - '--no-cpu-throttling'
       - '--allow-unauthenticated'
 
 images:
