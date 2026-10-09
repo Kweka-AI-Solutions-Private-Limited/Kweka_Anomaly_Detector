@@ -16,24 +16,32 @@ interface HeaderProps {
   onToggleMobileMenu?: () => void;
 }
 
+function isHexId(str?: string | null): boolean {
+  if (!str) return false;
+  const s = str.trim();
+  return s.length >= 16 && /^[0-9a-fA-F]+$/.test(s);
+}
+
 function formatUserIdentity(id: string, name?: string | null, email?: string | null) {
   let finalName = name?.trim();
   let finalEmail = email?.trim();
 
-  if (!finalName || finalName === id) {
+  // If missing or raw hex ID string, format human-friendly display name
+  if (!finalName || finalName === id || isHexId(finalName)) {
     if (id === 'usr_default') {
       finalName = 'QA Operator';
-    } else if (id.length >= 16) {
+    } else if (isHexId(id)) {
       finalName = `Operator (${id.slice(0, 8)})`;
     } else {
       finalName = id;
     }
   }
 
-  if (!finalEmail || (finalEmail.includes(id) && id.length >= 16)) {
+  // If missing or raw hex ID string, format clean email
+  if (!finalEmail || finalEmail.includes(id) || isHexId(finalEmail)) {
     if (id === 'usr_default') {
       finalEmail = 'operator@anomalydetector.ai';
-    } else if (id.length >= 16) {
+    } else if (isHexId(id)) {
       finalEmail = `user_${id.slice(0, 8)}@kweka.ai`;
     } else {
       finalEmail = `${id}@anomalydetector.ai`;
@@ -54,6 +62,23 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu }) => {
     const storedEmail = localStorage.getItem('user_email');
     return formatUserIdentity(activeId, storedName, storedEmail);
   });
+
+  // Listen to local storage or token exchange updates across tabs/events
+  useEffect(() => {
+    const syncProfile = () => {
+      const activeId = localStorage.getItem('user_id') || 'usr_default';
+      const storedName = localStorage.getItem('user_name');
+      const storedEmail = localStorage.getItem('user_email');
+      setUserProfile(formatUserIdentity(activeId, storedName, storedEmail));
+    };
+
+    window.addEventListener('storage', syncProfile);
+    window.addEventListener('profile_updated', syncProfile);
+    return () => {
+      window.removeEventListener('storage', syncProfile);
+      window.removeEventListener('profile_updated', syncProfile);
+    };
+  }, []);
 
   // Dropdown states
   const [isProfileOpen, setIsProfileOpen] = useState<boolean>(false);

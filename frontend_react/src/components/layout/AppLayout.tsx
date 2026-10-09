@@ -10,10 +10,26 @@ export const AppLayout: React.FC = () => {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const code = params.get('code') || params.get('token') || params.get('auth_code') || params.get('exchange_code');
+    const urlName = params.get('name') || params.get('user_name') || params.get('display_name') || params.get('full_name');
+    const urlEmail = params.get('email') || params.get('user_email') || params.get('mail');
+
+    if (urlName && !/^[0-9a-fA-F]{16,}$/.test(urlName.trim())) {
+      localStorage.setItem('user_name', urlName.trim());
+    }
+    if (urlEmail) {
+      localStorage.setItem('user_email', urlEmail.trim());
+    }
+
     if (code) {
       exchangeAuthCode(code)
         .then((res) => {
           console.log('[Auth] Code exchange successful for user:', res.user_id);
+          if (res.user?.name && !/^[0-9a-fA-F]{16,}$/.test(res.user.name.trim())) {
+            localStorage.setItem('user_name', res.user.name.trim());
+          }
+          if (res.user?.email) {
+            localStorage.setItem('user_email', res.user.email.trim());
+          }
           params.delete('code');
           params.delete('token');
           params.delete('auth_code');
@@ -21,10 +37,13 @@ export const AppLayout: React.FC = () => {
           const newSearch = params.toString();
           const newUrl = window.location.pathname + (newSearch ? `?${newSearch}` : '') + window.location.hash;
           window.history.replaceState({}, '', newUrl);
+          window.dispatchEvent(new Event('profile_updated'));
         })
         .catch((err) => {
           console.error('[Auth] Failed to exchange code:', err);
         });
+    } else if (urlName || urlEmail) {
+      window.dispatchEvent(new Event('profile_updated'));
     }
   }, []);
 
