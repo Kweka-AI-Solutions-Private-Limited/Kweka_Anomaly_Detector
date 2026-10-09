@@ -13,6 +13,13 @@ export const apiClient = axios.create({
   timeout: 45000,
 });
 
+// Automatic User Isolation Context Interceptor
+apiClient.interceptors.request.use((config) => {
+  const userId = localStorage.getItem('user_id') || 'usr_default';
+  config.headers['X-User-ID'] = userId;
+  return config;
+});
+
 // Automatic retry interceptor for handling Cloud Run cold starts and transient 502/503/504 errors
 apiClient.interceptors.response.use(
   (response) => response,

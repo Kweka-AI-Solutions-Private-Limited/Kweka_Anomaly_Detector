@@ -14,7 +14,7 @@ import time
 import random
 from pathlib import Path
 from typing import List, Optional
-from datetime import datetime
+from datetime import datetime, timezone
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, File, UploadFile, Form, HTTPException
@@ -250,12 +250,12 @@ async def legacy_run_inspection(
         "sample": filename,
         "sampleUrl": sample_url,
         "heatmapUrl": heatmap_url,
-        "created_at": datetime.utcnow()
+        "created_at": datetime.now(timezone.utc)
     }
 
     try:
         db = get_db()
-        db.inspections.insert_one(record)
+        db.ad_inspections.insert_one(record)
         record.pop("_id", None)
     except Exception as e:
         print(f"[WARN] Could not persist inspection record to MongoDB: {e}")
@@ -271,7 +271,7 @@ async def legacy_run_inspection(
 def legacy_delete_inspections():
     try:
         db = get_db()
-        result = db.inspections.delete_many({})
+        result = db.ad_inspections.delete_many({})
         return {"success": True, "deleted_count": result.deleted_count}
     except Exception as e:
         return {"success": False, "error": str(e)}

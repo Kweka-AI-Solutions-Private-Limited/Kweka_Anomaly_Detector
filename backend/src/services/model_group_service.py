@@ -1,4 +1,4 @@
-"""
+﻿"""
 InspectAI Model Group Service
 -----------------------------
 Business logic for Model Groups organization.
@@ -6,7 +6,7 @@ Handles group creation, listing with aggregated non-deleted model counts,
 updating, group member retrieval, and safe group deletion (unassigning member models).
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional
 from bson import ObjectId
 from fastapi import HTTPException
@@ -47,19 +47,25 @@ def regex_escape(text: str) -> str:
     return re.escape(text)
 
 
-def create_model_group(db: Database, name: str, description: Optional[str] = None) -> Dict[str, Any]:
-    """Creates a new model group."""
+def create_model_group(
+    db: Database,
+    name: str,
+    description: Optional[str] = None,
+    user_id: Optional[str] = "usr_default"
+) -> Dict[str, Any]:
+    """Creates a new model group scoped to user_id."""
     trimmed_name = validate_group_name(db, name)
 
     doc = ModelGroupSchema(
         name=trimmed_name,
         description=description.strip() if description and description.strip() else None,
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow()
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc)
     )
 
-    data = doc.model_dump() if hasattr(doc, "model_dump") else doc.dict()
+    data = doc.model_dump()
     data["is_group"] = True
+    data["user_id"] = user_id or "usr_default"
 
     try:
         res = db.ad_models.insert_one(data)
@@ -72,21 +78,27 @@ def create_model_group(db: Database, name: str, description: Optional[str] = Non
     return data
 
 
-def get_model_groups(db: Database) -> List[Dict[str, Any]]:
+def get_model_groups(db: Database, user_id: Optional[str] = "usr_default") -> List[Dict[str, Any]]:
     """
-    Returns all model groups sorted by name ASC, with aggregated model_count
+    Returns all model groups sorted by name ASC for active user_id, with aggregated model_count
     excluding deleted models (status == 'deleted').
     """
+    if user_id == "usr_default":
+        user_clause = {"$or": [{"user_id": "usr_default"}, {"user_id": {"$exists": False}}]}
+    else:
+        user_clause = {"user_id": user_id}
+
     # 1. Single aggregation query for model counts by group_id (excludes status=='deleted' and is_group==True)
     pipeline = [
-        {"$match": {"status": {"$ne": "deleted"}, "group_id": {"$ne": None}, "is_group": {"$ne": True}}},
+        {"$match": {**user_clause, "status": {"$ne": "deleted"}, "group_id": {"$ne": None}, "is_group": {"$ne": True}}},
         {"$group": {"_id": "$group_id", "count": {"$sum": 1}}}
     ]
     counts_cursor = db.ad_models.aggregate(pipeline)
     count_map = {str(item["_id"]): item["count"] for item in counts_cursor if item.get("_id")}
 
     # 2. Query groups
-    cursor = db.ad_models.find({"is_group": True}).sort("name", 1)
+    group_query = {**user_clause, "is_group": True}
+    cursor = db.ad_models.find(group_query).sort("name", 1)
     groups = []
     for doc in cursor:
         g_id = str(doc["_id"])
@@ -97,12 +109,18 @@ def get_model_groups(db: Database) -> List[Dict[str, Any]]:
     return groups
 
 
-def get_model_group(db: Database, group_id: str) -> Dict[str, Any]:
+def get_model_group(db: Database, group_id: str, user_id: Optional[str] = "usr_default") -> Dict[str, Any]:
     """Returns details for a single group including member models list."""
     if not group_id or not ObjectId.is_valid(group_id):
         raise HTTPException(status_code=400, detail=f"Invalid group_id format '{group_id}'.")
 
-    doc = db.ad_models.find_one({"_id": ObjectId(group_id), "is_group": True})
+    if user_id == "usr_default":
+        user_clause = {"$or": [{"user_id": "usr_default"}, {"user_id": {"$exists": False}}]}
+    else:
+        user_clause = {"user_id": user_id}
+
+    group_query = {**user_clause, "_id": ObjectId(group_id), "is_group": True}
+    doc = db.ad_models.find_one(group_query)
     if not doc:
         raise HTTPException(status_code=404, detail=f"Model group with ID '{group_id}' not found.")
 
@@ -111,11 +129,13 @@ def get_model_group(db: Database, group_id: str) -> Dict[str, Any]:
     doc["_id"] = g_id
 
     # Fetch member models (excluding deleted and groups)
-    models_cursor = db.ad_models.find({
+    member_query = {
+        **user_clause,
         "group_id": ObjectId(group_id),
         "status": {"$ne": "deleted"},
         "is_group": {"$ne": True}
-    }).sort("name", 1)
+    }
+    models_cursor = db.ad_models.find(member_query).sort("name", 1)
     member_models = []
     for m in models_cursor:
         m["id"] = str(m["_id"])
@@ -135,17 +155,23 @@ def update_model_group(
     db: Database,
     group_id: str,
     name: Optional[str] = None,
-    description: Optional[str] = None
+    description: Optional[str] = None,
+    user_id: Optional[str] = "usr_default"
 ) -> Dict[str, Any]:
     """Updates an existing model group's name and/or description."""
     if not group_id or not ObjectId.is_valid(group_id):
         raise HTTPException(status_code=400, detail=f"Invalid group_id format '{group_id}'.")
 
-    group = db.ad_models.find_one({"_id": ObjectId(group_id), "is_group": True})
+    if user_id == "usr_default":
+        user_clause = {"$or": [{"user_id": "usr_default"}, {"user_id": {"$exists": False}}]}
+    else:
+        user_clause = {"user_id": user_id}
+
+    group = db.ad_models.find_one({**user_clause, "_id": ObjectId(group_id), "is_group": True})
     if not group:
         raise HTTPException(status_code=404, detail=f"Model group with ID '{group_id}' not found.")
 
-    updates: Dict[str, Any] = {"updated_at": datetime.utcnow()}
+    updates: Dict[str, Any] = {"updated_at": datetime.now(timezone.utc)}
 
     if name is not None:
         trimmed_name = validate_group_name(db, name, current_group_id=group_id)
@@ -159,10 +185,10 @@ def update_model_group(
     except DuplicateKeyError:
         raise HTTPException(status_code=400, detail="A model group with that name already exists.")
 
-    return get_model_group(db, group_id)
+    return get_model_group(db, group_id, user_id=user_id)
 
 
-def delete_model_group(db: Database, group_id: str) -> Dict[str, Any]:
+def delete_model_group(db: Database, group_id: str, user_id: Optional[str] = "usr_default") -> Dict[str, Any]:
     """
     Deletes a model group.
     CRITICAL: Unassigns all member models by setting group_id = None.
@@ -171,14 +197,19 @@ def delete_model_group(db: Database, group_id: str) -> Dict[str, Any]:
     if not group_id or not ObjectId.is_valid(group_id):
         raise HTTPException(status_code=400, detail=f"Invalid group_id format '{group_id}'.")
 
-    group = db.ad_models.find_one({"_id": ObjectId(group_id), "is_group": True})
+    if user_id == "usr_default":
+        user_clause = {"$or": [{"user_id": "usr_default"}, {"user_id": {"$exists": False}}]}
+    else:
+        user_clause = {"user_id": user_id}
+
+    group = db.ad_models.find_one({**user_clause, "_id": ObjectId(group_id), "is_group": True})
     if not group:
         raise HTTPException(status_code=404, detail=f"Model group with ID '{group_id}' not found.")
 
     # 1. Unassign all models belonging to this group
     db.ad_models.update_many(
         {"group_id": ObjectId(group_id), "is_group": {"$ne": True}},
-        {"$set": {"group_id": None, "updated_at": datetime.utcnow()}}
+        {"$set": {"group_id": None, "updated_at": datetime.now(timezone.utc)}}
     )
 
     # 2. Delete group document
@@ -188,3 +219,5 @@ def delete_model_group(db: Database, group_id: str) -> Dict[str, Any]:
         "message": f"Model group '{group.get('name')}' deleted successfully. Associated models have been ungrouped.",
         "group_id": group_id
     }
+
+

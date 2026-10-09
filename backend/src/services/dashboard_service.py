@@ -25,6 +25,7 @@ def parse_date(date_str: Optional[str]) -> Optional[datetime]:
 
 def get_dashboard_summary(
     db: Any,
+    user_id: Optional[str] = "usr_default",
     model_id: Optional[str] = None,
     model_version_id: Optional[str] = None,
     start_date: Optional[str] = None,
@@ -32,17 +33,30 @@ def get_dashboard_summary(
 ) -> Dict[str, Any]:
     """
     Returns structured dashboard metrics aggregated across inspections, runs, models, and feedback.
-    Supports scope filters: model_id, model_version_id, start_date, end_date.
+    Supports user isolation (user_id) and scope filters: model_id, model_version_id, start_date, end_date.
     """
     # 1. Build Query for Inspections
     query: Dict[str, Any] = {}
 
+    # User isolation query clause
+    if user_id:
+        if user_id == "usr_default":
+            user_clause = {"$or": [{"user_id": "usr_default"}, {"user_id": {"$exists": False}}]}
+        else:
+            user_clause = {"user_id": user_id}
+        query.update(user_clause)
+
     if model_id and model_id != "all":
         try:
             m_obj_id = ObjectId(model_id)
-            query["$or"] = [{"model_id": m_obj_id}, {"model_id": model_id}]
+            model_clause = [{"model_id": m_obj_id}, {"model_id": model_id}]
         except Exception:
-            query["model_id"] = model_id
+            model_clause = [{"model_id": model_id}]
+        
+        if "$or" in query:
+            query = {"$and": [query, {"$or": model_clause}]}
+        else:
+            query["$or"] = model_clause
 
     if model_version_id and model_version_id != "all":
         try:

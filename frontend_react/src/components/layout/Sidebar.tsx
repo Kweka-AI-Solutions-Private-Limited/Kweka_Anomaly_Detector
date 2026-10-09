@@ -8,9 +8,6 @@ import {
   MessageSquare,
   Settings,
   ShieldCheck,
-  Leaf,
-  Layers,
-  ExternalLink,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -63,65 +60,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen = false, onClose }) => 
 
         {/* Main Navigation List */}
         <nav className="flex-1 px-3 py-4 space-y-5 overflow-y-auto">
-          {/* Applications Navigation Section */}
+          {/* Navigation Section */}
           <div className="space-y-1">
             <div className="px-3 pb-1.5 text-[10px] font-mono uppercase tracking-wider text-industrial-400 font-bold">
-              Applications
-            </div>
-            
-            {/* Anomaly Detection */}
-            <NavLink
-              to="/"
-              end
-              onClick={onClose}
-              className={({ isActive }) =>
-                `flex items-center space-x-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-all ${
-                  isActive
-                    ? 'bg-brand-500 text-white shadow-sm shadow-brand-500/20 font-semibold'
-                    : 'text-industrial-300 hover:text-white hover:bg-industrial-800/70'
-                }`
-              }
-            >
-              <ShieldCheck className="w-4 h-4 flex-shrink-0" />
-              <span>Anomaly Detection</span>
-            </NavLink>
-
-            {/* Leaf Disease Detection */}
-            <NavLink
-              to="/leaf-disease"
-              onClick={onClose}
-              className={({ isActive }) =>
-                `flex items-center space-x-3 px-3 py-2 rounded-lg text-[13px] font-medium transition-all ${
-                  isActive
-                    ? 'bg-brand-500 text-white shadow-sm shadow-brand-500/20 font-semibold'
-                    : 'text-industrial-300 hover:text-white hover:bg-industrial-800/70'
-                }`
-              }
-            >
-              <Leaf className="w-4 h-4 flex-shrink-0" />
-              <span>Leaf Disease Detection</span>
-            </NavLink>
-
-            {/* Pipe Counting (External Link) */}
-            <a
-              href="https://kweka-pipes-count.web.app/"
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={onClose}
-              className="flex items-center justify-between px-3 py-2 rounded-lg text-[13px] font-medium text-industrial-300 hover:text-white hover:bg-industrial-800/70 transition-all group"
-            >
-              <div className="flex items-center space-x-3">
-                <Layers className="w-4 h-4 flex-shrink-0" />
-                <span>Pipe Counting</span>
-              </div>
-              <ExternalLink className="w-3.5 h-3.5 text-industrial-400 group-hover:text-white transition-colors" />
-            </a>
-          </div>
-
-          {/* Anomaly Workspace Tools Section */}
-          <div className="space-y-1 pt-3 border-t border-industrial-800/80">
-            <div className="px-3 pb-1.5 text-[10px] font-mono uppercase tracking-wider text-industrial-400 font-bold">
-              Anomaly Workspace
+              Navigation
             </div>
             {anomalyNavItems.map((item) => {
               const Icon = item.icon;

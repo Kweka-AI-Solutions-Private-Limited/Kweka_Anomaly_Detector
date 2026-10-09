@@ -1,0 +1,133 @@
+=================== Test Image #1 ===================
+Overall Status: PASS | Total Instances: 10
+  Instance #1: Status=PASS, DefectType=Normal, Severity=NONE
+    Bbox={'x': 17, 'y': 16, 'width': 239, 'height': 394}
+    Evidence: Head, shank, threads, and tip geometry intact
+  Instance #2: Status=PASS, DefectType=Normal, Severity=NONE
+    Bbox={'x': 236, 'y': 16, 'width': 245, 'height': 394}
+    Evidence: Head, shank, threads, and tip geometry intact
+  Instance #3: Status=PASS, DefectType=Normal, Severity=NONE
+    Bbox={'x': 461, 'y': 16, 'width': 246, 'height': 394}
+    Evidence: Head, shank, threads, and tip geometry intact
+  Instance #4: Status=PASS, DefectType=Normal, Severity=NONE
+    Bbox={'x': 686, 'y': 16, 'width': 246, 'height': 394}
+    Evidence: Head, shank, threads, and tip geometry intact
+  Instance #5: Status=PASS, DefectType=Normal, Severity=NONE
+    Bbox={'x': 819, 'y': 16, 'width': 185, 'height': 394}
+    Evidence: Head, shank, threads, and tip geometry intact
+  Instance #6: Status=PASS, DefectType=Normal, Severity=NONE
+    Bbox={'x': 17, 'y': 604, 'width': 239, 'height': 400}
+    Evidence: Head, shank, threads, and tip geometry intact
+  Instance #7: Status=PASS, DefectType=Normal, Severity=NONE
+    Bbox={'x': 236, 'y': 604, 'width': 245, 'height': 400}
+    Evidence: Head, shank, threads, and tip geometry intact
+  Instance #8: Status=PASS, DefectType=Normal, Severity=NONE
+    Bbox={'x': 461, 'y': 604, 'width': 246, 'height': 400}
+    Evidence: Head, shank, threads, and tip geometry intact
+  Instance #9: Status=PASS, DefectType=Normal, Severity=NONE
+    Bbox={'x': 686, 'y': 604, 'width': 246, 'height': 400}
+    Evidence: Head, shank, threads, and tip geometry intact
+  Instance #10: Status=PASS, DefectType=Normal, Severity=NONE
+    Bbox={'x': 819, 'y': 604, 'width': 185, 'height': 400}
+    Evidence: Head, shank, threads, and tip geometry intact
+=================== Test Image #2 ===================
+Overall Status: PASS | Total Instances: 6
+  Instance #1: Status=PASS, DefectType=Normal, Severity=NONE
+    Bbox={'x': 71, 'y': 70, 'width': 204, 'height': 345}
+    Evidence: Head, shank, threads, and tip geometry intact, no surface defects.
+  Instance #2: Status=PASS, DefectType=Normal, Severity=NONE
+    Bbox={'x': 386, 'y': 70, 'width': 246, 'height': 345}
+    Evidence: Head, shank, threads, and tip geometry intact, no surface defects.
+  Instance #3: Status=PASS, DefectType=Normal, Severity=NONE
+    Bbox={'x': 701, 'y': 70, 'width': 246, 'height': 345}
+    Evidence: Head, shank, threads, and tip geometry intact, no surface defects.
+  Instance #4: Status=PASS, DefectType=Normal, Severity=NONE
+    Bbox={'x': 71, 'y': 573, 'width': 204, 'height': 346}
+    Evidence: Head, shank, threads, and tip geometry intact, no surface defects.
+  Instance #5: Status=PASS, DefectType=Normal, Severity=NONE
+    Bbox={'x': 386, 'y': 573, 'width': 246, 'height': 346}
+    Evidence: Head, shank, threads, and tip geometry intact, no surface defects.
+  Instance #6: Status=PASS, DefectType=Normal, Severity=NONE
+    Bbox={'x': 701, 'y': 573, 'width': 246, 'height': 346}
+    Evidence: Head, shank, threads, and tip geometry intact, no surface defects.
+=================== Test Image #3 ===================
+Overall Status: PASS | Total Instances: 8
+  Instance #1: Status=PASS, DefectType=Normal, Severity=NONE
+    Bbox={'x': 39, 'y': 82, 'width': 170, 'height': 264}
+    Evidence: Head, shank, threads, and tip geometry intact.
+  Instance #2: Status=PASS, DefectType=Normal, Severity=NONE
+    Bbox={'x': 276, 'y': 51, 'width': 195, 'height': 377}
+    Evidence: Head, shank, threads, and tip geometry intact.
+  Instance #3: Status=PASS, DefectType=Normal, Severity=NONE
+    Bbox={'x': 553, 'y': 82, 'width': 113, 'height': 338}
+    Evidence: Head, shank, threads, and tip geometry intact.
+  Instance #4: Status=PASS, DefectType=Normal, Severity=NONE
+    Bbox={'x': 809, 'y': 51, 'width': 133, 'height': 410}
+    Evidence: Head, shank, threads, and tip geometry intact.
+  Instance #5: Status=PASS, DefectType=Normal, Severity=NONE
+    Bbox={'x': 82, 'y': 563, 'width': 123, 'height': 379}
+    Evidence: Head, shank, threads, and tip geometry intact.
+  Instance #6: Status=PASS, DefectType=Normal, Severity=NONE
+    Bbox={'x': 328, 'y': 584, 'width': 112, 'height': 338}
+    Evidence: Head, shank, threads, and tip geometry intact.
+  Instance #7: Status=PASS, DefectType=Normal, Severity=NONE
+    Bbox={'x': 553, 'y': 614, 'width': 164, 'height': 277}
+    Evidence: Head, shank, threads, and tip geometry intact.
+  Instance #8: Status=PASS, DefectType=Normal, Severity=NONE
+    Bbox={'x': 788, 'y': 635, 'width': 195, 'height': 276}
+    Evidence: Head, shank, threads, and tip geometry intact.
+=================== Test Image #4 ===================
+Overall Status: REJECT | Total Instances: 9
+  Instance #1: Status=PASS, DefectType=Normal, Severity=NONE
+    Bbox={'x': 69, 'y': 63, 'width': 458, 'height': 238}
+    Evidence: Head, shank, threads, and tip geometry intact with no visible defects.
+  Instance #2: Status=PASS, DefectType=Normal, Severity=NONE
+    Bbox={'x': 627, 'y': 50, 'width': 364, 'height': 301}
+    Evidence: Head, shank, threads, and tip geometry intact with no visible defects.
+  Instance #3: Status=PASS, DefectType=Normal, Severity=NONE
+    Bbox={'x': 100, 'y': 288, 'width': 377, 'height': 326}
+    Evidence: Head, shank, threads, and tip geometry intact with no visible defects.
+  Instance #4: Status=PASS, DefectType=Normal, Severity=NONE
+    Bbox={'x': 527, 'y': 364, 'width': 125, 'height': 501}
+    Evidence: Head, shank, threads, and tip geometry intact with no visible defects.
+  Instance #5: Status=REJECT, DefectType=damaged_threads, Severity=MEDIUM
+    Bbox={'x': 777, 'y': 401, 'width': 327, 'height': 326}
+    Evidence: Mid-shank threads exhibit significant flattening and material distortion, appearing partially stripped.
+  Instance #6: Status=PASS, DefectType=Normal, Severity=NONE
+    Bbox={'x': 1028, 'y': 150, 'width': 126, 'height': 464}
+    Evidence: Head, shank, threads, and tip geometry intact with no visible defects.
+  Instance #7: Status=PASS, DefectType=Normal, Severity=NONE
+    Bbox={'x': 63, 'y': 640, 'width': 401, 'height': 388}
+    Evidence: Head, shank, threads, and tip geometry intact with no visible defects.
+  Instance #8: Status=REJECT, DefectType=bent_shank, Severity=HIGH
+    Bbox={'x': 401, 'y': 803, 'width': 389, 'height': 275}
+    Evidence: The screw shank exhibits a severe bend, forming an approximate 90-degree angle, with associated thread deformation.
+  Instance #9: Status=PASS, DefectType=Normal, Severity=NONE
+    Bbox={'x': 878, 'y': 752, 'width': 338, 'height': 339}
+    Evidence: Head, shank, threads, and tip geometry intact with no visible defects.
+=================== Test Image #5 ===================
+Overall Status: REJECT | Total Instances: 8
+  Instance #1: Status=PASS, DefectType=Normal, Severity=NONE
+    Bbox={'x': 31, 'y': 102, 'width': 205, 'height': 308}
+    Evidence: Head, shank, threads, and tip geometry intact
+  Instance #2: Status=PASS, DefectType=Normal, Severity=NONE
+    Bbox={'x': 287, 'y': 51, 'width': 123, 'height': 410}
+    Evidence: Head, shank, threads, and tip geometry intact
+  Instance #3: Status=PASS, DefectType=Normal, Severity=NONE
+    Bbox={'x': 532, 'y': 102, 'width': 205, 'height': 308}
+    Evidence: Head, shank, threads, and tip geometry intact
+  Instance #4: Status=REJECT, DefectType=bent_tip, Severity=MEDIUM
+    Bbox={'x': 788, 'y': 102, 'width': 205, 'height': 246}
+    Evidence: Screw tip exhibits visible bending and taper deformation, appearing blunted and curved upwards.
+  Instance #5: Status=PASS, DefectType=Normal, Severity=NONE
+    Bbox={'x': 82, 'y': 563, 'width': 123, 'height': 410}
+    Evidence: Head, shank, threads, and tip geometry intact
+  Instance #6: Status=PASS, DefectType=Normal, Severity=NONE
+    Bbox={'x': 307, 'y': 563, 'width': 205, 'height': 359}
+    Evidence: Head, shank, threads, and tip geometry intact
+  Instance #7: Status=PASS, DefectType=Normal, Severity=NONE
+    Bbox={'x': 543, 'y': 614, 'width': 205, 'height': 246}
+    Evidence: Head, shank, threads, and tip geometry intact
+  Instance #8: Status=PASS, DefectType=Normal, Severity=NONE
+    Bbox={'x': 829, 'y': 563, 'width': 123, 'height': 410}
+    Evidence: Head, shank, threads, and tip geometry intact

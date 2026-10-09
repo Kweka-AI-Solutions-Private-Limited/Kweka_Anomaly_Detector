@@ -13,6 +13,8 @@ from services.notification_service import (
     get_notifications, get_unread_count, mark_notification_read, mark_all_notifications_read
 )
 
+from api.deps import get_current_user_id
+
 router = APIRouter(prefix="/notifications", tags=["Notifications"])
 
 
@@ -20,22 +22,29 @@ router = APIRouter(prefix="/notifications", tags=["Notifications"])
 def list_notifications_endpoint(
     limit: int = Query(20, ge=1, le=100),
     unread_only: bool = Query(False),
+    user_id: str = Depends(get_current_user_id),
     db=Depends(get_db)
 ):
     """Lists notifications ordered newest first with optional unread filter and limit."""
-    return get_notifications(db, limit=limit, unread_only=unread_only)
+    return get_notifications(db, user_id=user_id, limit=limit, unread_only=unread_only)
 
 
 @router.get("/unread-count")
-def unread_count_endpoint(db=Depends(get_db)):
+def unread_count_endpoint(
+    user_id: str = Depends(get_current_user_id),
+    db=Depends(get_db)
+):
     """Returns total count of unread notifications."""
-    return {"unread_count": get_unread_count(db)}
+    return {"unread_count": get_unread_count(db, user_id=user_id)}
 
 
 @router.patch("/read-all")
-def mark_all_read_endpoint(db=Depends(get_db)):
+def mark_all_read_endpoint(
+    user_id: str = Depends(get_current_user_id),
+    db=Depends(get_db)
+):
     """Marks all unread notifications as read."""
-    return mark_all_notifications_read(db)
+    return mark_all_notifications_read(db, user_id=user_id)
 
 
 @router.patch("/{notification_id}/read")

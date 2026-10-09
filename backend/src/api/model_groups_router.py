@@ -23,38 +23,60 @@ from services.model_group_service import (
     delete_model_group,
 )
 
+from api.deps import get_current_user_id
+
 router = APIRouter(prefix="/model-groups", tags=["Model Groups"])
 
 
 @router.get("", response_model=List[Dict[str, Any]])
-def list_groups_endpoint(db: Database = Depends(get_db)):
-    """Lists all model groups with non-deleted model counts."""
-    return get_model_groups(db)
+def list_groups_endpoint(
+    user_id: str = Depends(get_current_user_id),
+    db: Database = Depends(get_db)
+):
+    """Lists all model groups with non-deleted model counts for active user."""
+    return get_model_groups(db, user_id=user_id)
 
 
 @router.post("", status_code=status.HTTP_201_CREATED, response_model=Dict[str, Any])
-def create_group_endpoint(payload: ModelGroupCreate, db: Database = Depends(get_db)):
+def create_group_endpoint(
+    payload: ModelGroupCreate,
+    user_id: str = Depends(get_current_user_id),
+    db: Database = Depends(get_db)
+):
     """Creates a new user-defined model group."""
-    return create_model_group(db, name=payload.name, description=payload.description)
+    return create_model_group(db, name=payload.name, description=payload.description, user_id=user_id)
 
 
 @router.get("/{group_id}", response_model=Dict[str, Any])
-def get_group_endpoint(group_id: str, db: Database = Depends(get_db)):
+def get_group_endpoint(
+    group_id: str,
+    user_id: str = Depends(get_current_user_id),
+    db: Database = Depends(get_db)
+):
     """Gets details of a single model group and its member models."""
-    return get_model_group(db, group_id)
+    return get_model_group(db, group_id, user_id=user_id)
 
 
 @router.patch("/{group_id}", response_model=Dict[str, Any])
-def update_group_endpoint(group_id: str, payload: ModelGroupUpdate, db: Database = Depends(get_db)):
+def update_group_endpoint(
+    group_id: str,
+    payload: ModelGroupUpdate,
+    user_id: str = Depends(get_current_user_id),
+    db: Database = Depends(get_db)
+):
     """Updates model group name or description."""
-    return update_model_group(db, group_id, name=payload.name, description=payload.description)
+    return update_model_group(db, group_id, name=payload.name, description=payload.description, user_id=user_id)
 
 
 @router.delete("/{group_id}", response_model=Dict[str, Any])
-def delete_group_endpoint(group_id: str, db: Database = Depends(get_db)):
+def delete_group_endpoint(
+    group_id: str,
+    user_id: str = Depends(get_current_user_id),
+    db: Database = Depends(get_db)
+):
     """
     Deletes a model group.
     Unassigns all member models (sets group_id=null).
     Does NOT delete any models or historical inspection data.
     """
-    return delete_model_group(db, group_id)
+    return delete_model_group(db, group_id, user_id=user_id)

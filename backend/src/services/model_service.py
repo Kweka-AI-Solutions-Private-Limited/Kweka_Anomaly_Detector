@@ -6,7 +6,7 @@ Supports full Model Usability Lifecycle: ACTIVE, INACTIVE, DRAFT, BUILDING, ERRO
 """
 
 import math
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Tuple
 from bson import ObjectId
@@ -143,7 +143,7 @@ def sync_model_usability_status(db: Database, doc: Dict[str, Any]) -> Dict[str, 
         if ObjectId.is_valid(model_id):
             db.ad_models.update_one(
                 {"_id": ObjectId(model_id)},
-                {"$set": {"status": new_status, "updated_at": datetime.utcnow()}}
+                {"$set": {"status": new_status, "updated_at": datetime.now(timezone.utc)}}
             )
         doc["status"] = new_status
         return doc
@@ -180,6 +180,7 @@ def validate_and_parse_group_id(db: Database, group_id: Optional[str]) -> Option
 def create_model(
     db: Database,
     name: str,
+    user_id: Optional[str] = "usr_default",
     description: Optional[str] = None,
     domain: Optional[str] = None,
     group_id: Optional[str] = None
@@ -200,24 +201,28 @@ def create_model(
         group_id=parsed_group_id,
         reference_image_count=0,
         active_version_id=None,
-        created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow()
+        created_at=datetime.now(timezone.utc),
+        updated_at=datetime.now(timezone.utc)
     )
 
-    data = doc.model_dump() if hasattr(doc, "model_dump") else doc.dict()
+    data = doc.model_dump()
+    data["user_id"] = user_id or "usr_default"
     res = db.ad_models.insert_one(data)
-    return clean_mongo_doc(get_model(db, str(res.inserted_id)))
+    return clean_mongo_doc(get_model(db, str(res.inserted_id), user_id=user_id))
 
 
-def get_models(db: Database) -> List[Dict[str, Any]]:
-    """Returns all models (excluding deleted) sorted by updated_at DESC."""
+def get_models(db: Database, user_id: Optional[str] = "usr_default") -> List[Dict[str, Any]]:
+    """Returns all models (excluding deleted) for the given user_id sorted by updated_at DESC."""
     try:
-        cursor = list(db.ad_models.find({
+        user_filter = {"$or": [{"user_id": "usr_default"}, {"user_id": {"$exists": False}}]} if (not user_id or user_id == "usr_default") else {"user_id": user_id}
+        query = {
             "name": {"$exists": True},
             "status": {"$ne": "deleted"},
             "is_group": {"$ne": True},
-            "model_id": {"$exists": False}
-        }).sort("updated_at", -1))
+            "model_id": {"$exists": False},
+            **user_filter
+        }
+        cursor = list(db.ad_models.find(query).sort("updated_at", -1))
 
         group_ids = [doc["group_id"] for doc in cursor if doc.get("group_id") and ObjectId.is_valid(str(doc["group_id"]))]
         groups_map = {}
@@ -260,12 +265,19 @@ def get_models(db: Database) -> List[Dict[str, Any]]:
         return []
 
 
-def get_model(db: Database, model_id: str) -> Dict[str, Any]:
-    """Returns model by ID or raises 404 if not found or deleted."""
+def get_model(db: Database, model_id: str, user_id: Optional[str] = None) -> Dict[str, Any]:
+    """Returns model by ID or raises 404 if not found, deleted, or owned by another user."""
     if not ObjectId.is_valid(model_id):
         raise HTTPException(status_code=400, detail=f"Invalid model_id format '{model_id}'.")
 
-    doc = db.ad_models.find_one({"_id": ObjectId(model_id), "status": {"$ne": "deleted"}, "is_group": {"$ne": True}})
+    query = {"_id": ObjectId(model_id), "status": {"$ne": "deleted"}, "is_group": {"$ne": True}}
+    if user_id:
+        if user_id == "usr_default":
+            query["$or"] = [{"user_id": "usr_default"}, {"user_id": {"$exists": False}}]
+        else:
+            query["user_id"] = user_id
+
+    doc = db.ad_models.find_one(query)
     if not doc:
         raise HTTPException(status_code=404, detail=f"Model with ID '{model_id}' not found.")
 
@@ -294,15 +306,16 @@ def get_model(db: Database, model_id: str) -> Dict[str, Any]:
 def update_model(
     db: Database,
     model_id: str,
+    user_id: Optional[str] = None,
     name: Optional[str] = None,
     description: Optional[str] = None,
     domain: Optional[str] = None,
     group_id: Optional[Any] = ...  # Use Ellipsis default to distinguish omitted from explicit None
 ) -> Dict[str, Any]:
     """Updates model metadata (name, description, domain, group_id)."""
-    model = get_model(db, model_id)  # Validates 404 if missing or deleted
+    model = get_model(db, model_id, user_id=user_id)  # Validates 404 if missing or deleted
 
-    updates: Dict[str, Any] = {"updated_at": datetime.utcnow()}
+    updates: Dict[str, Any] = {"updated_at": datetime.now(timezone.utc)}
 
     if name is not None:
         if not name or not name.strip():
@@ -323,12 +336,12 @@ def update_model(
     return get_model(db, model_id)
 
 
-def activate_model(db: Database, model_id: str) -> Dict[str, Any]:
+def activate_model(db: Database, model_id: str, user_id: Optional[str] = None) -> Dict[str, Any]:
     """
     Validates model usability criteria and sets model.status = 'active'.
     Raises HTTP 400 with a detailed explanation if validation fails.
     """
-    model = get_model(db, model_id)
+    model = get_model(db, model_id, user_id=user_id)
 
     is_valid, error_msg = validate_model_artifacts_and_version(db, model)
     if not is_valid:
@@ -336,7 +349,7 @@ def activate_model(db: Database, model_id: str) -> Dict[str, Any]:
         if error_msg and ("missing" in error_msg.lower() or "failed" in error_msg.lower() or "empty" in error_msg.lower()):
             db.ad_models.update_one(
                 {"_id": ObjectId(model_id)},
-                {"$set": {"status": "error", "error_reason": error_msg, "updated_at": datetime.utcnow()}}
+                {"$set": {"status": "error", "error_reason": error_msg, "updated_at": datetime.now(timezone.utc)}}
             )
         raise HTTPException(status_code=400, detail=f"Cannot activate model: {error_msg}")
 
@@ -345,34 +358,34 @@ def activate_model(db: Database, model_id: str) -> Dict[str, Any]:
         {"$set": {
             "status": "active",
             "error_reason": None,
-            "updated_at": datetime.utcnow()
+            "updated_at": datetime.now(timezone.utc)
         }}
     )
 
-    return get_model(db, model_id)
+    return get_model(db, model_id, user_id=user_id)
 
 
-def deactivate_model(db: Database, model_id: str) -> Dict[str, Any]:
+def deactivate_model(db: Database, model_id: str, user_id: Optional[str] = None) -> Dict[str, Any]:
     """
     Sets model.status = 'inactive' without deleting or modifying any
     versions, references, artifacts, thresholds, or history. Safe and reversible.
     """
-    model = get_model(db, model_id)
+    model = get_model(db, model_id, user_id=user_id)
 
     db.ad_models.update_one(
         {"_id": ObjectId(model_id)},
         {"$set": {
             "status": "inactive",
-            "updated_at": datetime.utcnow()
+            "updated_at": datetime.now(timezone.utc)
         }}
     )
 
-    return get_model(db, model_id)
+    return get_model(db, model_id, user_id=user_id)
 
 
-def add_reference_images(db: Database, model_id: str, files: List[UploadFile]) -> List[Dict[str, Any]]:
+def add_reference_images(db: Database, model_id: str, files: List[UploadFile], user_id: Optional[str] = None) -> List[Dict[str, Any]]:
     """Uploads GOOD reference images for a model."""
-    model = get_model(db, model_id)
+    model = get_model(db, model_id, user_id=user_id)
 
     if not files or len(files) == 0:
         raise HTTPException(status_code=400, detail="No files provided for reference upload.")
@@ -392,10 +405,11 @@ def add_reference_images(db: Database, model_id: str, files: List[UploadFile]) -
             height=256,
             file_size=file_size,
             checksum=checksum,
-            uploaded_at=datetime.utcnow()
+            uploaded_at=datetime.now(timezone.utc)
         )
 
-        data = ref_doc.model_dump() if hasattr(ref_doc, "model_dump") else ref_doc.dict()
+        data = ref_doc.model_dump()
+        data["user_id"] = user_id or "usr_default"
         res = db.ad_models.insert_one(data)
         data["id"] = str(res.inserted_id)
         data["_id"] = str(res.inserted_id)
@@ -407,15 +421,15 @@ def add_reference_images(db: Database, model_id: str, files: List[UploadFile]) -
     new_count = db.ad_models.count_documents({"model_id": ObjectId(model_id), "filename": {"$exists": True}})
     db.ad_models.update_one(
         {"_id": ObjectId(model_id)},
-        {"$set": {"reference_image_count": new_count, "updated_at": datetime.utcnow()}}
+        {"$set": {"reference_image_count": new_count, "updated_at": datetime.now(timezone.utc)}}
     )
 
     return uploaded_records
 
 
-def get_reference_images(db: Database, model_id: str) -> List[Dict[str, Any]]:
+def get_reference_images(db: Database, model_id: str, user_id: Optional[str] = None) -> List[Dict[str, Any]]:
     """Lists metadata for reference images of a model."""
-    get_model(db, model_id)  # Validate 404
+    get_model(db, model_id, user_id=user_id)  # Validate 404
     cursor = db.ad_models.find({"model_id": ObjectId(model_id), "filename": {"$exists": True}}).sort("uploaded_at", -1)
     refs = []
     for doc in cursor:
@@ -427,9 +441,9 @@ def get_reference_images(db: Database, model_id: str) -> List[Dict[str, Any]]:
     return refs
 
 
-def build_model_version(db: Database, model_id: str) -> Dict[str, Any]:
+def build_model_version(db: Database, model_id: str, user_id: Optional[str] = None) -> Dict[str, Any]:
     """Builds a new PatchCore model version from uploaded GOOD reference images."""
-    model = get_model(db, model_id)
+    model = get_model(db, model_id, user_id=user_id)
 
     # Fetch reference image docs
     ref_cursor = list(db.ad_models.find({
@@ -448,7 +462,7 @@ def build_model_version(db: Database, model_id: str) -> Dict[str, Any]:
     # Mark model status as building
     db.ad_models.update_one(
         {"_id": ObjectId(model_id)},
-        {"$set": {"status": "building", "error_reason": None, "updated_at": datetime.utcnow()}}
+        {"$set": {"status": "building", "error_reason": None, "updated_at": datetime.now(timezone.utc)}}
     )
 
     # Determine next version number
@@ -465,10 +479,11 @@ def build_model_version(db: Database, model_id: str) -> Dict[str, Any]:
         calibration=CalibrationConfig(),
         training=TrainingConfig(reference_count=len(ref_cursor), reference_ids=ref_ids),
         artifacts=VersionArtifacts(),
-        created_at=datetime.utcnow()
+        created_at=datetime.now(timezone.utc)
     )
 
-    v_data = v_doc.model_dump() if hasattr(v_doc, "model_dump") else v_doc.dict()
+    v_data = v_doc.model_dump()
+    v_data["user_id"] = user_id or "usr_default"
     v_res = db.ad_models.insert_one(v_data)
     version_id = v_res.inserted_id
 
@@ -512,7 +527,7 @@ def build_model_version(db: Database, model_id: str) -> Dict[str, Any]:
                 "active_version_id": version_id,
                 "status": "active",
                 "error_reason": None,
-                "updated_at": datetime.utcnow()
+                "updated_at": datetime.now(timezone.utc)
             }}
         )
 
@@ -524,7 +539,8 @@ def build_model_version(db: Database, model_id: str) -> Dict[str, Any]:
                 version_id=str(version_id),
                 version_number=next_version_num,
                 status="ready",
-                model_name=model.get("name", "Inspection Model")
+                model_name=model.get("name", "Inspection Model"),
+                user_id=user_id
             )
         except Exception as n_err:
             print(f"[WARN] Failed to create model build notification: {n_err}")
@@ -540,7 +556,7 @@ def build_model_version(db: Database, model_id: str) -> Dict[str, Any]:
         db.ad_models.update_one({"_id": version_id}, {"$set": {"status": "failed"}})
         db.ad_models.update_one(
             {"_id": ObjectId(model_id)},
-            {"$set": {"status": "error", "error_reason": err_msg, "updated_at": datetime.utcnow()}}
+            {"$set": {"status": "error", "error_reason": err_msg, "updated_at": datetime.now(timezone.utc)}}
         )
 
         # Trigger Model Build Failed Notification
@@ -552,7 +568,8 @@ def build_model_version(db: Database, model_id: str) -> Dict[str, Any]:
                 version_number=next_version_num,
                 status="failed",
                 model_name=model.get("name", "Inspection Model"),
-                error_reason=err_msg
+                error_reason=err_msg,
+                user_id=user_id
             )
         except Exception as n_err:
             print(f"[WARN] Failed to create model build failed notification: {n_err}")
@@ -561,9 +578,9 @@ def build_model_version(db: Database, model_id: str) -> Dict[str, Any]:
 
 
 
-def get_model_versions(db: Database, model_id: str) -> List[Dict[str, Any]]:
+def get_model_versions(db: Database, model_id: str, user_id: Optional[str] = None) -> List[Dict[str, Any]]:
     """Returns all non-deleted versions for a model sorted newest first."""
-    get_model(db, model_id)  # Validate 404
+    get_model(db, model_id, user_id=user_id)  # Validate 404
     m_obj_id = ObjectId(model_id) if ObjectId.is_valid(model_id) else model_id
     cursor = db.ad_models.find({
         "model_id": {"$in": [m_obj_id, str(model_id)]},
@@ -576,9 +593,9 @@ def get_model_versions(db: Database, model_id: str) -> List[Dict[str, Any]]:
     return versions
 
 
-def get_model_version(db: Database, model_id: str, version_id: str) -> Dict[str, Any]:
+def get_model_version(db: Database, model_id: str, version_id: str, user_id: Optional[str] = None) -> Dict[str, Any]:
     """Returns a specific model version by ID or raises 404 if not found or deleted."""
-    get_model(db, model_id)  # Validate model exists and not deleted
+    get_model(db, model_id, user_id=user_id)  # Validate model exists and not deleted
     if not ObjectId.is_valid(version_id):
         raise HTTPException(status_code=400, detail=f"Invalid version_id format '{version_id}'.")
 
@@ -596,14 +613,14 @@ def get_model_version(db: Database, model_id: str, version_id: str) -> Dict[str,
     return clean_mongo_doc(doc)
 
 
-def delete_model_version(db: Database, model_id: str, version_id: str) -> Dict[str, Any]:
+def delete_model_version(db: Database, model_id: str, version_id: str, user_id: Optional[str] = None) -> Dict[str, Any]:
     """
     Deletes a specific model version by setting status='deleted' and purging disk ML artifacts.
     Active Version Guard: Rejects deletion if version is active_version_id of an active model (HTTP 400).
     Idempotent 404: Returns HTTP 404 if model or version is missing or already deleted.
     """
-    model = get_model(db, model_id)  # Raises 404 if missing or deleted
-    version = get_model_version(db, model_id, version_id)  # Raises 404 if missing or deleted
+    model = get_model(db, model_id, user_id=user_id)  # Raises 404 if missing or deleted
+    version = get_model_version(db, model_id, version_id, user_id=user_id)  # Raises 404 if missing or deleted
 
     is_active_v = str(model.get("active_version_id")) == str(version_id)
     is_active_model = (model.get("status") or "").lower() == "active"
@@ -617,7 +634,7 @@ def delete_model_version(db: Database, model_id: str, version_id: str) -> Dict[s
     # Soft delete in DB
     db.ad_models.update_one(
         {"_id": ObjectId(version_id)},
-        {"$set": {"status": "deleted", "updated_at": datetime.utcnow()}}
+        {"$set": {"status": "deleted", "updated_at": datetime.now(timezone.utc)}}
     )
 
     # If deleted version was active_version_id on an inactive model, clear active_version_id
@@ -630,7 +647,7 @@ def delete_model_version(db: Database, model_id: str, version_id: str) -> Dict[s
         new_active_id = fallback_v["_id"] if fallback_v else None
         db.ad_models.update_one(
             {"_id": ObjectId(model_id)},
-            {"$set": {"active_version_id": new_active_id, "updated_at": datetime.utcnow()}}
+            {"$set": {"active_version_id": new_active_id, "updated_at": datetime.now(timezone.utc)}}
         )
 
     # Clean up disk artifacts directory
@@ -647,24 +664,24 @@ def delete_model_version(db: Database, model_id: str, version_id: str) -> Dict[s
     }
 
 
-def delete_model(db: Database, model_id: str) -> Dict[str, Any]:
+def delete_model(db: Database, model_id: str, user_id: Optional[str] = None) -> Dict[str, Any]:
     """
     Soft-deletes a model and all associated versions, preserving historical inspection data.
     Purges physical storage folders for artifacts and references.
     Returns 404 consistently if model is already deleted or not found.
     """
-    model = get_model(db, model_id)  # Raises 404 if missing or already deleted
+    model = get_model(db, model_id, user_id=user_id)  # Raises 404 if missing or already deleted
 
     # Mark model as deleted
     db.ad_models.update_one(
         {"_id": ObjectId(model_id)},
-        {"$set": {"status": "deleted", "updated_at": datetime.utcnow()}}
+        {"$set": {"status": "deleted", "updated_at": datetime.now(timezone.utc)}}
     )
 
     # Soft-delete all associated versions
     db.ad_models.update_many(
         {"model_id": ObjectId(model_id)},
-        {"$set": {"status": "deleted", "updated_at": datetime.utcnow()}}
+        {"$set": {"status": "deleted", "updated_at": datetime.now(timezone.utc)}}
     )
 
     # Archive reference image records for historical auditing
@@ -691,15 +708,15 @@ def delete_model(db: Database, model_id: str) -> Dict[str, Any]:
     }
 
 
-def archive_model(db: Database, model_id: str) -> Dict[str, Any]:
+def archive_model(db: Database, model_id: str, user_id: Optional[str] = None) -> Dict[str, Any]:
     """Alias for delete_model to maintain backward compatibility."""
-    return delete_model(db, model_id)
+    return delete_model(db, model_id, user_id=user_id)
 
 
-def activate_model_version(db: Database, model_id: str, version_id: str) -> Dict[str, Any]:
+def activate_model_version(db: Database, model_id: str, version_id: str, user_id: Optional[str] = None) -> Dict[str, Any]:
     """Activates a specific model version for the model."""
-    get_model(db, model_id)
-    v_doc = get_model_version(db, model_id, version_id)
+    get_model(db, model_id, user_id=user_id)
+    v_doc = get_model_version(db, model_id, version_id, user_id=user_id)
     if v_doc.get("status") != "ready":
         raise HTTPException(status_code=400, detail=f"Version '{version_id}' is not in 'ready' status.")
 
@@ -709,20 +726,20 @@ def activate_model_version(db: Database, model_id: str, version_id: str) -> Dict
             "active_version_id": ObjectId(version_id),
             "status": "active",
             "error_reason": None,
-            "updated_at": datetime.utcnow()
+            "updated_at": datetime.now(timezone.utc)
         }}
     )
-    return get_model(db, model_id)
+    return get_model(db, model_id, user_id=user_id)
 
 
 # Alias for backwards compatibility
 activate_version = activate_model
 
 
-def get_version_reference_images(db: Database, model_id: str, version_id: str) -> List[Dict[str, Any]]:
+def get_version_reference_images(db: Database, model_id: str, version_id: str, user_id: Optional[str] = None) -> List[Dict[str, Any]]:
     """Lists exact reference images used to construct a specific model version."""
-    get_model(db, model_id)  # Validate 404
-    v_doc = get_model_version(db, model_id, version_id)
+    get_model(db, model_id, user_id=user_id)  # Validate 404
+    v_doc = get_model_version(db, model_id, version_id, user_id=user_id)
 
     training_cfg = v_doc.get("training", {})
     ref_ids = training_cfg.get("reference_ids", [])
@@ -744,7 +761,7 @@ def get_version_reference_images(db: Database, model_id: str, version_id: str) -
     return refs
 
 
-def create_custom_threshold_version(db: Database, model_id: str, custom_threshold: float) -> Dict[str, Any]:
+def create_custom_threshold_version(db: Database, model_id: str, custom_threshold: float, user_id: Optional[str] = None) -> Dict[str, Any]:
     """
     Creates a new immutable Model Version (N+1) with a user-supplied custom anomaly score threshold.
     Reuses existing checkpoint artifacts and reference image IDs without rebuilding PatchCore.
@@ -760,7 +777,7 @@ def create_custom_threshold_version(db: Database, model_id: str, custom_threshol
     ):
         raise HTTPException(status_code=400, detail="Threshold must be a finite positive numeric value greater than 0.")
 
-    model = get_model(db, model_id)
+    model = get_model(db, model_id, user_id=user_id)
 
     # 2. Locate active version or latest valid parent version to copy detector config from
     parent_version = None
@@ -814,10 +831,11 @@ def create_custom_threshold_version(db: Database, model_id: str, custom_threshol
         ),
         training=TrainingConfig(**parent_version.get("training", {})),
         artifacts=VersionArtifacts(**parent_version.get("artifacts", {})),
-        created_at=datetime.utcnow()
+        created_at=datetime.now(timezone.utc)
     )
 
-    v_data = v_doc.model_dump() if hasattr(v_doc, "model_dump") else v_doc.dict()
+    v_data = v_doc.model_dump()
+    v_data["user_id"] = user_id or "usr_default"
     v_res = db.ad_models.insert_one(v_data)
     new_version_id = v_res.inserted_id
 
@@ -828,7 +846,7 @@ def create_custom_threshold_version(db: Database, model_id: str, custom_threshol
             "active_version_id": new_version_id,
             "status": "active",
             "error_reason": None,
-            "updated_at": datetime.utcnow()
+            "updated_at": datetime.now(timezone.utc)
         }}
     )
 
@@ -841,6 +859,8 @@ def create_custom_threshold_version(db: Database, model_id: str, custom_threshol
             str(r) for r in completed_version["training"]["reference_ids"]
         ]
     return completed_version
+
+
 
 
 

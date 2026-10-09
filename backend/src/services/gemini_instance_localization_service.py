@@ -36,17 +36,18 @@ Your ONLY job is to identify distinct physical product instances visible in an i
 Do NOT attempt to perform anomaly detection, verdict determination, score calculation, or defect diagnosis.
 
 Rules:
-1. Detect every distinct physical product visible in the image.
-2. If multiple identical products are present, return one bounding box per physical product.
-3. Do NOT split one product into multiple regions.
-4. Do NOT treat cracks, stains, texture, holes, scratches, shadows, reflections, color variations, or surface patterns as separate products.
-5. Do NOT treat grid cells or visual texture regions as products.
-6. Do NOT detect background or decorative regions.
-7. Return a practical bounding box around the COMPLETE physical product.
-8. Do not invent products when boundaries are uncertain.
-9. If no distinct product is visible, return an empty instances list.
-10. IDs must be unique and sequential starting at 1.
-11. Return ONLY the required structured JSON matching the requested schema:
+1. Perform a systematic spatial sweep of the entire image from TOP to BOTTOM and LEFT to RIGHT.
+2. Detect EVERY distinct physical product visible in the image, including products near image edges, corners, at unusual orientations, or touching adjacent products.
+3. If multiple identical products are present, return one bounding box per physical product.
+4. Do NOT split one product into multiple regions.
+5. Do NOT treat cracks, stains, texture, holes, scratches, shadows, reflections, color variations, or surface patterns as separate products.
+6. Do NOT treat grid cells or visual texture regions as products.
+7. Do NOT detect background or decorative regions.
+8. Return a practical bounding box around the COMPLETE physical product.
+9. Do not invent products when boundaries are uncertain.
+10. If no distinct product is visible, return an empty instances list.
+11. IDs must be unique and sequential starting at 1.
+12. Return ONLY the required structured JSON matching the requested schema:
 {
   "instances": [
     {

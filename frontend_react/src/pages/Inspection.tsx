@@ -244,18 +244,8 @@ export const Inspection: React.FC = () => {
       const updateBatchFromRun = (runData: InspectionRun) => {
         if (!runData.inspections || runData.inspections.length === 0) return;
         setBatchItems((prev) =>
-          prev.map((item, itemIndex) => {
-            // Match 1-to-1 by batch index first (preserves exact upload sequence even with duplicate filenames)
-            let insp: any = runData.inspections?.[itemIndex];
-
-            // Fallback to filename matching if index is out of bounds or filenames differ
-            if (!insp || (insp.filename && item.file.name && insp.filename !== item.file.name)) {
-              const matchedByName = runData.inspections?.find((i: any) => i.filename === item.file.name);
-              if (matchedByName) {
-                insp = matchedByName;
-              }
-            }
-
+          prev.map((item) => {
+            const insp: any = runData.inspections?.find((i: any) => i.filename === item.file.name);
             if (insp) {
               // 'review' is a terminal state for multi-instance inspections (e.g. PATCHCORE_INSTANCE_FAILED, NO_OBJECTS_DETECTED)
               const isTerminal = insp.status === 'completed' || insp.status === 'review';
@@ -397,7 +387,7 @@ export const Inspection: React.FC = () => {
                   >
                     {models.map((m) => (
                       <option key={m.id || m._id} value={m.id || m._id}>
-                        {m.name} — [{ (m.status || 'draft').toUpperCase() }]
+                        {m.name} — [{(m.status || 'draft').toUpperCase()}]
                       </option>
                     ))}
                   </select>
@@ -443,27 +433,27 @@ export const Inspection: React.FC = () => {
 
                     <div className="bg-industrial-50 p-4 rounded-xl border border-industrial-200 grid grid-cols-2 gap-3.5 text-xs font-mono">
                       <div>
-                        <span className="text-industrial-600 block text-xs uppercase tracking-wider font-extrabold mb-1">STATUS</span>
+                        <span className="text-industrial-600 block text-[11px] uppercase tracking-wider font-extrabold mb-1">STATUS</span>
                         <Badge status={selectedModel.status} size="sm" />
                       </div>
                       <div>
-                        <span className="text-industrial-600 block text-xs uppercase tracking-wider font-extrabold mb-1">REFERENCE BANK</span>
+                        <span className="text-industrial-600 block text-[11px] uppercase tracking-wider font-extrabold mb-1">REFERENCE BANK</span>
                         <span className="font-extrabold text-industrial-900 text-sm block">
                           {selectedModel.reference_image_count} normal images
                         </span>
                       </div>
                       <div>
-                        <span className="text-industrial-600 block text-xs uppercase tracking-wider font-extrabold mb-1">ALGORITHM</span>
+                        <span className="text-industrial-600 block text-[11px] uppercase tracking-wider font-extrabold mb-1">ALGORITHM</span>
                         <span className="font-extrabold text-brand-700 text-sm block">PatchCore WRN-50</span>
                       </div>
                       <div>
-                        <span className="text-industrial-600 block text-xs uppercase tracking-wider font-extrabold mb-1">ACTIVE VERSION</span>
+                        <span className="text-industrial-600 block text-[11px] uppercase tracking-wider font-extrabold mb-1">ACTIVE VERSION</span>
                         <span className="font-extrabold text-industrial-900 text-sm block font-mono">
                           {activeVersion
                             ? `v${activeVersion.version_number} (${activeVersion.status.toUpperCase()})`
                             : selectedModel.active_version_id
-                            ? 'Active'
-                            : 'None'}
+                              ? 'Active'
+                              : 'None'}
                         </span>
                       </div>
                     </div>
@@ -486,17 +476,16 @@ export const Inspection: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setInspectionMode('single_image')}
-                    className={`p-4 rounded-xl border text-left transition-all ${
-                      inspectionMode === 'single_image'
+                    className={`p-4 rounded-xl border text-left transition-all ${inspectionMode === 'single_image'
                         ? 'border-brand-500 bg-brand-50/50 ring-2 ring-brand-500/20'
                         : 'border-industrial-200 bg-white hover:border-industrial-300'
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center space-x-2 font-extrabold text-industrial-900 text-sm">
                       <FileImage className="w-4 h-4 text-brand-600" />
                       <span>Single Product</span>
                     </div>
-                    <p className="text-xs text-industrial-600 mt-1.5 leading-snug font-medium">
+                    <p className="text-[11px] text-industrial-500 mt-1.5 leading-snug">
                       1 item per uploaded image. Standard PatchCore anomaly detection.
                     </p>
                   </button>
@@ -504,17 +493,16 @@ export const Inspection: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setInspectionMode('multi_instance')}
-                    className={`p-4 rounded-xl border text-left transition-all ${
-                      inspectionMode === 'multi_instance'
+                    className={`p-4 rounded-xl border text-left transition-all ${inspectionMode === 'multi_instance'
                         ? 'border-brand-500 bg-brand-50/50 ring-2 ring-brand-500/20'
                         : 'border-industrial-200 bg-white hover:border-industrial-300'
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center space-x-2 font-extrabold text-industrial-900 text-sm">
                       <Layers className="w-4 h-4 text-brand-600" />
                       <span>Multi-Product (Pure-Gemini Engine)</span>
                     </div>
-                    <p className="text-xs text-industrial-600 mt-1.5 leading-snug font-medium">
+                    <p className="text-[11px] text-industrial-500 mt-1.5 leading-snug">
                       Inspect multiple physical products in one image directly via Gemini VLM. No reference images or PatchCore required.
                     </p>
                   </button>
@@ -603,11 +591,10 @@ export const Inspection: React.FC = () => {
                 </div>
 
                 <div className="space-y-3 font-mono text-xs">
-                  <label className={`flex items-center justify-between p-3.5 rounded-xl border cursor-pointer transition-all ${
-                    thresholdMode === 'default'
+                  <label className={`flex items-center justify-between p-3.5 rounded-xl border cursor-pointer transition-all ${thresholdMode === 'default'
                       ? 'border-brand-500 bg-brand-50/40 ring-1 ring-brand-500'
                       : 'border-industrial-200 bg-industrial-50 hover:bg-industrial-100/60'
-                  }`}>
+                    }`}>
                     <div className="flex items-center space-x-3">
                       <input
                         type="radio"
@@ -626,11 +613,10 @@ export const Inspection: React.FC = () => {
                     </span>
                   </label>
 
-                  <label className={`flex flex-col p-3.5 rounded-xl border cursor-pointer transition-all space-y-2.5 ${
-                    thresholdMode === 'custom'
+                  <label className={`flex flex-col p-3.5 rounded-xl border cursor-pointer transition-all space-y-2.5 ${thresholdMode === 'custom'
                       ? 'border-brand-500 bg-brand-50/40 ring-1 ring-brand-500'
                       : 'border-industrial-200 bg-industrial-50 hover:bg-industrial-100/60'
-                  }`}>
+                    }`}>
                     <div className="flex items-center space-x-3">
                       <input
                         type="radio"
@@ -657,7 +643,7 @@ export const Inspection: React.FC = () => {
                           placeholder="e.g. 20.00"
                           className="w-36 px-3 py-1.5 bg-white border border-industrial-300 rounded-lg text-industrial-900 font-bold focus:ring-2 focus:ring-brand-500 outline-none text-sm shadow-xs"
                         />
-                        <span className="text-xs text-industrial-600 font-sans leading-tight font-medium">
+                        <span className="text-[11px] text-industrial-500 font-sans leading-tight">
                           Applied to this inspection run only (no new model version created).
                         </span>
                       </div>
@@ -665,8 +651,8 @@ export const Inspection: React.FC = () => {
                   </label>
 
                   {/* Sensitivity Guidance Note */}
-                  <div className="p-3.5 bg-brand-50/60 border border-brand-200 rounded-lg text-xs text-industrial-800 space-y-1 font-medium">
-                    <p className="font-extrabold text-brand-900">Threshold Sensitivity Behavior:</p>
+                  <div className="p-3 bg-brand-50/60 border border-brand-200 rounded-lg text-[11px] text-industrial-700 space-y-1">
+                    <p className="font-bold text-brand-900">Threshold Sensitivity Behavior:</p>
                     <p className="leading-relaxed">
                       • <strong>Higher threshold (e.g. 50.0)</strong> = Less sensitive (only stronger anomalies flagged as REJECT).<br />
                       • <strong>Lower threshold (e.g. 15.0)</strong> = More sensitive (weaker anomalies flagged as REJECT).<br />
@@ -799,11 +785,10 @@ export const Inspection: React.FC = () => {
                         setSelectedIndex(idx);
                         setFeedbackSubmitted(false);
                       }}
-                      className={`p-2.5 rounded-md border flex items-center space-x-3 cursor-pointer transition-all ${
-                        isSelected
+                      className={`p-2.5 rounded-md border flex items-center space-x-3 cursor-pointer transition-all ${isSelected
                           ? 'border-brand-500 bg-brand-50/50 shadow-sm ring-1 ring-brand-500'
                           : 'border-industrial-200 hover:border-industrial-300 bg-white'
-                      }`}
+                        }`}
                     >
                       <div className="w-10 h-10 rounded border border-industrial-200 overflow-hidden bg-industrial-100 flex-shrink-0 relative">
                         <img src={item.previewUrl} alt="Thumbnail" className="w-full h-full object-cover" />
@@ -867,354 +852,332 @@ export const Inspection: React.FC = () => {
               </div>
             ) : (
               <>
-            {/* CENTER PANEL: Image Viewer (6 Cols, shifted left) */}
-            <div className="lg:col-span-6 bg-white rounded-lg border border-industrial-200 flex flex-col h-full overflow-hidden shadow-sm">
-              <div className="p-3 border-b border-industrial-200 bg-industrial-50 flex items-center justify-between flex-shrink-0">
-                <div className="flex items-center space-x-1 bg-white rounded border border-industrial-200 p-0.5">
-                  <button
-                    onClick={() => setActiveTab('overlay')}
-                    className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
-                      activeTab === 'overlay' ? 'bg-brand-600 text-white shadow-sm' : 'text-industrial-600 hover:text-industrial-900'
-                    }`}
-                  >
-                    Heatmap Overlay
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('original')}
-                    className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
-                      activeTab === 'original' ? 'bg-brand-600 text-white shadow-sm' : 'text-industrial-600 hover:text-industrial-900'
-                    }`}
-                  >
-                    Original Image
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('heatmap')}
-                    className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
-                      activeTab === 'heatmap' ? 'bg-brand-600 text-white shadow-sm' : 'text-industrial-600 hover:text-industrial-900'
-                    }`}
-                  >
-                    Heatmap Only
-                  </button>
-                </div>
-
-                {activeTab === 'overlay' && (
-                  <div className="flex items-center space-x-2 text-xs font-mono text-industrial-600">
-                    <Sliders className="w-3.5 h-3.5" />
-                    <span>Opacity:</span>
-                    <input
-                      type="range"
-                      min="0.1"
-                      max="1.0"
-                      step="0.05"
-                      value={heatmapOpacity}
-                      onChange={(e) => setHeatmapOpacity(parseFloat(e.target.value))}
-                      className="w-20 h-1 bg-industrial-200 rounded-lg appearance-none cursor-pointer accent-brand-600"
-                    />
-                  </div>
-                )}
-
-                <div className="flex items-center space-x-1">
-                  <button
-                    onClick={() => setZoomLevel((z) => Math.max(0.5, z - 0.25))}
-                    className="p-1 text-industrial-500 hover:text-industrial-900 hover:bg-industrial-100 rounded"
-                  >
-                    <ZoomOut className="w-4 h-4" />
-                  </button>
-                  <span className="text-xs font-mono text-industrial-600 w-10 text-center">
-                    {Math.round(zoomLevel * 100)}%
-                  </span>
-                  <button
-                    onClick={() => setZoomLevel((z) => Math.min(3, z + 0.25))}
-                    className="p-1 text-industrial-500 hover:text-industrial-900 hover:bg-industrial-100 rounded"
-                  >
-                    <ZoomIn className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => setZoomLevel(1)}
-                    className="p-1 text-industrial-500 hover:text-industrial-900 hover:bg-industrial-100 rounded"
-                  >
-                    <Maximize2 className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Viewport */}
-              <div className="flex-1 bg-industrial-900 relative overflow-hidden flex items-center justify-center p-4">
-                {!currentItem ? (
-                  <div className="text-center text-industrial-500 font-mono text-xs">
-                    Select a test image from left.
-                  </div>
-                ) : currentItem.status === 'processing' ? (
-                  <div className="text-center space-y-3">
-                    <div className="w-10 h-10 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto" />
-                    <p className="text-xs font-mono text-brand-400">Running PatchCore Feature Comparison...</p>
-                  </div>
-                ) : (
-                  <div
-                    className="relative transition-transform duration-200 ease-out max-h-full max-w-full"
-                    style={{ transform: `scale(${zoomLevel})` }}
-                  >
-                    <img
-                      src={currentItem.previewUrl}
-                      alt="Original"
-                      className={`max-h-[440px] w-auto object-contain rounded shadow-lg ${
-                        activeTab === 'heatmap' ? 'opacity-0' : 'opacity-100'
-                      }`}
-                    />
-
-                    {currentItem.result?.localization?.heatmap_uri && activeTab !== 'original' && (
-                      <img
-                        src={getStorageUrl(currentItem.result.localization.heatmap_uri)}
-                        alt="Heatmap"
-                        className={`absolute inset-0 w-full h-full object-contain rounded pointer-events-none ${
-                          activeTab === 'overlay' ? 'mix-blend-multiply' : ''
-                        }`}
-                        style={{
-                          opacity: activeTab === 'heatmap' ? 1.0 : heatmapOpacity,
-                        }}
-                      />
-                    )}
-
-                    {currentItem.result?.localization?.bbox && (
-                      <svg
-                        className="absolute inset-0 w-full h-full pointer-events-none"
-                        viewBox="0 0 100 100"
-                        preserveAspectRatio="none"
+                {/* CENTER PANEL: Image Viewer (6 Cols, shifted left) */}
+                <div className="lg:col-span-6 bg-white rounded-lg border border-industrial-200 flex flex-col h-full overflow-hidden shadow-sm">
+                  <div className="p-3 border-b border-industrial-200 bg-industrial-50 flex items-center justify-between flex-shrink-0">
+                    <div className="flex items-center space-x-1 bg-white rounded border border-industrial-200 p-0.5">
+                      <button
+                        onClick={() => setActiveTab('overlay')}
+                        className={`px-3 py-1 text-xs font-medium rounded transition-colors ${activeTab === 'overlay' ? 'bg-brand-600 text-white shadow-sm' : 'text-industrial-600 hover:text-industrial-900'
+                          }`}
                       >
-                        <rect
-                          x={`${currentItem.result.localization.bbox.x}`}
-                          y={`${currentItem.result.localization.bbox.y}`}
-                          width={`${currentItem.result.localization.bbox.width}`}
-                          height={`${currentItem.result.localization.bbox.height}`}
-                          fill="none"
-                          stroke="#EF4444"
-                          strokeWidth="2.5"
-                          strokeDasharray="4 2"
-                          className="animate-pulse"
+                        Heatmap Overlay
+                      </button>
+                      <button
+                        onClick={() => setActiveTab('original')}
+                        className={`px-3 py-1 text-xs font-medium rounded transition-colors ${activeTab === 'original' ? 'bg-brand-600 text-white shadow-sm' : 'text-industrial-600 hover:text-industrial-900'
+                          }`}
+                      >
+                        Original Image
+                      </button>
+                      <button
+                        onClick={() => setActiveTab('heatmap')}
+                        className={`px-3 py-1 text-xs font-medium rounded transition-colors ${activeTab === 'heatmap' ? 'bg-brand-600 text-white shadow-sm' : 'text-industrial-600 hover:text-industrial-900'
+                          }`}
+                      >
+                        Heatmap Only
+                      </button>
+                    </div>
+
+                    {activeTab === 'overlay' && (
+                      <div className="flex items-center space-x-2 text-xs font-mono text-industrial-600">
+                        <Sliders className="w-3.5 h-3.5" />
+                        <span>Opacity:</span>
+                        <input
+                          type="range"
+                          min="0.1"
+                          max="1.0"
+                          step="0.05"
+                          value={heatmapOpacity}
+                          onChange={(e) => setHeatmapOpacity(parseFloat(e.target.value))}
+                          className="w-20 h-1 bg-industrial-200 rounded-lg appearance-none cursor-pointer accent-brand-600"
                         />
-                      </svg>
+                      </div>
                     )}
+
+                    <div className="flex items-center space-x-1">
+                      <button
+                        onClick={() => setZoomLevel((z) => Math.max(0.5, z - 0.25))}
+                        className="p-1 text-industrial-500 hover:text-industrial-900 hover:bg-industrial-100 rounded"
+                      >
+                        <ZoomOut className="w-4 h-4" />
+                      </button>
+                      <span className="text-xs font-mono text-industrial-600 w-10 text-center">
+                        {Math.round(zoomLevel * 100)}%
+                      </span>
+                      <button
+                        onClick={() => setZoomLevel((z) => Math.min(3, z + 0.25))}
+                        className="p-1 text-industrial-500 hover:text-industrial-900 hover:bg-industrial-100 rounded"
+                      >
+                        <ZoomIn className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => setZoomLevel(1)}
+                        className="p-1 text-industrial-500 hover:text-industrial-900 hover:bg-industrial-100 rounded"
+                      >
+                        <Maximize2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
-                )}
-              </div>
-            </div>
 
-            {/* RIGHT PANEL: Result & Metadata (4 Cols) */}
-            <div className="lg:col-span-4 bg-white rounded-lg border border-industrial-200 flex flex-col h-full overflow-hidden shadow-sm">
-              <div className="p-3 border-b border-industrial-200 bg-industrial-50">
-                <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-industrial-700">
-                  Inspection Result
-                </h3>
-              </div>
-
-              <div className="flex-1 p-4 overflow-y-auto space-y-4 text-xs">
-                {!currentItem ? (
-                  <div className="h-full flex items-center justify-center text-center text-industrial-400 font-mono text-xs">
-                    Select a test image from left.
-                  </div>
-                ) : currentItem.status === 'processing' || !currentItem.result ? (
-                  <>
-                    {/* Loading Status Banner */}
-                    <div className="p-4 bg-brand-50 border border-brand-200 rounded-lg text-center space-y-2">
-                      <div className="w-8 h-8 border-3 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto" />
-                      <h2 className="text-lg font-extrabold text-brand-700 tracking-tight font-mono uppercase animate-pulse">
-                        ANALYZING
-                      </h2>
-                      <p className="text-[11px] font-semibold text-brand-600 font-mono">
-                        Running PatchCore Feature Comparison...
-                      </p>
-                    </div>
-
-                    {/* Scores Placeholder */}
-                    <div className="grid grid-cols-2 gap-2 font-mono">
-                      <div className="p-3 bg-industrial-50 rounded border border-industrial-200">
-                        <span className="text-[10px] text-industrial-500 uppercase">Score</span>
-                        <p className="text-base font-bold text-industrial-400 mt-0.5">—</p>
+                  {/* Viewport */}
+                  <div className="flex-1 bg-industrial-900 relative overflow-hidden flex items-center justify-center p-4">
+                    {!currentItem ? (
+                      <div className="text-center text-industrial-500 font-mono text-xs">
+                        Select a test image from left.
                       </div>
-                      <div className="p-3 bg-industrial-50 rounded border border-industrial-200">
-                        <span className="text-[10px] text-industrial-500 uppercase">Threshold</span>
-                        <p className="text-base font-bold text-industrial-700 mt-0.5">
-                          {(selectedModel as any)?.active_version?.calibration?.threshold?.toFixed(2) ?? '21.43'}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Status Metadata */}
-                    <div className="bg-industrial-50 p-3 rounded border border-industrial-200 space-y-2 font-mono">
-                      <div className="flex justify-between">
-                        <span className="text-industrial-500">Status:</span>
-                        <span className="font-semibold text-brand-600 animate-pulse">Processing</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-industrial-500">Severity:</span>
-                        <span className="font-semibold text-industrial-400">—</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-industrial-500">Processing Time:</span>
-                        <span className="font-semibold text-industrial-400">—</span>
-                      </div>
-                    </div>
-                    {/* Model Metadata */}
-                    <div className="bg-white p-3 rounded border border-industrial-200 space-y-1 text-industrial-600 font-mono">
-                      <div className="flex items-center space-x-1.5 font-semibold text-industrial-900 mb-1">
-                        <Layers className="w-3.5 h-3.5 text-brand-600" />
-                        <span>{selectedModel?.name || 'Textile Inspection'}</span>
-                      </div>
-                      <p className="text-[10px] text-industrial-400">ID: {selectedModel?.id || selectedModel?._id || '—'}</p>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    {/* Status Banner */}
-                    {currentItem.result.prediction?.status === 'anomalous' ||
-                    currentItem.result.prediction?.status === 'REJECT' ||
-                    (currentItem.result.prediction?.anomaly_score !== undefined &&
-                      currentItem.result.prediction?.threshold !== undefined &&
-                      currentItem.result.prediction.anomaly_score >= currentItem.result.prediction.threshold) ? (
-                      <div className="p-4 bg-reject-50 border border-reject-200 rounded-lg text-center space-y-1">
-                        <XCircle className="w-8 h-8 text-reject-600 mx-auto" />
-                        <h2 className="text-lg font-extrabold text-reject-700 tracking-tight font-mono">
-                          REJECT
-                        </h2>
-                        <p className="text-[11px] font-semibold text-reject-600">ANOMALY DETECTED</p>
+                    ) : currentItem.status === 'processing' ? (
+                      <div className="text-center space-y-3">
+                        <div className="w-10 h-10 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto" />
+                        <p className="text-xs font-mono text-brand-400">Running PatchCore Feature Comparison...</p>
                       </div>
                     ) : (
-                      <div className="p-4 bg-pass-50 border border-pass-200 rounded-lg text-center space-y-1">
-                        <CheckCircle2 className="w-8 h-8 text-pass-600 mx-auto" />
-                        <h2 className="text-lg font-extrabold text-pass-700 tracking-tight font-mono">
-                          PASS
-                        </h2>
-                        <p className="text-[11px] font-semibold text-pass-600">PRODUCT NORMAL</p>
+                      <div
+                        className="relative transition-transform duration-200 ease-out max-h-full max-w-full"
+                        style={{ transform: `scale(${zoomLevel})` }}
+                      >
+                        <img
+                          src={currentItem.previewUrl}
+                          alt="Original"
+                          className={`max-h-[440px] w-auto object-contain rounded shadow-lg ${activeTab === 'heatmap' ? 'opacity-0' : 'opacity-100'
+                            }`}
+                        />
+
+                        {currentItem.result?.localization?.heatmap_uri && activeTab !== 'original' && (
+                          <img
+                            src={getStorageUrl(currentItem.result.localization.heatmap_uri)}
+                            alt="Heatmap"
+                            className="absolute inset-0 w-full h-full object-contain rounded pointer-events-none"
+                            style={{
+                              opacity: activeTab === 'heatmap' ? 1.0 : heatmapOpacity,
+                            }}
+                          />
+                        )}
+
+
                       </div>
                     )}
+                  </div>
+                </div>
 
-                    {/* Scores */}
-                    <div className="grid grid-cols-2 gap-2 font-mono">
-                      <div className="p-3 bg-industrial-50 rounded border border-industrial-200">
-                        <span className="text-[10px] text-industrial-500 uppercase">Score</span>
-                        <p className="text-base font-bold text-industrial-900 mt-0.5">
-                          {currentItem.result.prediction?.anomaly_score?.toFixed(2) ?? 'N/A'}
-                        </p>
-                      </div>
-                      <div className="p-3 bg-industrial-50 rounded border border-industrial-200">
-                        <span className="text-[10px] text-industrial-500 uppercase">Threshold</span>
-                        <p className="text-base font-bold text-industrial-700 mt-0.5">
-                          {currentItem.result.prediction?.threshold?.toFixed(2) ?? '21.43'}
-                        </p>
-                      </div>
-                    </div>
+                {/* RIGHT PANEL: Result & Metadata (4 Cols) */}
+                <div className="lg:col-span-4 bg-white rounded-lg border border-industrial-200 flex flex-col h-full overflow-hidden shadow-sm">
+                  <div className="p-3 border-b border-industrial-200 bg-industrial-50">
+                    <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-industrial-700">
+                      Inspection Result
+                    </h3>
+                  </div>
 
-                    <div className="bg-industrial-50 p-3 rounded border border-industrial-200 space-y-2 font-mono">
-                      <div className="flex justify-between">
-                        <span className="text-industrial-500">Severity:</span>
-                        <span className="font-semibold capitalize text-industrial-900">
-                          {currentItem.result.prediction?.severity || 'none'}
-                        </span>
+                  <div className="flex-1 p-4 overflow-y-auto space-y-4 text-xs">
+                    {!currentItem ? (
+                      <div className="h-full flex items-center justify-center text-center text-industrial-400 font-mono text-xs">
+                        Select a test image from left.
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-industrial-500">Processing Time:</span>
-                        <span className="font-semibold text-industrial-900">
-                          {currentItem.result.processing_time_ms || 32} ms
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Model Metadata */}
-                    <div className="bg-white p-3 rounded border border-industrial-200 space-y-1 text-industrial-600 font-mono">
-                      <div className="flex items-center space-x-1.5 font-semibold text-industrial-900 mb-1">
-                        <Layers className="w-3.5 h-3.5 text-brand-600" />
-                        <span>{selectedModel?.name}</span>
-                      </div>
-                      <p className="text-[10px] text-industrial-400">ID: {currentItem.result.model_id}</p>
-                    </div>
-
-                    {/* AI Defect Analysis (Gemini Interpretation Layer) */}
-                    <VLMDefectAnalysisCard
-                      isPass={
-                        currentItem.result.prediction?.status === 'normal' ||
-                        currentItem.result.prediction?.status === 'PASS' ||
-                        (currentItem.result.prediction?.anomaly_score !== undefined &&
-                          currentItem.result.prediction?.threshold !== undefined &&
-                          currentItem.result.prediction.anomaly_score < currentItem.result.prediction.threshold)
-                      }
-                      vlmAnalysis={currentItem.result.vlm_analysis}
-                      onGenerate={handleGenerateVlm}
-                      isGenerating={isRetryingVlm}
-                    />
-
-                    {/* Feedback Widget */}
-                    <div className="pt-3 border-t border-industrial-200 space-y-2">
-                      <p className="font-bold text-industrial-900 text-xs">Is this inspection result correct?</p>
-                      
-                      {feedbackSubmitted ? (
-                        <div className="p-2.5 bg-pass-50 border border-pass-200 text-pass-700 text-xs rounded font-medium flex items-center space-x-2">
-                          <Check className="w-4 h-4 text-pass-600 flex-shrink-0" />
-                          <span>Feedback submitted.</span>
+                    ) : currentItem.status === 'processing' || !currentItem.result ? (
+                      <>
+                        {/* Loading Status Banner */}
+                        <div className="p-4 bg-brand-50 border border-brand-200 rounded-lg text-center space-y-2">
+                          <div className="w-8 h-8 border-3 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto" />
+                          <h2 className="text-lg font-extrabold text-brand-700 tracking-tight font-mono uppercase animate-pulse">
+                            ANALYZING
+                          </h2>
+                          <p className="text-[11px] font-semibold text-brand-600 font-mono">
+                            Running PatchCore Feature Comparison...
+                          </p>
                         </div>
-                      ) : (
-                        <form onSubmit={handleFeedbackSubmit} className="space-y-2">
-                          <div className="grid grid-cols-3 gap-1">
-                            <button
-                              type="button"
-                              onClick={() => setFeedbackType('correct')}
-                              className={`py-1.5 text-xs font-semibold rounded border transition-colors ${
-                                feedbackType === 'correct'
-                                  ? 'bg-pass-50 text-pass-700 border-pass-300 font-extrabold'
-                                  : 'bg-industrial-50 text-industrial-600 border-industrial-200'
-                              }`}
-                            >
-                              ✓ Correct
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setFeedbackType('false_positive')}
-                              className={`py-1.5 text-xs font-semibold rounded border transition-colors ${
-                                feedbackType === 'false_positive'
-                                  ? 'bg-reject-50 text-reject-700 border-reject-300 font-extrabold'
-                                  : 'bg-industrial-50 text-industrial-600 border-industrial-200'
-                              }`}
-                            >
-                              False Pos.
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setFeedbackType('wrong_severity')}
-                              className={`py-1.5 text-xs font-semibold rounded border transition-colors ${
-                                feedbackType === 'wrong_severity'
-                                  ? 'bg-review-50 text-review-700 border-review-300 font-extrabold'
-                                  : 'bg-industrial-50 text-industrial-600 border-industrial-200'
-                              }`}
-                            >
-                              Severity
-                            </button>
+
+                        {/* Scores Placeholder */}
+                        <div className="grid grid-cols-2 gap-2 font-mono">
+                          <div className="p-3 bg-industrial-50 rounded border border-industrial-200">
+                            <span className="text-[10px] text-industrial-500 uppercase">Score</span>
+                            <p className="text-base font-bold text-industrial-400 mt-0.5">—</p>
                           </div>
+                          <div className="p-3 bg-industrial-50 rounded border border-industrial-200">
+                            <span className="text-[10px] text-industrial-500 uppercase">Threshold</span>
+                            <p className="text-base font-bold text-industrial-700 mt-0.5">
+                              {(selectedModel as any)?.active_version?.calibration?.threshold?.toFixed(2) ?? '21.43'}
+                            </p>
+                          </div>
+                        </div>
 
-                          <input
-                            type="text"
-                            placeholder="Add optional comment..."
-                            value={feedbackComment}
-                            onChange={(e) => setFeedbackComment(e.target.value)}
-                            className="w-full px-2.5 py-1 text-xs border border-industrial-300 rounded focus:ring-1 focus:ring-brand-500 focus:outline-none"
-                          />
+                        {/* Status Metadata */}
+                        <div className="bg-industrial-50 p-3 rounded border border-industrial-200 space-y-2 font-mono">
+                          <div className="flex justify-between">
+                            <span className="text-industrial-500">Status:</span>
+                            <span className="font-semibold text-brand-600 animate-pulse">Processing</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-industrial-500">Severity:</span>
+                            <span className="font-semibold text-industrial-400">—</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-industrial-500">Processing Time:</span>
+                            <span className="font-semibold text-industrial-400">—</span>
+                          </div>
+                        </div>
 
-                          <Button
-                            type="submit"
-                            variant="secondary"
-                            size="sm"
-                            className="w-full text-xs"
-                            isLoading={isSubmittingFeedback}
-                            icon={<Send className="w-3 h-3" />}
-                          >
-                            Submit Feedback
-                          </Button>
-                        </form>
-                      )}
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-            </>
+
+
+                        {/* Model Metadata */}
+                        <div className="bg-white p-3 rounded border border-industrial-200 space-y-1 text-industrial-600 font-mono">
+                          <div className="flex items-center space-x-1.5 font-semibold text-industrial-900 mb-1">
+                            <Layers className="w-3.5 h-3.5 text-brand-600" />
+                            <span>{selectedModel?.name || 'Textile Inspection'}</span>
+                          </div>
+                          <p className="text-[10px] text-industrial-400">ID: {selectedModel?.id || selectedModel?._id || '—'}</p>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        {/* Status Banner */}
+                        {currentItem.result.prediction?.status === 'anomalous' ||
+                          currentItem.result.prediction?.status === 'REJECT' ||
+                          (currentItem.result.prediction?.anomaly_score !== undefined &&
+                            currentItem.result.prediction?.threshold !== undefined &&
+                            currentItem.result.prediction.anomaly_score >= currentItem.result.prediction.threshold) ? (
+                          <div className="p-4 bg-reject-50 border border-reject-200 rounded-lg text-center space-y-1">
+                            <XCircle className="w-8 h-8 text-reject-600 mx-auto" />
+                            <h2 className="text-lg font-extrabold text-reject-700 tracking-tight font-mono">
+                              REJECT
+                            </h2>
+                            <p className="text-[11px] font-semibold text-reject-600">ANOMALY DETECTED</p>
+                          </div>
+                        ) : (
+                          <div className="p-4 bg-pass-50 border border-pass-200 rounded-lg text-center space-y-1">
+                            <CheckCircle2 className="w-8 h-8 text-pass-600 mx-auto" />
+                            <h2 className="text-lg font-extrabold text-pass-700 tracking-tight font-mono">
+                              PASS
+                            </h2>
+                            <p className="text-[11px] font-semibold text-pass-600">PRODUCT NORMAL</p>
+                          </div>
+                        )}
+
+                        {/* Scores */}
+                        <div className="grid grid-cols-2 gap-2 font-mono">
+                          <div className="p-3 bg-industrial-50 rounded border border-industrial-200">
+                            <span className="text-[10px] text-industrial-500 uppercase">Score</span>
+                            <p className="text-base font-bold text-industrial-900 mt-0.5">
+                              {currentItem.result.prediction?.anomaly_score?.toFixed(2) ?? 'N/A'}
+                            </p>
+                          </div>
+                          <div className="p-3 bg-industrial-50 rounded border border-industrial-200">
+                            <span className="text-[10px] text-industrial-500 uppercase">Threshold</span>
+                            <p className="text-base font-bold text-industrial-700 mt-0.5">
+                              {currentItem.result.prediction?.threshold?.toFixed(2) ?? '21.43'}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="bg-industrial-50 p-3 rounded border border-industrial-200 space-y-2 font-mono">
+                          <div className="flex justify-between">
+                            <span className="text-industrial-500">Severity:</span>
+                            <span className="font-semibold capitalize text-industrial-900">
+                              {currentItem.result.prediction?.severity || 'none'}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-industrial-500">Processing Time:</span>
+                            <span className="font-semibold text-industrial-900">
+                              {currentItem.result.processing_time_ms || 32} ms
+                            </span>
+                          </div>
+                        </div>
+
+
+
+                        {/* Model Metadata */}
+                        <div className="bg-white p-3 rounded border border-industrial-200 space-y-1 text-industrial-600 font-mono">
+                          <div className="flex items-center space-x-1.5 font-semibold text-industrial-900 mb-1">
+                            <Layers className="w-3.5 h-3.5 text-brand-600" />
+                            <span>{selectedModel?.name}</span>
+                          </div>
+                          <p className="text-[10px] text-industrial-400">ID: {currentItem.result.model_id}</p>
+                        </div>
+
+                        {/* AI Defect Analysis (Gemini Interpretation Layer) */}
+                        <VLMDefectAnalysisCard
+                          isPass={
+                            currentItem.result.prediction?.status === 'normal' ||
+                            currentItem.result.prediction?.status === 'PASS' ||
+                            (currentItem.result.prediction?.anomaly_score !== undefined &&
+                              currentItem.result.prediction?.threshold !== undefined &&
+                              currentItem.result.prediction.anomaly_score < currentItem.result.prediction.threshold)
+                          }
+                          vlmAnalysis={currentItem.result.vlm_analysis}
+                          onGenerate={handleGenerateVlm}
+                          isGenerating={isRetryingVlm}
+                        />
+
+                        {/* Feedback Widget */}
+                        <div className="pt-3 border-t border-industrial-200 space-y-2">
+                          <p className="font-bold text-industrial-900 text-xs">Is this inspection result correct?</p>
+
+                          {feedbackSubmitted ? (
+                            <div className="p-2.5 bg-pass-50 border border-pass-200 text-pass-700 text-xs rounded font-medium flex items-center space-x-2">
+                              <Check className="w-4 h-4 text-pass-600 flex-shrink-0" />
+                              <span>Feedback submitted.</span>
+                            </div>
+                          ) : (
+                            <form onSubmit={handleFeedbackSubmit} className="space-y-2">
+                              <div className="grid grid-cols-3 gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => setFeedbackType('correct')}
+                                  className={`py-1.5 text-[11px] font-medium rounded border transition-colors ${feedbackType === 'correct'
+                                      ? 'bg-pass-50 text-pass-700 border-pass-300 font-bold'
+                                      : 'bg-industrial-50 text-industrial-600 border-industrial-200'
+                                    }`}
+                                >
+                                  ✓ Correct
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setFeedbackType('false_positive')}
+                                  className={`py-1.5 text-[11px] font-medium rounded border transition-colors ${feedbackType === 'false_positive'
+                                      ? 'bg-reject-50 text-reject-700 border-reject-300 font-bold'
+                                      : 'bg-industrial-50 text-industrial-600 border-industrial-200'
+                                    }`}
+                                >
+                                  False Pos.
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setFeedbackType('wrong_severity')}
+                                  className={`py-1.5 text-[11px] font-medium rounded border transition-colors ${feedbackType === 'wrong_severity'
+                                      ? 'bg-review-50 text-review-700 border-review-300 font-bold'
+                                      : 'bg-industrial-50 text-industrial-600 border-industrial-200'
+                                    }`}
+                                >
+                                  Severity
+                                </button>
+                              </div>
+
+                              <input
+                                type="text"
+                                placeholder="Add optional comment..."
+                                value={feedbackComment}
+                                onChange={(e) => setFeedbackComment(e.target.value)}
+                                className="w-full px-2.5 py-1 text-xs border border-industrial-300 rounded focus:ring-1 focus:ring-brand-500 focus:outline-none"
+                              />
+
+                              <Button
+                                type="submit"
+                                variant="secondary"
+                                size="sm"
+                                className="w-full text-xs"
+                                isLoading={isSubmittingFeedback}
+                                icon={<Send className="w-3 h-3" />}
+                              >
+                                Submit Feedback
+                              </Button>
+                            </form>
+                          )}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </>
             )}
           </div>
 

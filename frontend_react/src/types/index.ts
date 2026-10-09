@@ -156,6 +156,8 @@ export interface InstanceResult {
   prediction?: PredictionOutput | null;
   localization?: LocalizationOutput | null;
   vlm_analysis?: VLMAnalysis | null;
+  product_polygon?: number[][];
+  defect_polygon?: number[][];
 }
 
 export interface Inspection {

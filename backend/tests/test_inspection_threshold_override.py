@@ -10,6 +10,10 @@ Verifies that:
 6. Invalid threshold inputs (< 0, non-numeric) return HTTP 400.
 """
 
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
+
 import io
 import pytest
 from fastapi.testclient import TestClient
@@ -17,7 +21,7 @@ from bson import ObjectId
 import numpy as np
 from PIL import Image
 
-from main import app
+from api_server import app
 from db.connection import get_db
 
 client = TestClient(app)

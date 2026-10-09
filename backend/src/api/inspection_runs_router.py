@@ -12,6 +12,8 @@ from services.inspection_run_service import (
     create_inspection_run, get_inspection_runs, get_inspection_run
 )
 
+from api.deps import get_current_user_id
+
 router = APIRouter(prefix="/inspection-runs", tags=["Inspection Runs"])
 
 
@@ -24,6 +26,7 @@ def create_inspection_run_endpoint(
     min_instance_area: int = Form(500),
     max_instances: int = Form(20),
     files: List[UploadFile] = File(...),
+    user_id: str = Depends(get_current_user_id),
     db=Depends(get_db)
 ):
     """
@@ -35,6 +38,7 @@ def create_inspection_run_endpoint(
         db,
         model_id=model_id,
         upload_files=files,
+        user_id=user_id,
         background_tasks=background_tasks,
         threshold_override=threshold_override,
         inspection_mode=inspection_mode,
@@ -50,10 +54,11 @@ def list_inspection_runs_endpoint(
     model_id: Optional[str] = Query(None),
     model_version_id: Optional[str] = Query(None),
     status: Optional[str] = Query(None),
+    user_id: str = Depends(get_current_user_id),
     db=Depends(get_db)
 ):
     """Lists inspection runs with optional filtering (model_id, model_version_id, status)."""
-    return get_inspection_runs(db, model_id=model_id, model_version_id=model_version_id, status=status)
+    return get_inspection_runs(db, user_id=user_id, model_id=model_id, model_version_id=model_version_id, status=status)
 
 
 @router.get("/{run_id}")

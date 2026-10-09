@@ -59,17 +59,20 @@ def _serialize_leaf_run(doc: dict) -> dict:
     return cleaned
 
 
+from api.deps import get_current_user_id
+
 @router.post("/analyze", response_model=LeafDiseaseAnalysisResponse)
 async def analyze_leaf_disease(
     files: List[UploadFile] = File(...),
     selected_crop: Optional[str] = Form(None),
+    user_id: str = Depends(get_current_user_id),
     db: Database = Depends(get_db)
 ):
     """
     Phase 1 Leaf Disease Analysis Endpoint.
     Accepts 1 to 5 leaf image files and optional crop selection override.
     Uses Gemini Vision as intelligent fallback when primary providers are uncertain.
-    Persists analysis run history to MongoDB.
+    Persists analysis run history to MongoDB scoped to the active user.
     """
     if not files or len(files) == 0:
         raise HTTPException(
@@ -111,6 +114,7 @@ async def analyze_leaf_disease(
         # Save failed run to history
         try:
             doc_data = resp.model_dump()
+            doc_data["user_id"] = user_id
             doc_data["created_at"] = datetime.now(timezone.utc)
             doc_data["filenames"] = [f[0] for f in file_tuples]
             db.ad_inspections.insert_one(doc_data)
@@ -200,10 +204,11 @@ async def analyze_leaf_disease(
     # Save run record to MongoDB leaf_disease_runs collection
     try:
         doc_data = resp.model_dump(mode="json")
+        doc_data["user_id"] = user_id
         doc_data["created_at"] = datetime.now(timezone.utc)
         doc_data["filenames"] = [f[0] for f in file_tuples]
         db.ad_inspections.insert_one(doc_data)
-        print(f"[INFO] Saved leaf disease run '{analysis_id}' to MongoDB history.")
+        print(f"[INFO] Saved leaf disease run '{analysis_id}' for user '{user_id}' to MongoDB history.")
     except Exception as e:
         print(f"[WARN] Failed to persist leaf disease run history: {e}")
 
@@ -247,13 +252,19 @@ def get_leaf_disease_history(
     limit: int = Query(50, ge=1, le=200),
     status: Optional[str] = Query(None),
     crop_name: Optional[str] = Query(None),
+    user_id: str = Depends(get_current_user_id),
     db: Database = Depends(get_db)
 ):
     """
-    Returns list of historical Leaf Disease Analysis runs ordered newest first.
+    Returns list of historical Leaf Disease Analysis runs ordered newest first for the active user.
     Supports filtering by status ('SUCCESS', 'UNCERTAIN', 'FAILED') and crop_name.
     """
-    query = {}
+    if user_id == "usr_default":
+        user_clause = {"$or": [{"user_id": "usr_default"}, {"user_id": {"$exists": False}}]}
+    else:
+        user_clause = {"user_id": user_id}
+
+    query = dict(user_clause)
     if status:
         query["status"] = status.upper()
     if crop_name:

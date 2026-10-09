@@ -1,4 +1,4 @@
-"""
+﻿"""
 InspectAI Gemini VLM Service
 -----------------------------
 Downstream visual interpretation layer for PatchCore anomaly inspection results.
@@ -10,7 +10,7 @@ import json
 import logging
 from typing import Dict, Any, Optional
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
 from PIL import Image, ImageDraw
 
 from db.schemas import VLMAnalysisSchema
@@ -169,7 +169,7 @@ def analyze_inspection_evidence(
                 explanation="PatchCore flagged an anomaly in this region. Gemini VLM visual inspection summary provided.",
                 visual_evidence="Localized visual discontinuity in crop region.",
                 confidence=0.75,
-                generated_at=datetime.utcnow()
+                generated_at=datetime.now(timezone.utc)
             ).model_dump()
 
         parsed = json.loads(raw_text)
@@ -185,7 +185,7 @@ def analyze_inspection_evidence(
             explanation=parsed.get("explanation", "PatchCore identified an anomaly in this region."),
             visual_evidence=parsed.get("visual_evidence", "Localized anomaly heatmap intensity."),
             confidence=float(parsed.get("confidence", 0.85)),
-            generated_at=datetime.utcnow()
+            generated_at=datetime.now(timezone.utc)
         )
         return vlm_res.model_dump()
 
@@ -198,3 +198,4 @@ def analyze_inspection_evidence(
             model=os.getenv("GEMINI_MODEL", "gemini-2.5-flash"),
             explanation=f"VLM analysis service encounter: {str(e)}"
         ).model_dump()
+

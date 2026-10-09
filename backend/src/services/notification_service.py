@@ -1,4 +1,4 @@
-"""
+﻿"""
 InspectAI Notification Service
 ------------------------------
 Business logic for managing application completion notifications.
@@ -6,7 +6,7 @@ Handles terminal-state notifications for Model Building and Inspection Runs.
 Guarantees duplicate prevention via deterministic idempotency keys and MongoDB upsert.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional
 from bson import ObjectId
 from fastapi import HTTPException
@@ -37,6 +37,7 @@ def create_notification(
     message: str,
     severity: str,
     idempotency_key: str,
+    user_id: Optional[str] = "usr_default",
     target_route: str = "/",
     related_model_id: Optional[str] = None,
     related_version_id: Optional[str] = None,
@@ -48,6 +49,7 @@ def create_notification(
     Returns serialized notification dictionary.
     """
     notif_doc = {
+        "user_id": user_id or "usr_default",
         "type": notification_type,
         "title": title,
         "message": message,
@@ -58,7 +60,7 @@ def create_notification(
         "target_route": target_route,
         "read": False,
         "idempotency_key": idempotency_key,
-        "created_at": datetime.utcnow()
+        "created_at": datetime.now(timezone.utc)
     }
 
     try:
@@ -85,6 +87,7 @@ def create_model_build_notification(
     version_number: int,
     status: str,  # 'ready' or 'failed'
     model_name: str,
+    user_id: Optional[str] = "usr_default",
     error_reason: Optional[str] = None
 ) -> Optional[Dict[str, Any]]:
     """Generates a terminal Model Build notification (completed or failed)."""
@@ -109,6 +112,7 @@ def create_model_build_notification(
         message=message,
         severity=severity,
         idempotency_key=idempotency_key,
+        user_id=user_id,
         target_route=target_route,
         related_model_id=model_id,
         related_version_id=version_id
@@ -126,7 +130,8 @@ def create_run_notification(
     completed_images: int,
     pass_count: int,
     reject_count: int,
-    error_count: int
+    error_count: int,
+    user_id: Optional[str] = "usr_default"
 ) -> Optional[Dict[str, Any]]:
     """Generates a terminal Inspection Run notification (completed, partial, or failed)."""
     idempotency_key = f"RUN_COMPLETE:{run_id}:{status}"
@@ -134,7 +139,7 @@ def create_run_notification(
 
     if status == "completed":
         title = f"Inspection Run #{run_number} completed"
-        message = f"{total_images} images inspected — {pass_count} PASS, {reject_count} REJECT."
+        message = f"{total_images} images inspected â€” {pass_count} PASS, {reject_count} REJECT."
         severity = "success"
         n_type = "INSPECTION_RUN_COMPLETED"
     elif status == "partial":
@@ -155,6 +160,7 @@ def create_run_notification(
         message=message,
         severity=severity,
         idempotency_key=idempotency_key,
+        user_id=user_id,
         target_route=target_route,
         related_model_id=model_id,
         related_version_id=model_version_id,
@@ -164,11 +170,18 @@ def create_run_notification(
 
 def get_notifications(
     db: Database,
+    user_id: Optional[str] = "usr_default",
     limit: int = 20,
     unread_only: bool = False
 ) -> List[Dict[str, Any]]:
     """Lists notifications ordered newest first with optional unread filter and limit."""
-    query = {}
+    query: Dict[str, Any] = {}
+    if user_id:
+        if user_id == "usr_default":
+            query["$or"] = [{"user_id": "usr_default"}, {"user_id": {"$exists": False}}]
+        else:
+            query["user_id"] = user_id
+
     if unread_only:
         query["read"] = False
 
@@ -176,9 +189,15 @@ def get_notifications(
     return [serialize_notification(doc) for doc in cursor]
 
 
-def get_unread_count(db: Database) -> int:
+def get_unread_count(db: Database, user_id: Optional[str] = "usr_default") -> int:
     """Returns total count of unread notifications."""
-    return db.ad_notifications.count_documents({"read": False})
+    query: Dict[str, Any] = {"read": False}
+    if user_id:
+        if user_id == "usr_default":
+            query["$or"] = [{"user_id": "usr_default"}, {"user_id": {"$exists": False}}]
+        else:
+            query["user_id"] = user_id
+    return db.ad_notifications.count_documents(query)
 
 
 def mark_notification_read(db: Database, notification_id: str) -> Dict[str, Any]:
@@ -197,13 +216,21 @@ def mark_notification_read(db: Database, notification_id: str) -> Dict[str, Any]
     return serialize_notification(doc)
 
 
-def mark_all_notifications_read(db: Database) -> Dict[str, Any]:
+def mark_all_notifications_read(db: Database, user_id: Optional[str] = "usr_default") -> Dict[str, Any]:
     """Marks all unread notifications as read."""
+    query: Dict[str, Any] = {"read": False}
+    if user_id:
+        if user_id == "usr_default":
+            query["$or"] = [{"user_id": "usr_default"}, {"user_id": {"$exists": False}}]
+        else:
+            query["user_id"] = user_id
+
     res = db.ad_notifications.update_many(
-        {"read": False},
+        query,
         {"$set": {"read": True}}
     )
     return {
         "message": "All notifications marked as read.",
         "modified_count": res.modified_count
     }
+

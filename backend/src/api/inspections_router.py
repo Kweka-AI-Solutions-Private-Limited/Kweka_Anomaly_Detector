@@ -16,6 +16,8 @@ from services.inspection_service import (
     retry_instance_vlm_analysis
 )
 
+from api.deps import get_current_user_id
+
 router = APIRouter(prefix="/inspections", tags=["Inspections"])
 
 
@@ -38,6 +40,7 @@ def create_inspection_endpoint(
     min_instance_area: int = Form(500),
     max_instances: int = Form(20),
     image: UploadFile = File(...),
+    user_id: str = Depends(get_current_user_id),
     db=Depends(get_db)
 ):
     """
@@ -48,6 +51,7 @@ def create_inspection_endpoint(
         db,
         model_id=model_id,
         upload_file=image,
+        user_id=user_id,
         threshold_override=threshold_override,
         inspection_mode=inspection_mode,
         min_instance_area=min_instance_area,
@@ -70,6 +74,7 @@ def list_inspections_endpoint(
     search: Optional[str] = Query(None),
     skip: int = Query(0, ge=0),
     limit: Optional[int] = Query(None, ge=1),
+    user_id: str = Depends(get_current_user_id),
     db=Depends(get_db)
 ):
     """
@@ -78,6 +83,7 @@ def list_inspections_endpoint(
     """
     return get_inspections(
         db,
+        user_id=user_id,
         model_id=model_id,
         model_version_id=model_version_id,
         run_id=run_id,
@@ -99,11 +105,13 @@ def list_workspace_feedback_endpoint(
     model_version_id: Optional[str] = Query(None),
     run_id: Optional[str] = Query(None),
     feedback_type: Optional[str] = Query(None),
+    user_id: str = Depends(get_current_user_id),
     db=Depends(get_db)
 ):
     """Lists aggregated feedback records for the Feedback Workspace."""
     return get_all_feedback(
         db,
+        user_id=user_id,
         model_id=model_id,
         model_version_id=model_version_id,
         run_id=run_id,

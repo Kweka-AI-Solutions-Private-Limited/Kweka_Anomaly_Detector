@@ -39,7 +39,7 @@ def dummy_imwrite(p, img):
     """Helper mock for cv2.imwrite that creates a valid dummy file on disk."""
     path_obj = Path(p)
     path_obj.parent.mkdir(parents=True, exist_ok=True)
-    path_obj.write_bytes(b"dummy_image_data")
+    path_obj.write_bytes(create_dummy_image_bytes())
     return True
 
 
@@ -113,7 +113,8 @@ def test_multi_instance_inspection_flow(active_model):
         }
     ]
     
-    with patch("services.inspection_service.detect_and_crop_instances") as mock_detect, \
+    with patch.dict("os.environ", {"PIPELINE_B_MODE": "patchcore"}), \
+         patch("services.inspection_service.detect_and_crop_instances") as mock_detect, \
          patch("services.inspection_service.run_patchcore_inference") as mock_infer, \
          patch("cv2.imread") as mock_imread, \
          patch("cv2.imwrite", side_effect=dummy_imwrite):
@@ -170,7 +171,8 @@ def test_multi_instance_vlm_retry(active_model):
         }
     ]
     
-    with patch("services.inspection_service.detect_and_crop_instances") as mock_detect, \
+    with patch.dict("os.environ", {"PIPELINE_B_MODE": "patchcore"}), \
+         patch("services.inspection_service.detect_and_crop_instances") as mock_detect, \
          patch("services.inspection_service.run_patchcore_inference") as mock_infer, \
          patch("cv2.imread") as mock_imread, \
          patch("cv2.imwrite", side_effect=dummy_imwrite):

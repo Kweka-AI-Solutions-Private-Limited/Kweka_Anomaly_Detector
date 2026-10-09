@@ -36,7 +36,7 @@ def test_completion_notifications_suite():
     ensure_indexes(db)
 
     # Cleanup test notification records
-    db.notifications.delete_many({"idempotency_key": {"$regex": "^TEST_"}})
+    db.ad_notifications.delete_many({"idempotency_key": {"$regex": "^TEST_"}})
 
     test_model_id = str(ObjectId())
     test_version_id = str(ObjectId())
@@ -73,7 +73,7 @@ def test_completion_notifications_suite():
     assert notif1_dup["id"] == notif1["id"]
 
     # Verify count in DB for this idempotency key is exactly 1
-    count = db.notifications.count_documents({"idempotency_key": f"MODEL_BUILD:{test_version_id}:ready"})
+    count = db.ad_notifications.count_documents({"idempotency_key": f"MODEL_BUILD:{test_version_id}:ready"})
     assert count == 1
     print("✓ Model build ready notification created & duplicate attempt ignored.")
 
@@ -105,7 +105,7 @@ def test_completion_notifications_suite():
         model_name="TEST_Steel_Model",
         error_reason="Insufficient reference images."
     )
-    assert db.notifications.count_documents({"idempotency_key": f"MODEL_BUILD:{fail_version_id}:failed"}) == 1
+    assert db.ad_notifications.count_documents({"idempotency_key": f"MODEL_BUILD:{fail_version_id}:failed"}) == 1
     print("✓ Model build failed notification created & duplicate attempt ignored.")
 
     # -------------------------------------------------------------
@@ -145,7 +145,7 @@ def test_completion_notifications_suite():
         reject_count=5,
         error_count=0
     )
-    assert db.notifications.count_documents({"idempotency_key": f"RUN_COMPLETE:{run_comp_id}:completed"}) == 1
+    assert db.ad_notifications.count_documents({"idempotency_key": f"RUN_COMPLETE:{run_comp_id}:completed"}) == 1
     print("✓ Inspection run completed notification created & duplicate attempt ignored.")
 
     # Test Partial Run
@@ -228,7 +228,7 @@ def test_completion_notifications_suite():
     print("✓ All notifications marked as read.")
 
     # Cleanup created test notifications
-    db.notifications.delete_many({
+    db.ad_notifications.delete_many({
         "_id": {"$in": [
             ObjectId(notif1["id"]),
             ObjectId(notif2["id"]),

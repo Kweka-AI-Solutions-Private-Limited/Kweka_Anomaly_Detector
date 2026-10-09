@@ -1,4 +1,4 @@
-"""
+﻿"""
 InspectAI MongoDB Database Initialization & Verification Script
 -----------------------------------------------------------------
 Executes database initialization and automated verification:
@@ -11,7 +11,7 @@ Executes database initialization and automated verification:
 
 import sys
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from bson import ObjectId
 from pymongo.errors import DuplicateKeyError, PyMongoError
@@ -31,10 +31,8 @@ from db.schemas import (
 
 
 def _dump(model_obj):
-    """Helper for Pydantic v1 / v2 dictionary dump compatibility."""
-    if hasattr(model_obj, "model_dump"):
-        return model_obj.model_dump()
-    return model_obj.dict()
+    """Dump Pydantic model to dictionary using Pydantic v2 model_dump."""
+    return model_obj.model_dump()
 
 
 def run_db_initialization_and_test() -> bool:
@@ -90,7 +88,7 @@ def run_db_initialization_and_test() -> bool:
             domain="electronics",
             reference_image_count=50
         ))
-        model_res = db.models.insert_one(model_data)
+        model_res = db.ad_models.insert_one(model_data)
         model_id = model_res.inserted_id
         test_doc_ids["models"].append(model_id)
         print(f"[OK] 1/6 Model inserted (ObjectId: {model_id})")
@@ -101,18 +99,18 @@ def run_db_initialization_and_test() -> bool:
             version_number=1,
             status="active"
         ))
-        mv_res = db.model_versions.insert_one(mv_data)
+        mv_res = db.ad_models.insert_one(mv_data)
         version_id = mv_res.inserted_id
         test_doc_ids["model_versions"].append(version_id)
         print(f"[OK] 2/6 Model Version inserted (ObjectId: {version_id}, version_number: 1)")
 
         # Update model's active_version_id
-        db.models.update_one({"_id": model_id}, {"$set": {"active_version_id": version_id}})
+        db.ad_models.update_one({"_id": model_id}, {"$set": {"active_version_id": version_id}})
 
         # Test Unique Constraint on (model_id, version_number)
         dup_mv_caught = False
         try:
-            db.model_versions.insert_one(mv_data)
+            db.ad_models.insert_one(mv_data)
         except DuplicateKeyError:
             dup_mv_caught = True
             print("[OK] UNIQUE Constraint Verified: (model_id + version_number) prevented duplicate insert.")
@@ -132,7 +130,7 @@ def run_db_initialization_and_test() -> bool:
             height=256,
             file_size=102400
         ))
-        ref_res = db.reference_images.insert_one(ref_data)
+        ref_res = db.ad_models.insert_one(ref_data)
         ref_id = ref_res.inserted_id
         test_doc_ids["reference_images"].append(ref_id)
         print(f"[OK] 3/6 Reference Image inserted (ObjectId: {ref_id})")
@@ -149,9 +147,9 @@ def run_db_initialization_and_test() -> bool:
                 height=256
             ),
             processing_time_ms=48.5,
-            completed_at=datetime.utcnow()
+            completed_at=datetime.now(timezone.utc)
         ))
-        insp_res = db.inspections.insert_one(insp_data)
+        insp_res = db.ad_inspections.insert_one(insp_data)
         inspection_id = insp_res.inserted_id
         test_doc_ids["inspections"].append(inspection_id)
         print(f"[OK] 4/6 Inspection inserted (ObjectId: {inspection_id})")
@@ -170,7 +168,7 @@ def run_db_initialization_and_test() -> bool:
                 heatmap_uri="s3://inspectai-data/heatmaps/sample_001_hm.png"
             )
         ))
-        res_res = db.inspection_results.insert_one(res_data)
+        res_res = db.ad_inspections.insert_one(res_data)
         result_id = res_res.inserted_id
         test_doc_ids["inspection_results"].append(result_id)
         print(f"[OK] 5/6 Inspection Result inserted (ObjectId: {result_id})")
@@ -178,7 +176,7 @@ def run_db_initialization_and_test() -> bool:
         # Test Unique Constraint on inspection_results.inspection_id
         dup_res_caught = False
         try:
-            db.inspection_results.insert_one(res_data)
+            db.ad_inspections.insert_one(res_data)
         except DuplicateKeyError:
             dup_res_caught = True
             print("[OK] UNIQUE Constraint Verified: inspection_results.inspection_id prevented duplicate insert.")
@@ -194,19 +192,19 @@ def run_db_initialization_and_test() -> bool:
             feedback_type="correct",
             comment="True anomaly on PCB component lead"
         ))
-        fb_res = db.feedback.insert_one(fb_data)
+        fb_res = db.ad_feedback.insert_one(fb_data)
         fb_id = fb_res.inserted_id
         test_doc_ids["feedback"].append(fb_id)
         print(f"[OK] 6/6 Feedback inserted (ObjectId: {fb_id})")
 
         # G. Verify Full Chain Traversal
         print("\n--- Step 3: Chain Traversal & Referential Consistency ---")
-        fetched_fb = db.feedback.find_one({"_id": fb_id})
-        fetched_insp = db.inspections.find_one({"_id": fetched_fb["inspection_id"]})
-        fetched_res = db.inspection_results.find_one({"inspection_id": fetched_insp["_id"]})
-        fetched_version = db.model_versions.find_one({"_id": fetched_insp["model_version_id"]})
-        fetched_model = db.models.find_one({"_id": fetched_version["model_id"]})
-        fetched_ref = db.reference_images.find_one({"version_id": fetched_version["_id"]})
+        fetched_fb = db.ad_feedback.find_one({"_id": fb_id})
+        fetched_insp = db.ad_inspections.find_one({"_id": fetched_fb["inspection_id"]})
+        fetched_res = db.ad_inspections.find_one({"inspection_id": fetched_insp["_id"]})
+        fetched_version = db.ad_models.find_one({"_id": fetched_insp["model_version_id"]})
+        fetched_model = db.ad_models.find_one({"_id": fetched_version["model_id"]})
+        fetched_ref = db.ad_models.find_one({"version_id": fetched_version["_id"]})
 
         assert fetched_model["_id"] == model_id, "Model ID mismatch!"
         assert fetched_version["_id"] == version_id, "Version ID mismatch!"
@@ -253,3 +251,5 @@ if __name__ == "__main__":
     success = run_db_initialization_and_test()
     close_connection()
     sys.exit(0 if success else 1)
+
+

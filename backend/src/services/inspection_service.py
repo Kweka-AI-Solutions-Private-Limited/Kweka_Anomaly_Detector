@@ -8,7 +8,7 @@ import os
 import cv2
 import numpy as np
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional
 from bson import ObjectId
 from fastapi import HTTPException, UploadFile
@@ -41,6 +41,7 @@ def run_inspection(
     db: Database,
     model_id: str,
     upload_file: UploadFile,
+    user_id: Optional[str] = "usr_default",
     threshold_override: Optional[float] = None,
     inspection_mode: str = "single_image",
     min_instance_area: int = MIN_INSTANCE_AREA,
@@ -57,6 +58,7 @@ def run_inspection(
             db=db,
             model_id=model_id,
             upload_file=upload_file,
+            user_id=user_id,
             threshold_override=threshold_override,
             min_instance_area=min_instance_area,
             max_instances=max_instances,
@@ -67,6 +69,7 @@ def run_inspection(
             db=db,
             model_id=model_id,
             upload_file=upload_file,
+            user_id=user_id,
             threshold_override=threshold_override,
             run_id=run_id
         )
@@ -76,14 +79,15 @@ def run_single_image_inspection(
     db: Database,
     model_id: str,
     upload_file: UploadFile,
+    user_id: Optional[str] = "usr_default",
     threshold_override: Optional[float] = None,
     run_id: Optional[str] = None
 ) -> Dict[str, Any]:
     """
-    PIPELINE A — Single Product Image Inspection.
+    PIPELINE A â€” Single Product Image Inspection.
     Evaluates one uploaded product test image using the shared PatchCore anomaly engine.
     """
-    model = get_model(db, model_id)
+    model = get_model(db, model_id, user_id=user_id)
 
     model_status = (model.get("status") or "").lower()
     if model_status != "active":
@@ -96,7 +100,7 @@ def run_single_image_inspection(
         raise HTTPException(status_code=400, detail=f"Model '{model_id}' does not have an active model version. Build a version first.")
 
     active_version_id = str(model["active_version_id"])
-    version = get_model_version(db, model_id, active_version_id)
+    version = get_model_version(db, model_id, active_version_id, user_id=user_id)
 
     # Validate threshold_override if provided
     if threshold_override is not None:
@@ -122,10 +126,11 @@ def run_single_image_inspection(
             width=256,
             height=256
         ),
-        created_at=datetime.utcnow()
+        created_at=datetime.now(timezone.utc)
     )
 
-    data = insp_doc.model_dump() if hasattr(insp_doc, "model_dump") else insp_doc.dict()
+    data = insp_doc.model_dump()
+    data["user_id"] = user_id or "usr_default"
     res = db.ad_inspections.insert_one(data)
     inspection_id = str(res.inserted_id)
 
@@ -185,11 +190,11 @@ def run_single_image_inspection(
                 heatmap_uri=pred.get("heatmap_uri")
             ),
             vlm_analysis=vlm_schema_obj,
-            created_at=datetime.utcnow()
+            created_at=datetime.now(timezone.utc)
         )
 
-        res_data = res_doc.model_dump() if hasattr(res_doc, "model_dump") else res_doc.dict()
-        db.ad_inspections.insert_one(res_data)
+        res_data = res_doc.model_dump()
+        db.ad_inspection_results.insert_one(res_data)
 
         # 5. Update inspection to completed status
         db.ad_inspections.update_one(
@@ -197,7 +202,7 @@ def run_single_image_inspection(
             {"$set": {
                 "status": "completed",
                 "processing_time_ms": pred.get("processing_time_ms", 0.0),
-                "completed_at": datetime.utcnow()
+                "completed_at": datetime.now(timezone.utc)
             }}
         )
 
@@ -216,6 +221,7 @@ def run_multi_instance_inspection(
     db: Database,
     model_id: str,
     upload_file: UploadFile,
+    user_id: Optional[str] = "usr_default",
     threshold_override: Optional[float] = None,
     min_instance_area: int = MIN_INSTANCE_AREA,
     max_instances: int = MAX_INSTANCES,
@@ -234,6 +240,7 @@ def run_multi_instance_inspection(
             db=db,
             model_id=model_id,
             upload_file=upload_file,
+            user_id=user_id,
             threshold_override=threshold_override,
             min_instance_area=min_instance_area,
             max_instances=max_instances,
@@ -243,7 +250,7 @@ def run_multi_instance_inspection(
     import time
     start_total_time = time.time()
 
-    model = get_model(db, model_id)
+    model = get_model(db, model_id, user_id=user_id)
     model_status = (model.get("status") or "").lower()
     if model_status != "active":
         raise HTTPException(
@@ -255,7 +262,7 @@ def run_multi_instance_inspection(
         raise HTTPException(status_code=400, detail=f"Model '{model_id}' does not have an active model version.")
 
     active_version_id = str(model["active_version_id"])
-    version = get_model_version(db, model_id, active_version_id)
+    version = get_model_version(db, model_id, active_version_id, user_id=user_id)
 
     if threshold_override is not None:
         try:
@@ -283,10 +290,11 @@ def run_multi_instance_inspection(
             width=256,
             height=256
         ),
-        created_at=datetime.utcnow()
+        created_at=datetime.now(timezone.utc)
     )
 
-    data = insp_doc.model_dump() if hasattr(insp_doc, "model_dump") else insp_doc.dict()
+    data = insp_doc.model_dump()
+    data["user_id"] = user_id or "usr_default"
     res = db.ad_inspections.insert_one(data)
     inspection_id = str(res.inserted_id)
 
@@ -327,14 +335,14 @@ def run_multi_instance_inspection(
                 inspection_mode="multi_instance",
                 overall_prediction=overall_pred,
                 instances=[],
-                created_at=datetime.utcnow()
+                created_at=datetime.now(timezone.utc)
             )
-            res_data = res_doc.model_dump() if hasattr(res_doc, "model_dump") else res_doc.dict()
-            db.ad_inspections.insert_one(res_data)
+            res_data = res_doc.model_dump()
+            db.ad_inspection_results.insert_one(res_data)
 
             db.ad_inspections.update_one(
                 {"_id": ObjectId(inspection_id)},
-                {"$set": {"status": "review", "completed_at": datetime.utcnow()}}
+                {"$set": {"status": "review", "completed_at": datetime.now(timezone.utc)}}
             )
 
             doc = db.ad_inspections.find_one({"_id": ObjectId(inspection_id)})
@@ -354,14 +362,14 @@ def run_multi_instance_inspection(
                 inspection_mode="multi_instance",
                 overall_prediction=overall_pred,
                 instances=[],
-                created_at=datetime.utcnow()
+                created_at=datetime.now(timezone.utc)
             )
-            res_data = res_doc.model_dump() if hasattr(res_doc, "model_dump") else res_doc.dict()
-            db.ad_inspections.insert_one(res_data)
+            res_data = res_doc.model_dump()
+            db.ad_inspection_results.insert_one(res_data)
 
             db.ad_inspections.update_one(
                 {"_id": ObjectId(inspection_id)},
-                {"$set": {"status": "failed", "completed_at": datetime.utcnow()}}
+                {"$set": {"status": "failed", "completed_at": datetime.now(timezone.utc)}}
             )
 
             doc = db.ad_inspections.find_one({"_id": ObjectId(inspection_id)})
@@ -455,7 +463,7 @@ def run_multi_instance_inspection(
                         height=crop_bbox["height"]
                     )
 
-                is_reject = pred["status"] in ("anomalous", "reject") or pred.get("status") == "REJECT"
+                is_reject = str(pred.get("status", "")).upper() in ("ANOMALOUS", "REJECT")
                 inst_status = "REJECT" if is_reject else "PASS"
 
                 # Decoupled VLM state per instance
@@ -559,11 +567,11 @@ def run_multi_instance_inspection(
                 "image_width": orig_w,
                 "image_height": orig_h
             },
-            created_at=datetime.utcnow()
+            created_at=datetime.now(timezone.utc)
         )
 
-        res_data = res_doc.model_dump() if hasattr(res_doc, "model_dump") else res_doc.dict()
-        db.ad_inspections.insert_one(res_data)
+        res_data = res_doc.model_dump()
+        db.ad_inspection_results.insert_one(res_data)
 
         # Update inspection document status
         final_insp_status = "review" if overall_status == "REVIEW" else "completed"
@@ -572,7 +580,7 @@ def run_multi_instance_inspection(
             {"$set": {
                 "status": final_insp_status,
                 "processing_time_ms": total_time_ms,
-                "completed_at": datetime.utcnow()
+                "completed_at": datetime.now(timezone.utc)
             }}
         )
 
@@ -653,6 +661,7 @@ def normalize_inspection_payload(doc: Dict[str, Any], res_doc: Optional[Dict[str
 
 def get_inspections(
     db: Database,
+    user_id: Optional[str] = "usr_default",
     model_id: Optional[str] = None,
     model_version_id: Optional[str] = None,
     run_id: Optional[str] = None,
@@ -668,9 +677,15 @@ def get_inspections(
 ) -> List[Dict[str, Any]]:
     """
     Returns inspection history list with comprehensive filtering, date range, search, and pagination.
-    Supports version isolation, run isolation, and legacy run_id=None data preservation.
+    Supports user isolation, version isolation, run isolation, and legacy run_id=None data preservation.
     """
     query: Dict[str, Any] = {}
+
+    if user_id:
+        if user_id == "usr_default":
+            query["$or"] = [{"user_id": "usr_default"}, {"user_id": {"$exists": False}}]
+        else:
+            query["user_id"] = user_id
 
     if model_id:
         if not ObjectId.is_valid(model_id):
@@ -723,7 +738,7 @@ def get_inspections(
     results_map: Dict[str, Dict[str, Any]] = {}
     if insp_obj_ids:
         all_insp_keys = insp_obj_ids + [str(i) for i in insp_obj_ids]
-        raw_results = list(db.ad_inspections.find({"inspection_id": {"$in": all_insp_keys}}))
+        raw_results = list(db.ad_inspection_results.find({"inspection_id": {"$in": all_insp_keys}}))
         for r in raw_results:
             key = str(r.get("inspection_id"))
             results_map[key] = r
@@ -846,7 +861,7 @@ def get_inspection(db: Database, inspection_id: str) -> Dict[str, Any]:
     if not doc:
         raise HTTPException(status_code=404, detail=f"Inspection with ID '{inspection_id}' not found.")
 
-    res_doc = db.ad_inspections.find_one({"inspection_id": ObjectId(inspection_id)})
+    res_doc = db.ad_inspection_results.find_one({"inspection_id": ObjectId(inspection_id)})
     return normalize_inspection_payload(doc, res_doc)
 
 
@@ -867,7 +882,7 @@ def submit_feedback(
     Updates existing feedback record if already submitted to prevent accidental duplicates.
     """
     insp = get_inspection(db, inspection_id)
-    res_doc = db.ad_inspections.find_one({"inspection_id": ObjectId(inspection_id)})
+    res_doc = db.ad_inspection_results.find_one({"inspection_id": ObjectId(inspection_id)})
 
     # Handle legacy feedback_type parameter if passed
     if feedback_type and (not detection_feedback or detection_feedback == "correct"):
@@ -920,10 +935,10 @@ def submit_feedback(
         corrected_location=corrected_location,
         corrected_severity=corrected_severity,
         comment=comment,
-        created_at=datetime.utcnow()
+        created_at=datetime.now(timezone.utc)
     )
 
-    data = fb_doc.model_dump() if hasattr(fb_doc, "model_dump") else fb_doc.dict()
+    data = fb_doc.model_dump()
 
     if existing:
         db.ad_feedback.update_one({"_id": existing["_id"]}, {"$set": data})
@@ -998,7 +1013,7 @@ def retry_vlm_analysis(db: Database, inspection_id: str, force: bool = False) ->
     Includes backend concurrency protection ('generating' status lock) and returns cached completed analysis unless forced.
     """
     insp = get_inspection(db, inspection_id)
-    insp_res_doc = db.ad_inspections.find_one({"inspection_id": ObjectId(inspection_id)})
+    insp_res_doc = db.ad_inspection_results.find_one({"inspection_id": ObjectId(inspection_id)})
     if not insp_res_doc:
         raise HTTPException(status_code=404, detail=f"No inspection result found for inspection '{inspection_id}'.")
 
@@ -1013,7 +1028,7 @@ def retry_vlm_analysis(db: Database, inspection_id: str, force: bool = False) ->
         raise HTTPException(status_code=409, detail="AI analysis is currently generating for this inspection.")
 
     # Atomically lock state to 'generating'
-    db.ad_inspections.update_one(
+    db.ad_inspection_results.update_one(
         {"inspection_id": ObjectId(inspection_id)},
         {"$set": {
             "vlm_analysis": {
@@ -1029,8 +1044,9 @@ def retry_vlm_analysis(db: Database, inspection_id: str, force: bool = False) ->
         loc = insp.get("localization", {})
         input_info = insp.get("input", {})
 
-        target_path = get_storage_base_dir() / input_info.get("storage_uri", "") if input_info.get("storage_uri") else None
-        heatmap_path = get_storage_base_dir() / loc.get("heatmap_uri", "") if loc.get("heatmap_uri") else None
+        from services.storage_service import resolve_storage_path
+        target_path = resolve_storage_path(input_info.get("storage_uri", "")) if input_info.get("storage_uri") else None
+        heatmap_path = resolve_storage_path(loc.get("heatmap_uri", "")) if loc.get("heatmap_uri") else None
 
         model_doc = db.ad_models.find_one({"_id": ObjectId(insp.get("model_id"))}) if insp.get("model_id") and ObjectId.is_valid(insp.get("model_id")) else None
         model_name = model_doc.get("name") if model_doc else None
@@ -1044,12 +1060,12 @@ def retry_vlm_analysis(db: Database, inspection_id: str, force: bool = False) ->
             model_context=model_name
         )
 
-        db.ad_inspections.update_one(
+        db.ad_inspection_results.update_one(
             {"inspection_id": ObjectId(inspection_id)},
             {"$set": {"vlm_analysis": vlm_dict}}
         )
     except Exception as e:
-        db.ad_inspections.update_one(
+        db.ad_inspection_results.update_one(
             {"inspection_id": ObjectId(inspection_id)},
             {"$set": {
                 "vlm_analysis": {
@@ -1072,7 +1088,7 @@ def retry_instance_vlm_analysis(db: Database, inspection_id: str, instance_id: i
         raise HTTPException(status_code=400, detail=f"Invalid inspection_id '{inspection_id}'.")
 
     insp = get_inspection(db, inspection_id)
-    insp_res_doc = db.ad_inspections.find_one({"inspection_id": {"$in": [ObjectId(inspection_id), str(inspection_id)]}})
+    insp_res_doc = db.ad_inspection_results.find_one({"inspection_id": {"$in": [ObjectId(inspection_id), str(inspection_id)]}})
     if not insp_res_doc:
         raise HTTPException(status_code=404, detail=f"No result found for inspection '{inspection_id}'.")
 
@@ -1080,7 +1096,7 @@ def retry_instance_vlm_analysis(db: Database, inspection_id: str, instance_id: i
     target_idx = None
     target_inst = None
     for idx, inst in enumerate(instances):
-        if inst.get("instance_id") == instance_id:
+        if str(inst.get("instance_id")) == str(instance_id):
             target_idx = idx
             target_inst = inst
             break
@@ -1097,7 +1113,7 @@ def retry_instance_vlm_analysis(db: Database, inspection_id: str, instance_id: i
         raise HTTPException(status_code=409, detail=f"AI analysis is currently generating for Instance {instance_id}.")
 
     # Lock state
-    db.ad_inspections.update_one(
+    db.ad_inspection_results.update_one(
         {"_id": insp_res_doc["_id"], "instances.instance_id": instance_id},
         {"$set": {
             f"instances.{target_idx}.vlm_analysis": {
@@ -1130,14 +1146,14 @@ def retry_instance_vlm_analysis(db: Database, inspection_id: str, instance_id: i
             model_context=f"{model_name} (Instance {instance_id})"
         )
 
-        db.ad_inspections.update_one(
-            {"inspection_id": ObjectId(inspection_id), "instances.instance_id": instance_id},
+        db.ad_inspection_results.update_one(
+            {"_id": insp_res_doc["_id"], "instances.instance_id": instance_id},
             {"$set": {f"instances.{target_idx}.vlm_analysis": vlm_dict}}
         )
 
     except Exception as e:
-        db.ad_inspections.update_one(
-            {"inspection_id": ObjectId(inspection_id), "instances.instance_id": instance_id},
+        db.ad_inspection_results.update_one(
+            {"_id": insp_res_doc["_id"], "instances.instance_id": instance_id},
             {"$set": {
                 f"instances.{target_idx}.vlm_analysis": {
                     "status": "failed",
@@ -1149,4 +1165,7 @@ def retry_instance_vlm_analysis(db: Database, inspection_id: str, instance_id: i
         raise e
 
     return get_inspection(db, inspection_id)
+
+
+
 

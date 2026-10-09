@@ -10,6 +10,8 @@ from fastapi import APIRouter, Depends, Query
 from db.connection import get_db
 from services.dashboard_service import get_dashboard_summary
 
+from api.deps import get_current_user_id
+
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
 
 
@@ -19,6 +21,7 @@ def get_dashboard_summary_endpoint(
     model_version_id: Optional[str] = Query(None, description="Optional filter by model version ID"),
     start_date: Optional[str] = Query(None, description="Optional ISO start date filter (YYYY-MM-DD)"),
     end_date: Optional[str] = Query(None, description="Optional ISO end date filter (YYYY-MM-DD)"),
+    user_id: str = Depends(get_current_user_id),
     db=Depends(get_db)
 ):
     """
@@ -27,6 +30,7 @@ def get_dashboard_summary_endpoint(
     """
     return get_dashboard_summary(
         db,
+        user_id=user_id,
         model_id=model_id,
         model_version_id=model_version_id,
         start_date=start_date,

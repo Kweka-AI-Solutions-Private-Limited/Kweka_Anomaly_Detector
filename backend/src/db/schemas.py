@@ -10,10 +10,15 @@ Defines Pydantic models and document conversion helpers for the 6 core collectio
   6. feedback
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, List, Dict, Any, Union
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from bson import ObjectId
+
+
+def _utc_now() -> datetime:
+    """Returns current timezone-aware UTC datetime."""
+    return datetime.now(timezone.utc)
 
 
 class PyObjectId(ObjectId):
@@ -32,13 +37,12 @@ class PyObjectId(ObjectId):
 # 0. MODEL GROUPS
 # ------------------------------------------------------------
 class ModelGroupSchema(BaseModel):
+    model_config = ConfigDict(json_encoders={ObjectId: str})
+
     name: str
     description: Optional[str] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
-
-    class Config:
-        json_encoders = {ObjectId: str}
+    created_at: datetime = Field(default_factory=_utc_now)
+    updated_at: datetime = Field(default_factory=_utc_now)
 
 
 class ModelGroupCreate(BaseModel):
@@ -55,6 +59,8 @@ class ModelGroupUpdate(BaseModel):
 # 1. MODELS
 # ------------------------------------------------------------
 class ModelSchema(BaseModel):
+    model_config = ConfigDict(json_encoders={ObjectId: str})
+
     name: str
     description: Optional[str] = None
     status: str = "draft"  # draft, building, inactive, active, error
@@ -64,11 +70,8 @@ class ModelSchema(BaseModel):
     group_id: Optional[Any] = None  # ObjectId
     reference_image_count: int = 0
     active_version_id: Optional[Any] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
-
-    class Config:
-        json_encoders = {ObjectId: str}
+    created_at: datetime = Field(default_factory=_utc_now)
+    updated_at: datetime = Field(default_factory=_utc_now)
 
 
 # ------------------------------------------------------------
@@ -93,7 +96,7 @@ class CalibrationConfig(BaseModel):
 class TrainingConfig(BaseModel):
     reference_count: int = 0
     reference_ids: List[Any] = Field(default_factory=list)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=_utc_now)
     build_time_ms: float = 0.0
 
 
@@ -104,6 +107,8 @@ class VersionArtifacts(BaseModel):
 
 
 class ModelVersionSchema(BaseModel):
+    model_config = ConfigDict(json_encoders={ObjectId: str})
+
     model_id: Any  # ObjectId
     version_number: int
     status: str = "building"  # building, ready, active, archived, failed
@@ -111,10 +116,7 @@ class ModelVersionSchema(BaseModel):
     calibration: CalibrationConfig = Field(default_factory=CalibrationConfig)
     training: TrainingConfig = Field(default_factory=TrainingConfig)
     artifacts: VersionArtifacts = Field(default_factory=VersionArtifacts)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-
-    class Config:
-        json_encoders = {ObjectId: str}
+    created_at: datetime = Field(default_factory=_utc_now)
 
 
 # ------------------------------------------------------------
@@ -125,6 +127,8 @@ class ImageStorage(BaseModel):
 
 
 class ReferenceImageSchema(BaseModel):
+    model_config = ConfigDict(json_encoders={ObjectId: str})
+
     model_id: Any  # ObjectId
     version_id: Any  # ObjectId
     type: str = "good"
@@ -135,10 +139,7 @@ class ReferenceImageSchema(BaseModel):
     height: int = 256
     file_size: int = 0
     checksum: Optional[str] = None
-    uploaded_at: datetime = Field(default_factory=datetime.utcnow)
-
-    class Config:
-        json_encoders = {ObjectId: str}
+    uploaded_at: datetime = Field(default_factory=_utc_now)
 
 
 # ------------------------------------------------------------
@@ -152,6 +153,8 @@ class RunSummary(BaseModel):
 
 
 class InspectionRunSchema(BaseModel):
+    model_config = ConfigDict(json_encoders={ObjectId: str})
+
     model_id: Any  # ObjectId
     model_version_id: Any  # ObjectId
     run_number: int  # Chronological per model: 1, 2, 3...
@@ -162,11 +165,8 @@ class InspectionRunSchema(BaseModel):
     reject_count: int = 0
     error_count: int = 0
     summary: RunSummary = Field(default_factory=RunSummary)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=_utc_now)
     completed_at: Optional[datetime] = None
-
-    class Config:
-        json_encoders = {ObjectId: str}
 
 
 # ------------------------------------------------------------
@@ -185,6 +185,8 @@ class InspectionInput(BaseModel):
 
 
 class InspectionSchema(BaseModel):
+    model_config = ConfigDict(json_encoders={ObjectId: str})
+
     model_id: Any  # ObjectId
     model_version_id: Any  # ObjectId
     run_id: Optional[Any] = None  # ObjectId (Parent InspectionRun if part of batch run)
@@ -192,11 +194,8 @@ class InspectionSchema(BaseModel):
     status: str = "queued"  # queued, processing, completed, failed, review
     input: InspectionInput
     processing_time_ms: float = 0.0
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=_utc_now)
     completed_at: Optional[datetime] = None
-
-    class Config:
-        json_encoders = {ObjectId: str}
 
 
 # ------------------------------------------------------------
@@ -251,7 +250,7 @@ class VLMAnalysisSchema(BaseModel):
     explanation: Optional[str] = None
     visual_evidence: Optional[str] = None
     confidence: Optional[float] = None
-    generated_at: datetime = Field(default_factory=datetime.utcnow)
+    generated_at: datetime = Field(default_factory=_utc_now)
 
 
 class InstanceResultSchema(BaseModel):
@@ -265,9 +264,13 @@ class InstanceResultSchema(BaseModel):
     prediction: Optional[PredictionOutput] = None
     localization: Optional[LocalizationOutput] = None
     vlm_analysis: Optional[VLMAnalysisSchema] = None
+    product_polygon: Optional[List[List[int]]] = Field(default=None)
+    defect_polygon: Optional[List[List[int]]] = Field(default=None)
 
 
 class InspectionResultSchema(BaseModel):
+    model_config = ConfigDict(json_encoders={ObjectId: str})
+
     inspection_id: Any  # ObjectId (UNIQUE)
     inspection_mode: str = "single"  # single, multi_instance
     prediction: Optional[PredictionOutput] = None
@@ -278,10 +281,7 @@ class InspectionResultSchema(BaseModel):
     explanation: ExplanationOutput = Field(default_factory=ExplanationOutput)
     vlm_analysis: Optional[VLMAnalysisSchema] = None
     processing_stats: Optional[Dict[str, Any]] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-
-    class Config:
-        json_encoders = {ObjectId: str}
+    created_at: datetime = Field(default_factory=_utc_now)
 
 
 # ------------------------------------------------------------
@@ -293,6 +293,8 @@ SUPPORTED_SEVERITIES = ["Low", "Medium", "High", "Critical"]
 
 
 class FeedbackSchema(BaseModel):
+    model_config = ConfigDict(json_encoders={ObjectId: str})
+
     inspection_id: Any  # ObjectId
     inspection_result_id: Optional[Any] = None  # ObjectId
     model_id: Any  # ObjectId
@@ -319,16 +321,15 @@ class FeedbackSchema(BaseModel):
 
     # Additional Comment
     comment: Optional[str] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-
-    class Config:
-        json_encoders = {ObjectId: str}
+    created_at: datetime = Field(default_factory=_utc_now)
 
 
 # ------------------------------------------------------------
 # 7. NOTIFICATIONS
 # ------------------------------------------------------------
 class NotificationSchema(BaseModel):
+    model_config = ConfigDict(json_encoders={ObjectId: str})
+
     type: str  # MODEL_BUILD_COMPLETED, MODEL_BUILD_FAILED, INSPECTION_RUN_COMPLETED, INSPECTION_RUN_PARTIAL, INSPECTION_RUN_FAILED
     title: str
     message: str
@@ -339,9 +340,4 @@ class NotificationSchema(BaseModel):
     target_route: str = "/"
     read: bool = False
     idempotency_key: str
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-
-    class Config:
-        json_encoders = {ObjectId: str}
-
-
+    created_at: datetime = Field(default_factory=_utc_now)

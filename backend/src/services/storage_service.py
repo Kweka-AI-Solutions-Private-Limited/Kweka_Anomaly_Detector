@@ -25,6 +25,19 @@ def get_storage_base_dir() -> Path:
     """Returns the base storage directory path."""
     return STORAGE_BASE_DIR
 
+
+def resolve_storage_path(uri: str) -> Path:
+    """
+    Resolves a relative storage_uri (e.g. 'storage/inspections/.../image.png')
+    into an absolute filesystem Path without duplicate directory prefixes.
+    """
+    if not uri:
+        return Path("")
+    clean_uri = uri.replace("\\", "/").strip()
+    if clean_uri.startswith("storage/"):
+        clean_uri = clean_uri[len("storage/"):]
+    return STORAGE_BASE_DIR / clean_uri
+
 # Ensure directories exist
 REFERENCES_DIR.mkdir(parents=True, exist_ok=True)
 INSPECTIONS_DIR.mkdir(parents=True, exist_ok=True)

@@ -6,7 +6,7 @@ Hierarchy: Model -> Inspection Run -> Inspection -> Result
 """
 
 import io
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Dict, Any, Optional, Tuple
 from bson import ObjectId
 from fastapi import HTTPException, UploadFile
@@ -165,7 +165,7 @@ def _process_inspection_run_background(
     else:
         final_status = "failed"
 
-    completed_time = datetime.utcnow()
+    completed_time = datetime.now(timezone.utc)
     db.ad_inspection_runs.update_one(
         {"_id": ObjectId(run_id)},
         {"$set": {
@@ -211,6 +211,7 @@ def create_inspection_run(
     db: Database,
     model_id: str,
     upload_files: List[UploadFile],
+    user_id: Optional[str] = "usr_default",
     background_tasks: Optional[BackgroundTasks] = None,
     threshold_override: Optional[float] = None,
     inspection_mode: str = "single",
@@ -229,7 +230,7 @@ def create_inspection_run(
         raise HTTPException(status_code=400, detail="At least one test image file must be uploaded for an inspection run.")
 
     # 1. Active Model & Active Version Guard
-    model = get_model(db, model_id)
+    model = get_model(db, model_id, user_id=user_id)
     model_status = (model.get("status") or "").lower()
     if model_status != "active":
         raise HTTPException(
@@ -241,7 +242,7 @@ def create_inspection_run(
         raise HTTPException(status_code=400, detail=f"Model '{model_id}' does not have an active model version. Build a version first.")
 
     active_version_id = str(model["active_version_id"])
-    version = get_model_version(db, model_id, active_version_id)
+    version = get_model_version(db, model_id, active_version_id, user_id=user_id)
 
     # 2. Assign chronological run_number per model
     run_number = get_next_run_number(db, model_id)
@@ -265,10 +266,11 @@ def create_inspection_run(
         reject_count=0,
         error_count=0,
         summary=RunSummary(total=len(upload_files), pass_count=0, reject_count=0, errors=0),
-        created_at=datetime.utcnow()
+        created_at=datetime.now(timezone.utc)
     )
 
-    run_data = run_doc.model_dump() if hasattr(run_doc, "model_dump") else run_doc.dict()
+    run_data = run_doc.model_dump()
+    run_data["user_id"] = user_id or "usr_default"
     res = db.ad_inspection_runs.insert_one(run_data)
     run_id = str(res.inserted_id)
 
@@ -288,18 +290,24 @@ def create_inspection_run(
     )
 
     # 6. Fetch updated run document with completed status and inspection results
-    return get_inspection_run(db, run_id)
-
+    return get_inspection_run(db, run_id, user_id=user_id)
 
 
 def get_inspection_runs(
     db: Database,
+    user_id: Optional[str] = "usr_default",
     model_id: Optional[str] = None,
     model_version_id: Optional[str] = None,
     status: Optional[str] = None
 ) -> List[Dict[str, Any]]:
     """Lists inspection runs with optional filters ordered newest first."""
-    query = {}
+    query: Dict[str, Any] = {}
+    if user_id:
+        if user_id == "usr_default":
+            query["$or"] = [{"user_id": "usr_default"}, {"user_id": {"$exists": False}}]
+        else:
+            query["user_id"] = user_id
+
     if model_id:
         if not ObjectId.is_valid(model_id):
             raise HTTPException(status_code=400, detail="Invalid model_id format.")
@@ -321,12 +329,19 @@ def get_inspection_runs(
     return runs
 
 
-def get_inspection_run(db: Database, run_id: str) -> Dict[str, Any]:
+def get_inspection_run(db: Database, run_id: str, user_id: Optional[str] = None) -> Dict[str, Any]:
     """Returns detailed InspectionRun document with metadata and inspection results."""
     if not ObjectId.is_valid(run_id):
         raise HTTPException(status_code=400, detail=f"Invalid run_id format '{run_id}'.")
 
-    doc = db.ad_inspection_runs.find_one({"_id": ObjectId(run_id)})
+    query: Dict[str, Any] = {"_id": ObjectId(run_id)}
+    if user_id:
+        if user_id == "usr_default":
+            query["$or"] = [{"user_id": "usr_default"}, {"user_id": {"$exists": False}}]
+        else:
+            query["user_id"] = user_id
+
+    doc = db.ad_inspection_runs.find_one(query)
     if not doc:
         raise HTTPException(status_code=404, detail=f"Inspection run with ID '{run_id}' not found.")
 
@@ -343,3 +358,5 @@ def get_inspection_run(db: Database, run_id: str) -> Dict[str, Any]:
 
     serialized_run["inspections"] = inspections
     return serialized_run
+
+

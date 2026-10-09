@@ -295,24 +295,7 @@ export const InspectionDetail: React.FC = () => {
                   <span className="text-xs text-industrial-500 font-mono">No Heatmap Generated</span>
                 )}
 
-                {/* Bounding box */}
-                {loc?.bbox && (
-                  <svg
-                    className="absolute inset-0 w-full h-full pointer-events-none"
-                    viewBox="0 0 100 100"
-                    preserveAspectRatio="none"
-                  >
-                    <rect
-                      x={`${loc.bbox.x}`}
-                      y={`${loc.bbox.y}`}
-                      width={`${loc.bbox.width}`}
-                      height={`${loc.bbox.height}`}
-                      fill="none"
-                      stroke="#EF4444"
-                      strokeWidth="2.5"
-                    />
-                  </svg>
-                )}
+
               </div>
             </div>
           </div>
@@ -368,24 +351,7 @@ export const InspectionDetail: React.FC = () => {
               </div>
             </div>
 
-            {/* Bounding box readout */}
-            <div className="bg-industrial-50 p-3.5 rounded-xl border border-industrial-200 space-y-1 font-mono text-xs">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold text-industrial-500 uppercase tracking-wider">
-                  DETECTED REGION (PatchCore localization)
-                </span>
-              </div>
-              {loc?.bbox ? (
-                <div className="grid grid-cols-4 gap-1 text-[11px] text-industrial-800 pt-1">
-                  <div><span className="text-industrial-400">X:</span> {loc.bbox.x}</div>
-                  <div><span className="text-industrial-400">Y:</span> {loc.bbox.y}</div>
-                  <div><span className="text-industrial-400">W:</span> {loc.bbox.width}</div>
-                  <div><span className="text-industrial-400">H:</span> {loc.bbox.height}</div>
-                </div>
-              ) : (
-                <p className="text-[11px] text-industrial-400 italic pt-1">No localized anomaly region available.</p>
-              )}
-            </div>
+
 
             {/* AI Defect Analysis (Gemini Interpretation Layer) */}
             <VLMDefectAnalysisCard

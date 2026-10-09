@@ -11,6 +11,10 @@ Verifies:
 7. Failed Gemini calls save status == "failed" and allow explicit retry.
 """
 
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
+
 import io
 import pytest
 from unittest.mock import patch
@@ -19,7 +23,7 @@ from bson import ObjectId
 import numpy as np
 from PIL import Image
 
-from main import app
+from api_server import app
 from db.connection import get_db
 
 client = TestClient(app)
