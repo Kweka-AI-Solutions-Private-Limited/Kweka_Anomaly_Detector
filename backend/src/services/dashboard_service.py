@@ -40,10 +40,7 @@ def get_dashboard_summary(
     user_clause: Dict[str, Any] = {}
 
     if user_id:
-        if user_id == "usr_default":
-            user_clause = {"$or": [{"user_id": "usr_default"}, {"user_id": {"$exists": False}}]}
-        else:
-            user_clause = {"user_id": user_id}
+        user_clause = {"user_id": user_id}
         query.update(user_clause)
 
     if model_id and model_id != "all":

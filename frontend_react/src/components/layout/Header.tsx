@@ -16,6 +16,33 @@ interface HeaderProps {
   onToggleMobileMenu?: () => void;
 }
 
+function formatUserIdentity(id: string, name?: string | null, email?: string | null) {
+  let finalName = name?.trim();
+  let finalEmail = email?.trim();
+
+  if (!finalName || finalName === id) {
+    if (id === 'usr_default') {
+      finalName = 'QA Operator';
+    } else if (id.length >= 16) {
+      finalName = `Operator (${id.slice(0, 8)})`;
+    } else {
+      finalName = id;
+    }
+  }
+
+  if (!finalEmail || (finalEmail.includes(id) && id.length >= 16)) {
+    if (id === 'usr_default') {
+      finalEmail = 'operator@anomalydetector.ai';
+    } else if (id.length >= 16) {
+      finalEmail = `user_${id.slice(0, 8)}@kweka.ai`;
+    } else {
+      finalEmail = `${id}@anomalydetector.ai`;
+    }
+  }
+
+  return { id, name: finalName, email: finalEmail };
+}
+
 export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu }) => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -25,11 +52,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu }) => {
     const activeId = localStorage.getItem('user_id') || 'usr_default';
     const storedName = localStorage.getItem('user_name');
     const storedEmail = localStorage.getItem('user_email');
-    return {
-      id: activeId,
-      name: storedName || (activeId !== 'usr_default' ? activeId : 'QA Operator'),
-      email: storedEmail || `${activeId}@anomalydetector.ai`,
-    };
+    return formatUserIdentity(activeId, storedName, storedEmail);
   });
 
   // Dropdown states
@@ -48,15 +71,11 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu }) => {
   // Fetch active authenticated user profile
   useEffect(() => {
     getCurrentUser()
-      .then((res) => {
+      .then((res: any) => {
         const activeId = res.user_id || localStorage.getItem('user_id') || 'usr_default';
-        const storedName = localStorage.getItem('user_name');
-        const storedEmail = localStorage.getItem('user_email');
-        setUserProfile({
-          id: activeId,
-          name: storedName || (activeId !== 'usr_default' ? activeId : 'QA Operator'),
-          email: storedEmail || `${activeId}@anomalydetector.ai`,
-        });
+        const storedName = res.name || localStorage.getItem('user_name');
+        const storedEmail = res.email || localStorage.getItem('user_email');
+        setUserProfile(formatUserIdentity(activeId, storedName, storedEmail));
       })
       .catch(() => {
         // Fallback to local storage if me endpoint fails
