@@ -35,10 +35,10 @@ def get_dashboard_summary(
     Returns structured dashboard metrics aggregated across inspections, runs, models, and feedback.
     Supports user isolation (user_id) and scope filters: model_id, model_version_id, start_date, end_date.
     """
-    # 1. Build Query for Inspections
+    # 1. Build Query for Inspections & User Scoping
     query: Dict[str, Any] = {}
+    user_clause: Dict[str, Any] = {}
 
-    # User isolation query clause
     if user_id:
         if user_id == "usr_default":
             user_clause = {"$or": [{"user_id": "usr_default"}, {"user_id": {"$exists": False}}]}
@@ -81,20 +81,20 @@ def get_dashboard_summary(
     # 2. Fetch Matching Inspections
     raw_inspections = list(db.ad_inspections.find(query).sort("created_at", -1))
 
-    # Build Metadata Maps
-    models_list = list(db.ad_models.find())
+    # Build Metadata Maps (Scoped to user_clause)
+    models_list = list(db.ad_models.find(user_clause))
     model_map = {}
     for m in models_list:
         m_id = str(m.get("_id") or m.get("id"))
         model_map[m_id] = m.get("name", "Unknown Model")
 
-    versions_list = list(db.ad_models.find())
+    versions_list = list(db.ad_models.find(user_clause))
     version_map = {}
     for v in versions_list:
         v_id = str(v.get("_id") or v.get("id"))
         version_map[v_id] = v.get("version_number", 1)
 
-    runs_list = list(db.ad_inspection_runs.find())
+    runs_list = list(db.ad_inspection_runs.find(user_clause))
     run_map = {}
     for r in runs_list:
         r_id = str(r.get("_id") or r.get("id"))
@@ -269,12 +269,15 @@ def get_dashboard_summary(
     valid_denom = pass_count + reject_count
     pass_rate = round((pass_count / valid_denom) * 100, 1) if valid_denom > 0 else 0.0
 
-    # 4. Runs Summary (Filtered by Model / Version / Date scope)
-    run_query: Dict[str, Any] = {}
+    # 4. Runs Summary (Filtered by User & Model / Version / Date scope)
+    run_query: Dict[str, Any] = dict(user_clause) if user_clause else {}
     if model_id and model_id != "all":
         try:
             m_obj_id = ObjectId(model_id)
-            run_query["$or"] = [{"model_id": m_obj_id}, {"model_id": model_id}]
+            if "$or" in run_query:
+                run_query["$and"] = [user_clause, {"$or": [{"model_id": m_obj_id}, {"model_id": model_id}]}]
+            else:
+                run_query["$or"] = [{"model_id": m_obj_id}, {"model_id": model_id}]
         except Exception:
             run_query["model_id"] = model_id
 
@@ -306,11 +309,8 @@ def get_dashboard_summary(
             "status": r.get("status", "completed")
         })
 
-    # Active Models Count
-    active_models = len(set(str(insp.get("model_id")) for insp in raw_inspections if insp.get("model_id")))
-    if active_models == 0:
-        active_models_count = len([m for m in models_list if m.get("status") == "active"])
-        active_models = active_models_count if active_models_count > 0 else len(models_list)
+    # Active Models Count (Scoped to current authenticated user)
+    active_models = len([m for m in models_list if m.get("is_active") is True or m.get("status") == "active"])
 
     # 5. Feedback Summary (Scoped to Model & Date via matching inspection IDs - Requirement 4!)
     matched_insp_obj_ids = [insp.get("_id") for insp in raw_inspections if insp.get("_id")]

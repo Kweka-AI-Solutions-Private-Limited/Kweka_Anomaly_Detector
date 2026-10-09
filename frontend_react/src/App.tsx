@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AppLayout } from './components/layout/AppLayout';
 import { Home } from './pages/Home';
@@ -14,6 +14,22 @@ import { Settings } from './pages/Settings';
 import { LeafDiseasePage } from './pages/LeafDiseasePage';
 
 export const App: React.FC = () => {
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('anomaly_detector_theme') || 'system';
+    const root = document.documentElement;
+    if (savedTheme === 'dark') {
+      root.classList.add('dark');
+    } else if (savedTheme === 'light') {
+      root.classList.remove('dark');
+    } else {
+      if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        root.classList.add('dark');
+      } else {
+        root.classList.remove('dark');
+      }
+    }
+  }, []);
+
   return (
     <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <Routes>

@@ -288,9 +288,9 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu }) => {
             <div className="w-9 h-9 rounded-full bg-brand-500 text-white flex items-center justify-center font-mono font-bold text-sm shadow-sm">
               {getInitials(userProfile.name)}
             </div>
-            <div className="text-left hidden sm:block max-w-[140px]">
-              <p className="leading-tight font-extrabold text-base text-industrial-900 truncate">{userProfile.name}</p>
-              <p className="text-xs text-industrial-500 font-mono truncate">{userProfile.id}</p>
+            <div className="text-left hidden sm:block max-w-[180px]">
+              <p className="leading-tight font-extrabold text-sm text-industrial-900 truncate" title={userProfile.name}>{userProfile.name}</p>
+              <p className="text-xs text-industrial-500 font-mono truncate" title={userProfile.email}>{userProfile.email}</p>
             </div>
             <ChevronDown className="w-4 h-4 text-industrial-400" />
           </button>
@@ -299,9 +299,12 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu }) => {
           {isProfileOpen && (
             <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl border border-industrial-200 shadow-xl py-2 z-50 text-base animate-in fade-in slide-in-from-top-2">
               <div className="px-5 py-3 border-b border-industrial-100">
-                <p className="font-bold text-industrial-900 text-base truncate">{userProfile.name}</p>
+                <p className="font-bold text-industrial-900 text-sm truncate">{userProfile.name}</p>
                 <p className="text-xs text-industrial-500 font-mono mt-0.5 truncate">
                   {userProfile.email}
+                </p>
+                <p className="text-[10px] text-industrial-400 font-mono mt-1 truncate">
+                  ID: {userProfile.id}
                 </p>
               </div>
 
