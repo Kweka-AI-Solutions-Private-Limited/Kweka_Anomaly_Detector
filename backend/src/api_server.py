@@ -86,23 +86,31 @@ app.openapi = custom_openapi
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
-# Enable CORS for Frontend Development Server and configured origins
+# Enable CORS for Frontend Development Server, Firebase Hosting, and Parent Application origins
 cors_origins_env = os.getenv("CORS_ORIGINS", "*")
-if cors_origins_env == "*":
-    cors_origins = ["*"]
-elif cors_origins_env:
-    cors_origins = [o.strip() for o in cors_origins_env.split(",") if o.strip()]
-    if "http://localhost:5173" not in cors_origins:
-        cors_origins.extend(["http://localhost:5173", "http://127.0.0.1:5173"])
-else:
-    cors_origins = ["*"]
+parsed_origins = [o.strip() for o in cors_origins_env.split(",") if o.strip()] if cors_origins_env and cors_origins_env != "*" else []
+
+default_origins = [
+    "https://anomaly-detector.web.app",
+    "https://anomaly-detector.firebaseapp.com",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+
+for d_origin in default_origins:
+    if d_origin not in parsed_origins:
+        parsed_origins.append(d_origin)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=cors_origins,
-    allow_credentials=False,
+    allow_origins=parsed_origins,
+    allow_origin_regex=r"https?://.*",
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 # Mount static file routes for storage and data directories

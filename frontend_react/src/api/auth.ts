@@ -12,6 +12,14 @@ export async function exchangeAuthCode(code: string): Promise<AuthTokenResponse>
   if (response.data.access_token) {
     localStorage.setItem('auth_token', response.data.access_token);
     localStorage.setItem('user_id', response.data.user_id);
+    if (response.data.user?.name) {
+      localStorage.setItem('user_name', response.data.user.name);
+    } else {
+      localStorage.setItem('user_name', response.data.user_id);
+    }
+    if (response.data.user?.email) {
+      localStorage.setItem('user_email', response.data.user.email);
+    }
   }
   return response.data;
 }

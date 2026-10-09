@@ -10,6 +10,8 @@ import {
 } from '../../api/notifications';
 import { NotificationPanel } from '../notifications/NotificationPanel';
 
+import { getCurrentUser } from '../../api/auth';
+
 interface HeaderProps {
   onToggleMobileMenu?: () => void;
 }
@@ -17,6 +19,18 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu }) => {
   const location = useLocation();
   const navigate = useNavigate();
+
+  // Dynamic profile user state
+  const [userProfile, setUserProfile] = useState<{ id: string; name: string; email: string }>(() => {
+    const activeId = localStorage.getItem('user_id') || 'usr_default';
+    const storedName = localStorage.getItem('user_name');
+    const storedEmail = localStorage.getItem('user_email');
+    return {
+      id: activeId,
+      name: storedName || (activeId !== 'usr_default' ? activeId : 'QA Operator'),
+      email: storedEmail || `${activeId}@anomalydetector.ai`,
+    };
+  });
 
   // Dropdown states
   const [isProfileOpen, setIsProfileOpen] = useState<boolean>(false);
@@ -30,6 +44,32 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu }) => {
 
   const profileRef = useRef<HTMLDivElement>(null);
   const notifContainerRef = useRef<HTMLDivElement>(null);
+
+  // Fetch active authenticated user profile
+  useEffect(() => {
+    getCurrentUser()
+      .then((res) => {
+        const activeId = res.user_id || localStorage.getItem('user_id') || 'usr_default';
+        const storedName = localStorage.getItem('user_name');
+        const storedEmail = localStorage.getItem('user_email');
+        setUserProfile({
+          id: activeId,
+          name: storedName || (activeId !== 'usr_default' ? activeId : 'QA Operator'),
+          email: storedEmail || `${activeId}@anomalydetector.ai`,
+        });
+      })
+      .catch(() => {
+        // Fallback to local storage if me endpoint fails
+      });
+  }, []);
+
+  const getInitials = (name: string): string => {
+    const parts = name.trim().split(/[\s_-]+/);
+    if (parts.length >= 2 && parts[0] && parts[1]) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return name.slice(0, 2).toUpperCase() || 'QA';
+  };
 
   // Fetch unread count from backend
   const fetchUnreadCount = useCallback(async () => {
@@ -246,11 +286,11 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu }) => {
             className="flex items-center space-x-3 text-sm font-medium text-industrial-800 hover:bg-industrial-50 p-2 px-3 rounded-xl border border-industrial-200 transition-colors"
           >
             <div className="w-9 h-9 rounded-full bg-brand-500 text-white flex items-center justify-center font-mono font-bold text-sm shadow-sm">
-              QA
+              {getInitials(userProfile.name)}
             </div>
-            <div className="text-left hidden sm:block">
-              <p className="leading-tight font-extrabold text-base text-industrial-900">QA Operator</p>
-              <p className="text-xs text-industrial-500 font-mono">Anomaly Detector</p>
+            <div className="text-left hidden sm:block max-w-[140px]">
+              <p className="leading-tight font-extrabold text-base text-industrial-900 truncate">{userProfile.name}</p>
+              <p className="text-xs text-industrial-500 font-mono truncate">{userProfile.id}</p>
             </div>
             <ChevronDown className="w-4 h-4 text-industrial-400" />
           </button>
@@ -259,9 +299,9 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu }) => {
           {isProfileOpen && (
             <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl border border-industrial-200 shadow-xl py-2 z-50 text-base animate-in fade-in slide-in-from-top-2">
               <div className="px-5 py-3 border-b border-industrial-100">
-                <p className="font-bold text-industrial-900 text-base">QA Operator</p>
-                <p className="text-xs text-industrial-500 font-mono mt-0.5">
-                  operator@anomalydetector.ai
+                <p className="font-bold text-industrial-900 text-base truncate">{userProfile.name}</p>
+                <p className="text-xs text-industrial-500 font-mono mt-0.5 truncate">
+                  {userProfile.email}
                 </p>
               </div>
 
