@@ -60,6 +60,54 @@ def create_access_token(user_id: str, extra_payload: Optional[Dict[str, Any]] = 
     return encoded_jwt
 
 
+import base64
+import json
+
+def extract_user_info_from_payload(payload: Dict[str, Any]) -> tuple[str, Dict[str, Any]]:
+    """Helper to extract user_id, name, email, and role from JWT or JSON payload dictionary."""
+    sub = str(payload.get("sub") or "").strip()
+    
+    email = (
+        payload.get("email") or
+        payload.get("user_email") or
+        payload.get("email_address") or
+        payload.get("mail")
+    )
+    if not email and "@" in sub:
+        email = sub
+
+    first_name = payload.get("first_name") or ""
+    last_name = payload.get("last_name") or ""
+    combined_name = f"{first_name} {last_name}".strip()
+
+    name = (
+        payload.get("name") or
+        payload.get("full_name") or
+        payload.get("display_name") or
+        (combined_name if combined_name else None) or
+        payload.get("username") or
+        payload.get("user_name") or
+        payload.get("preferred_username")
+    )
+
+    user_id = (
+        payload.get("user_id") or
+        payload.get("id") or
+        payload.get("uid") or
+        (payload.get("sub") if not ("@" in sub and not payload.get("user_id")) else None) or
+        email or
+        sub
+    )
+
+    metadata = {
+        "id": str(user_id) if user_id else None,
+        "email": str(email) if email else None,
+        "name": str(name) if name else None,
+        "role": payload.get("role", "user")
+    }
+    return str(user_id) if user_id else "", metadata
+
+
 @router.post("/auth/exchange", response_model=AuthTokenResponse)
 @router.post("/auth/code", response_model=AuthTokenResponse)
 @router.post("/auth/login", response_model=AuthTokenResponse)
@@ -85,37 +133,21 @@ def exchange_code(req: ExchangeCodeRequest):
             algorithms=["HS256", "HS384", "HS512", "RS256"],
             options={"verify_signature": True if secret != DEFAULT_SECRET_KEY else False}
         )
-        extracted_user_id = (
-            payload.get("user_id") or
-            payload.get("sub") or
-            payload.get("id") or
-            payload.get("email") or
-            payload.get("uid")
-        )
-        user_metadata = {
-            "email": payload.get("email"),
-            "name": payload.get("name") or payload.get("username"),
-            "role": payload.get("role", "user")
-        }
-    except jwt.InvalidTokenError:
-        # 2. Try unverified decode if signature failed or format is JWT with external secret
+        extracted_user_id, user_metadata = extract_user_info_from_payload(payload)
+    except Exception:
+        # 2. Try unverified decode if signature failed or external secret used
         try:
             payload = jwt.decode(code_str, options={"verify_signature": False})
-            extracted_user_id = (
-                payload.get("user_id") or
-                payload.get("sub") or
-                payload.get("id") or
-                payload.get("email") or
-                payload.get("uid")
-            )
-            user_metadata = {
-                "email": payload.get("email"),
-                "name": payload.get("name") or payload.get("username"),
-                "role": payload.get("role", "user")
-            }
+            extracted_user_id, user_metadata = extract_user_info_from_payload(payload)
         except Exception:
-            # 3. Code is a raw string exchange code (e.g. from parent OAuth redirect)
-            extracted_user_id = code_str
+            # 3. Try base64 json decode
+            try:
+                decoded_bytes = base64.b64decode(code_str)
+                decoded_json = json.loads(decoded_bytes.decode('utf-8'))
+                if isinstance(decoded_json, dict):
+                    extracted_user_id, user_metadata = extract_user_info_from_payload(decoded_json)
+            except Exception:
+                extracted_user_id = code_str
 
     if not extracted_user_id:
         extracted_user_id = code_str
@@ -136,10 +168,29 @@ def exchange_code(req: ExchangeCodeRequest):
 
 
 @router.get("/auth/me")
-def get_current_user_profile(user_id: str = Depends(get_current_user_id)):
+def get_current_user_profile(request: Request, user_id: str = Depends(get_current_user_id)):
     """Returns the authenticated user details for the active session."""
+    name = None
+    email = None
+    role = "user"
+
+    auth_header = request.headers.get("authorization") or request.headers.get("Authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        token = auth_header.split(" ", 1)[1].strip()
+        try:
+            payload = jwt.decode(token, options={"verify_signature": False})
+            _, meta = extract_user_info_from_payload(payload)
+            name = meta.get("name")
+            email = meta.get("email")
+            role = meta.get("role", "user")
+        except Exception:
+            pass
+
     return {
         "user_id": user_id,
+        "name": name,
+        "email": email,
+        "role": role,
         "authenticated": user_id != "usr_default",
         "status": "active"
     }
