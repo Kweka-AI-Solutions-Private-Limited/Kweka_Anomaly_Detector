@@ -76,8 +76,8 @@ def extract_user_info_from_payload(payload: Dict[str, Any]) -> tuple[str, Dict[s
     if not email and "@" in sub:
         email = sub
 
-    first_name = payload.get("first_name") or ""
-    last_name = payload.get("last_name") or ""
+    first_name = payload.get("first_name") or payload.get("given_name") or ""
+    last_name = payload.get("last_name") or payload.get("family_name") or ""
     combined_name = f"{first_name} {last_name}".strip()
 
     name = (
@@ -121,6 +121,8 @@ def exchange_code(req: ExchangeCodeRequest):
         raise HTTPException(status_code=400, detail="Exchange code or token is required.")
 
     code_str = code_val.strip()
+    if code_str.startswith("Bearer "):
+        code_str = code_str.split(" ", 1)[1].strip()
     secret = get_jwt_secret()
     extracted_user_id = None
     user_metadata: Dict[str, Any] = {}
