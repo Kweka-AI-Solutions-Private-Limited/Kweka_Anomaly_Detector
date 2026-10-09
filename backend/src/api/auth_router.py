@@ -62,6 +62,28 @@ def create_access_token(user_id: str, extra_payload: Optional[Dict[str, Any]] = 
 
 import base64
 import json
+import urllib.request
+
+CENTRAL_AUTH_VERIFY_URL = "https://kw-prototypes-service-238644809220.asia-south1.run.app/api/auth/exchange/verify"
+
+
+def verify_central_exchange_code(code_str: str) -> Optional[Dict[str, Any]]:
+    """Calls central Kweka auth service to verify exchange_token and retrieve real user details."""
+    try:
+        data = json.dumps({"exchange_token": code_str}).encode("utf-8")
+        req = urllib.request.Request(
+            CENTRAL_AUTH_VERIFY_URL,
+            data=data,
+            headers={"Content-Type": "application/json", "User-Agent": "Anomaly-Detector-Backend"}
+        )
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            if resp.status == 200:
+                body = json.loads(resp.read().decode("utf-8"))
+                return body
+    except Exception as e:
+        pass
+    return None
+
 
 def extract_user_info_from_payload(payload: Dict[str, Any]) -> tuple[str, Dict[str, Any]]:
     """Helper to extract user_id, name, email, and role from JWT or JSON payload dictionary."""
@@ -103,7 +125,11 @@ def extract_user_info_from_payload(payload: Dict[str, Any]) -> tuple[str, Dict[s
         "id": str(user_id) if user_id else None,
         "email": str(email) if email else None,
         "name": str(name) if name else None,
-        "role": payload.get("role", "user")
+        "role": payload.get("role", "user"),
+        "first_name": first_name or None,
+        "last_name": last_name or None,
+        "company": payload.get("company"),
+        "job_title": payload.get("job_title"),
     }
     return str(user_id) if user_id else "", metadata
 
@@ -126,35 +152,47 @@ def exchange_code(req: ExchangeCodeRequest):
     secret = get_jwt_secret()
     extracted_user_id = None
     user_metadata: Dict[str, Any] = {}
+    returned_access_token = None
 
-    # 1. Attempt to decode code_str as a signed JWT token from parent website
-    try:
-        payload = jwt.decode(
-            code_str,
-            secret,
-            algorithms=["HS256", "HS384", "HS512", "RS256"],
-            options={"verify_signature": True if secret != DEFAULT_SECRET_KEY else False}
-        )
-        extracted_user_id, user_metadata = extract_user_info_from_payload(payload)
-    except Exception:
-        # 2. Try unverified decode if signature failed or external secret used
+    # 1. Attempt central exchange verification (Kweka Prototypes Central Auth Service)
+    central_res = verify_central_exchange_code(code_str)
+    if central_res:
+        returned_access_token = central_res.get("token") or central_res.get("access_token")
+        u_obj = central_res.get("user") or {}
+        if u_obj and isinstance(u_obj, dict):
+            extracted_user_id, user_metadata = extract_user_info_from_payload(u_obj)
+        elif isinstance(central_res, dict):
+            extracted_user_id, user_metadata = extract_user_info_from_payload(central_res)
+
+    # 2. Attempt to decode code_str as a signed JWT token if central exchange returned nothing
+    if not extracted_user_id:
         try:
-            payload = jwt.decode(code_str, options={"verify_signature": False})
+            payload = jwt.decode(
+                code_str,
+                secret,
+                algorithms=["HS256", "HS384", "HS512", "RS256"],
+                options={"verify_signature": True if secret != DEFAULT_SECRET_KEY else False}
+            )
             extracted_user_id, user_metadata = extract_user_info_from_payload(payload)
         except Exception:
-            # 3. Try base64 json decode
+            # 3. Try unverified decode if signature failed or external secret used
             try:
-                decoded_bytes = base64.b64decode(code_str)
-                decoded_json = json.loads(decoded_bytes.decode('utf-8'))
-                if isinstance(decoded_json, dict):
-                    extracted_user_id, user_metadata = extract_user_info_from_payload(decoded_json)
+                payload = jwt.decode(code_str, options={"verify_signature": False})
+                extracted_user_id, user_metadata = extract_user_info_from_payload(payload)
             except Exception:
-                extracted_user_id = code_str
+                # 4. Try base64 json decode
+                try:
+                    decoded_bytes = base64.b64decode(code_str)
+                    decoded_json = json.loads(decoded_bytes.decode('utf-8'))
+                    if isinstance(decoded_json, dict):
+                        extracted_user_id, user_metadata = extract_user_info_from_payload(decoded_json)
+                except Exception:
+                    extracted_user_id = code_str
 
     if not extracted_user_id:
         extracted_user_id = code_str
 
-    user_id_clean = str(extracted_user_id).strip()
+    user_id_clean = extracted_user_id.strip()
     if "id" not in user_metadata or not user_metadata["id"]:
         user_metadata["id"] = user_id_clean
 
@@ -162,7 +200,7 @@ def exchange_code(req: ExchangeCodeRequest):
     access_token = create_access_token(user_id_clean, extra_payload=user_metadata)
 
     return AuthTokenResponse(
-        access_token=access_token,
+        access_token=returned_access_token or access_token,
         token_type="bearer",
         user_id=user_id_clean,
         user=user_metadata

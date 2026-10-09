@@ -30,7 +30,7 @@ export const apiClient = axios.create({
 // Automatic User Isolation Context Interceptor
 apiClient.interceptors.request.use((config) => {
   const userId = localStorage.getItem('user_id') || 'usr_default';
-  const token = localStorage.getItem('auth_token');
+  const token = localStorage.getItem('auth_token') || localStorage.getItem('token');
   config.headers['X-User-ID'] = userId;
   if (token) {
     config.headers['Authorization'] = `Bearer ${token}`;

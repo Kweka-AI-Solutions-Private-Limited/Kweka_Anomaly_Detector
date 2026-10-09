@@ -10,14 +10,34 @@ export interface AuthTokenResponse {
 export async function exchangeAuthCode(code: string): Promise<AuthTokenResponse> {
   const response = await apiClient.post<AuthTokenResponse>('/api/auth/exchange', { code });
   if (response.data.access_token) {
-    localStorage.setItem('auth_token', response.data.access_token);
-    localStorage.setItem('user_id', response.data.user_id);
-    if (response.data.user?.name && response.data.user.name !== response.data.user_id) {
-      localStorage.setItem('user_name', response.data.user.name);
+    const token = response.data.access_token;
+    const userId = response.data.user_id;
+    const userObj = response.data.user || {};
+
+    localStorage.setItem('auth_token', token);
+    localStorage.setItem('token', token);
+    localStorage.setItem('user_id', userId);
+
+    const firstName = userObj.first_name || '';
+    const lastName = userObj.last_name || '';
+    const combinedName = `${firstName} ${lastName}`.trim();
+    const name = combinedName || userObj.name || userObj.full_name || userObj.display_name;
+
+    if (name && name !== userId && !/^[0-9a-fA-F]{16,}$/.test(name)) {
+      localStorage.setItem('user_name', name);
     }
-    if (response.data.user?.email) {
-      localStorage.setItem('user_email', response.data.user.email);
+    if (userObj.email) {
+      localStorage.setItem('user_email', userObj.email);
     }
+
+    localStorage.setItem('user_profile', JSON.stringify({
+      id: userId,
+      name: name || undefined,
+      email: userObj.email || undefined,
+      first_name: firstName || undefined,
+      last_name: lastName || undefined,
+      role: userObj.role || 'user'
+    }));
   }
   return response.data;
 }
