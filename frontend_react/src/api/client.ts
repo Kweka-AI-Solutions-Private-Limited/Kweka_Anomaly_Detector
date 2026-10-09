@@ -1,8 +1,22 @@
 import axios from 'axios';
 
-// Production: VITE_API_BASE_URL is set at Docker build time (ARG VITE_API_BASE_URL=https://your-app.run.app)
-// Local dev: leave empty — Vite proxy in vite.config.ts forwards /api /storage /data to localhost:8000
-const BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
+// Production Backend URL fallback for hosted production deployments (Firebase, Cloud Run, Vercel, etc.)
+const DEFAULT_PROD_API_URL = 'https://kweka-anomaly-detector-238644809220.asia-south1.run.app';
+
+const getBaseUrl = (): string => {
+  const envUrl = import.meta.env.VITE_API_BASE_URL;
+  if (envUrl && envUrl.trim()) {
+    return envUrl.trim().replace(/\/$/, '');
+  }
+  // If building for production without explicit VITE_API_BASE_URL, default to Cloud Run backend
+  if (import.meta.env.PROD) {
+    return DEFAULT_PROD_API_URL;
+  }
+  // Local dev: leave empty so Vite proxy forwards /api to local uvicorn
+  return '';
+};
+
+const BASE_URL = getBaseUrl();
 export const DB_NAME = import.meta.env.VITE_DB_NAME || 'Anomaly_Detector';
 
 export const apiClient = axios.create({
