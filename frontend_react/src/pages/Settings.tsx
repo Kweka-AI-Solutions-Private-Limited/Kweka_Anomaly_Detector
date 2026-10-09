@@ -11,6 +11,9 @@ import {
   AlertCircle,
   RefreshCw,
   HardDrive,
+  User,
+  Mail,
+  Save,
 } from 'lucide-react';
 import { getHealthStatus } from '../api/health';
 import { HealthStatus } from '../types';
@@ -22,6 +25,23 @@ export const Settings: React.FC = () => {
   const [theme, setTheme] = useState<'light' | 'dark' | 'system'>(() => {
     return (localStorage.getItem('anomaly_detector_theme') as any) || 'system';
   });
+
+  const [userNameInput, setUserNameInput] = useState<string>(() => localStorage.getItem('user_name') || '');
+  const [userEmailInput, setUserEmailInput] = useState<string>(() => localStorage.getItem('user_email') || '');
+  const [profileSaved, setProfileSaved] = useState<boolean>(false);
+
+  const handleSaveProfile = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (userNameInput.trim()) {
+      localStorage.setItem('user_name', userNameInput.trim());
+    }
+    if (userEmailInput.trim()) {
+      localStorage.setItem('user_email', userEmailInput.trim());
+    }
+    window.dispatchEvent(new Event('profile_updated'));
+    setProfileSaved(true);
+    setTimeout(() => setProfileSaved(false), 3000);
+  };
 
   const [health, setHealth] = useState<HealthStatus | null>(null);
   const [isLoadingHealth, setIsLoadingHealth] = useState<boolean>(true);
@@ -88,11 +108,76 @@ export const Settings: React.FC = () => {
         </Button>
       </div>
 
-      {/* 1. Appearance / Theme Section */}
+      {/* 1. User Identity & Profile Settings */}
+      <Card className="p-6 space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-xs font-mono font-bold uppercase tracking-wider text-industrial-700 flex items-center space-x-2">
+              <User className="w-4 h-4 text-brand-600" />
+              <span>1. Active User Profile</span>
+            </h2>
+            <p className="text-xs text-industrial-500 mt-0.5">
+              Inspect or customize your operator display identity for active multi-tenant sessions.
+            </p>
+          </div>
+          {profileSaved && (
+            <span className="text-xs font-mono font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded border border-emerald-200 animate-in fade-in">
+              Profile updated successfully!
+            </span>
+          )}
+        </div>
+
+        <form onSubmit={handleSaveProfile} className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+          <div>
+            <label className="block text-xs font-mono font-bold text-industrial-700 uppercase mb-1">
+              User ID
+            </label>
+            <input
+              type="text"
+              readOnly
+              value={localStorage.getItem('user_id') || 'usr_default'}
+              className="w-full px-3 py-2 text-xs font-mono bg-industrial-100 text-industrial-600 border border-industrial-200 rounded outline-none cursor-not-allowed"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-mono font-bold text-industrial-700 uppercase mb-1">
+              Display Name
+            </label>
+            <input
+              type="text"
+              placeholder="e.g. Abhiram Kweka"
+              value={userNameInput}
+              onChange={(e) => setUserNameInput(e.target.value)}
+              className="w-full px-3 py-2 text-xs font-sans font-bold bg-white text-industrial-900 border border-industrial-300 rounded focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-mono font-bold text-industrial-700 uppercase mb-1">
+              Email Address
+            </label>
+            <div className="flex items-center space-x-2">
+              <input
+                type="email"
+                placeholder="e.g. operator@kweka.ai"
+                value={userEmailInput}
+                onChange={(e) => setUserEmailInput(e.target.value)}
+                className="w-full px-3 py-2 text-xs font-mono font-medium bg-white text-industrial-900 border border-industrial-300 rounded focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none"
+              />
+              <Button type="submit" variant="primary" size="sm" icon={<Save className="w-3.5 h-3.5" />}>
+                Save
+              </Button>
+            </div>
+          </div>
+        </form>
+      </Card>
+
+      {/* 2. Appearance / Theme Section */}
       <Card className="p-6 space-y-4">
         <div>
           <h2 className="text-xs font-mono font-bold uppercase tracking-wider text-industrial-700">
-            1. Appearance & Theme
+            2. Appearance & Theme
           </h2>
           <p className="text-xs text-industrial-500 mt-0.5">
             Select your preferred visual style for industrial workstation display.
