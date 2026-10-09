@@ -36,7 +36,7 @@ yarn-error.log*
 .DS_Store
 Thumbs.db
 
-# Heavy Data, Storage, Datasets, Artifacts & Weights
+# Heavy Data, Storage, Datasets, Artifacts, Weights & Experiments
 **/storage/
 **/artifacts/
 **/results/
@@ -46,6 +46,9 @@ Thumbs.db
 **/outputs/
 **/runs/
 **/weights/
+**/experiments/
+**/notebooks/
+**/scripts/
 *.ckpt
 *.pth
 *.pt
@@ -60,3 +63,21 @@ Thumbs.db
 test_heatmap_demo.png
 **/benchmark_results.json
 **/tmp_test_dir/
+
+# One-off Developer Diagnostic Scripts
+backend/tests/audit_defects.py
+backend/tests/check_db_model_version.py
+backend/tests/check_poly.py
+backend/tests/crop_screw_regions.py
+backend/tests/find_screw_defects.py
+backend/tests/inspect_defect_location.py
+backend/tests/inspect_disk_heatmap.py
+backend/tests/locate_real_patchcore_defect.py
+backend/tests/print_db_results.py
+backend/tests/print_screw_model.py
+backend/tests/print_screw_model_formatted.py
+backend/tests/run_full_pipeline_b_benchmark.py
+backend/tests/test_cucurbit_pathology.py
+backend/tests/test_leaf_disease.py
+backend/tests/test_nacl_*.py
+backend/tests/verify_*.py
