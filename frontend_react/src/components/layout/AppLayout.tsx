@@ -1,10 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
+import { exchangeAuthCode } from '../../api/auth';
 
 export const AppLayout: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code') || params.get('token') || params.get('auth_code') || params.get('exchange_code');
+    if (code) {
+      exchangeAuthCode(code)
+        .then((res) => {
+          console.log('[Auth] Code exchange successful for user:', res.user_id);
+          params.delete('code');
+          params.delete('token');
+          params.delete('auth_code');
+          params.delete('exchange_code');
+          const newSearch = params.toString();
+          const newUrl = window.location.pathname + (newSearch ? `?${newSearch}` : '') + window.location.hash;
+          window.history.replaceState({}, '', newUrl);
+        })
+        .catch((err) => {
+          console.error('[Auth] Failed to exchange code:', err);
+        });
+    }
+  }, []);
 
   return (
     <div className="min-h-screen w-screen bg-industrial-100 flex overflow-x-hidden">

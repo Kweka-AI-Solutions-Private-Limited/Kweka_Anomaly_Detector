@@ -40,6 +40,7 @@ from api.inspection_runs_router import router as inspection_runs_router
 from api.dashboard_router import router as dashboard_router
 from api.notifications_router import router as notifications_router
 from api.leaf_disease_router import router as leaf_disease_router
+from api.auth_router import router as auth_router
 
 # Load Environment Variables from backend/.env
 env_path = Path(__file__).resolve().parent.parent / ".env"
@@ -113,7 +114,9 @@ data_path.mkdir(parents=True, exist_ok=True)
 app.mount("/storage", StaticFiles(directory=str(storage_path)), name="storage")
 app.mount("/data", StaticFiles(directory=str(data_path)), name="data")
 
-# Mount Core Model Router (both /api and base endpoints)
+# Mount Routers
+app.include_router(auth_router, prefix="/api")
+app.include_router(auth_router)
 app.include_router(models_router, prefix="/api")
 app.include_router(models_router)
 app.include_router(model_groups_router, prefix="/api")

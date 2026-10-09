@@ -8,9 +8,10 @@ uvicorn[standard]==0.32.0
 python-multipart==0.0.12
 pydantic==2.10.3
 
-# --- Database ---
+# --- Database & Auth ---
 pymongo==4.10.1
 python-dotenv==1.0.1
+PyJWT==2.15.1
 
 # --- PyTorch (CUDA 12.8) ---
 torch==2.11.0+cu128
