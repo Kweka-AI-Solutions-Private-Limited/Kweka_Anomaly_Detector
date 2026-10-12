@@ -445,10 +445,11 @@ def build_model_version(db: Database, model_id: str, user_id: Optional[str] = No
     """Builds a new PatchCore model version from uploaded GOOD reference images."""
     model = get_model(db, model_id, user_id=user_id)
 
-    # Fetch reference image docs
+    # Fetch reference image docs — type stored as "good" (ReferenceImageSchema default) or legacy "reference_image"
     ref_cursor = list(db.ad_models.find({
         "model_id": ObjectId(model_id),
-        "type": "reference_image"
+        "type": {"$in": ["good", "reference_image"]},
+        "filename": {"$exists": True}
     }))
 
     if len(ref_cursor) < 2:
@@ -546,6 +547,8 @@ def build_model_version(db: Database, model_id: str, user_id: Optional[str] = No
             print(f"[WARN] Failed to create model build notification: {n_err}")
 
         completed_version = db.ad_models.find_one({"_id": version_id})
+        if completed_version is None:
+            completed_version = v_data
         completed_version["id"] = str(completed_version["_id"])
         completed_version["_id"] = str(completed_version["_id"])
         completed_version["model_id"] = str(completed_version["model_id"])
@@ -851,6 +854,8 @@ def create_custom_threshold_version(db: Database, model_id: str, custom_threshol
     )
 
     completed_version = db.ad_models.find_one({"_id": new_version_id})
+    if completed_version is None:
+        completed_version = v_data
     completed_version["id"] = str(completed_version["_id"])
     completed_version["_id"] = str(completed_version["_id"])
     completed_version["model_id"] = str(completed_version["model_id"])
