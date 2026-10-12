@@ -62,6 +62,10 @@ def list_inspection_runs_endpoint(
 
 
 @router.get("/{run_id}")
-def get_inspection_run_endpoint(run_id: str, db=Depends(get_db)):
+def get_inspection_run_endpoint(
+    run_id: str,
+    user_id: str = Depends(get_current_user_id),
+    db=Depends(get_db)
+):
     """Returns detailed InspectionRun summary and associated inspection results."""
-    return get_inspection_run(db, run_id=run_id)
+    return get_inspection_run(db, run_id=run_id, user_id=user_id)

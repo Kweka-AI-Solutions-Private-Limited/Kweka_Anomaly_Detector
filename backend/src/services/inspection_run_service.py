@@ -66,7 +66,8 @@ def _process_inspection_run_background(
     threshold_override: Optional[float] = None,
     inspection_mode: str = "single",
     min_instance_area: int = 500,
-    max_instances: int = 20
+    max_instances: int = 20,
+    user_id: Optional[str] = "usr_default"
 ):
 
     """
@@ -102,6 +103,7 @@ def _process_inspection_run_background(
                 db=db,
                 model_id=model_id,
                 upload_file=upload_wrapper,
+                user_id=user_id,
                 threshold_override=threshold_override,
                 inspection_mode=inspection_mode,
                 min_instance_area=min_instance_area,
@@ -128,12 +130,28 @@ def _process_inspection_run_background(
             completed_images += 1
             print(f"[WARN] Inspection item '{filename}' in run '{run_id}' failed: {e}")
             try:
-                db.ad_inspections.update_many(
+                res_upd = db.ad_inspections.update_many(
                     {"run_id": ObjectId(run_id), "input.filename": filename},
                     {"$set": {"status": "failed", "error": str(e)}}
                 )
-            except Exception:
-                pass
+                if res_upd.matched_count == 0:
+                    # Create failed inspection record so get_inspection_run surfaces the error
+                    db.ad_inspections.insert_one({
+                        "model_id": ObjectId(model_id) if ObjectId.is_valid(model_id) else model_id,
+                        "model_version_id": ObjectId(active_version_id) if ObjectId.is_valid(active_version_id) else active_version_id,
+                        "run_id": ObjectId(run_id),
+                        "user_id": user_id or "usr_default",
+                        "inspection_mode": inspection_mode,
+                        "status": "failed",
+                        "error": str(e),
+                        "input": {
+                            "filename": filename,
+                            "storage_uri": ""
+                        },
+                        "created_at": datetime.now(timezone.utc)
+                    })
+            except Exception as upd_err:
+                print(f"[WARN] Error updating/recording failed inspection: {upd_err}")
             inspection_records.append({
                 "filename": filename,
                 "status": "failed",
@@ -286,7 +304,8 @@ def create_inspection_run(
         threshold_override,
         inspection_mode,
         min_instance_area,
-        max_instances
+        max_instances,
+        user_id=user_id
     )
 
     # 6. Fetch updated run document with completed status and inspection results

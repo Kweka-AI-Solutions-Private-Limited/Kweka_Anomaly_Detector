@@ -275,9 +275,19 @@ def get_model(db: Database, model_id: str, user_id: Optional[str] = None) -> Dic
         if user_id == "usr_default":
             query["$or"] = [{"user_id": "usr_default"}, {"user_id": {"$exists": False}}]
         else:
-            query["user_id"] = user_id
+            query["$or"] = [{"user_id": user_id}, {"user_id": "usr_default"}, {"user_id": {"$exists": False}}]
 
     doc = db.ad_models.find_one(query)
+    if not doc and "models" in db.list_collection_names():
+        doc = db.models.find_one(query)
+
+    # Fallback to model lookup by ID even if user_id was set on another account (shared/base model support)
+    if not doc:
+        base_query = {"_id": ObjectId(model_id), "status": {"$ne": "deleted"}, "is_group": {"$ne": True}}
+        doc = db.ad_models.find_one(base_query)
+        if not doc and "models" in db.list_collection_names():
+            doc = db.models.find_one(base_query)
+
     if not doc:
         raise HTTPException(status_code=404, detail=f"Model with ID '{model_id}' not found.")
 
@@ -605,21 +615,14 @@ def get_model_version(db: Database, model_id: str, version_id: str, user_id: Opt
     v_obj_id = ObjectId(version_id)
     m_obj_id = ObjectId(model_id) if ObjectId.is_valid(model_id) else model_id
 
-    doc = db.ad_models.find_one({
-        "_id": v_obj_id,
-        "model_id": {"$in": [m_obj_id, str(model_id)]},
-        "status": {"$ne": "deleted"}
-    }) or db.ad_model_versions.find_one({
-        "_id": v_obj_id,
-        "model_id": {"$in": [m_obj_id, str(model_id)]},
-        "status": {"$ne": "deleted"}
-    }) or db.ad_models.find_one({
-        "_id": v_obj_id,
-        "status": {"$ne": "deleted"}
-    }) or db.ad_model_versions.find_one({
-        "_id": v_obj_id,
-        "status": {"$ne": "deleted"}
-    })
+    doc = (
+        db.ad_models.find_one({"_id": v_obj_id, "model_id": {"$in": [m_obj_id, str(model_id)]}, "status": {"$ne": "deleted"}}) or
+        db.ad_model_versions.find_one({"_id": v_obj_id, "model_id": {"$in": [m_obj_id, str(model_id)]}, "status": {"$ne": "deleted"}}) or
+        (db.model_versions.find_one({"_id": v_obj_id, "model_id": {"$in": [m_obj_id, str(model_id)]}, "status": {"$ne": "deleted"}}) if "model_versions" in db.list_collection_names() else None) or
+        db.ad_models.find_one({"_id": v_obj_id, "status": {"$ne": "deleted"}}) or
+        db.ad_model_versions.find_one({"_id": v_obj_id, "status": {"$ne": "deleted"}}) or
+        (db.model_versions.find_one({"_id": v_obj_id, "status": {"$ne": "deleted"}}) if "model_versions" in db.list_collection_names() else None)
+    )
     if not doc:
         raise HTTPException(status_code=404, detail=f"Version '{version_id}' for model '{model_id}' not found.")
 
