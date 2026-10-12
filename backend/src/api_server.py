@@ -17,10 +17,13 @@ from typing import List, Optional
 from datetime import datetime, timezone
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, File, UploadFile, Form, HTTPException
+from fastapi import FastAPI, File, UploadFile, Form, HTTPException, Request, Response, Query, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse, FileResponse
+from fastapi.exceptions import RequestValidationError
 from pydantic import BaseModel
 import torch
+import traceback
 
 if torch.cuda.is_available():
     torch.set_float32_matmul_precision("high")
@@ -41,6 +44,7 @@ from api.dashboard_router import router as dashboard_router
 from api.notifications_router import router as notifications_router
 from api.leaf_disease_router import router as leaf_disease_router
 from api.auth_router import router as auth_router
+from api.deps import get_current_user_id
 
 # Load Environment Variables from backend/.env
 env_path = Path(__file__).resolve().parent.parent / ".env"
@@ -112,6 +116,82 @@ app.add_middleware(
     allow_headers=["*"],
     expose_headers=["*"],
 )
+
+
+def _get_cors_headers(request: Request) -> dict:
+    req_origin = request.headers.get("origin")
+    headers = {
+        "Access-Control-Allow-Credentials": "true",
+        "Access-Control-Allow-Methods": "*",
+        "Access-Control-Allow-Headers": "*",
+        "Access-Control-Expose-Headers": "*",
+    }
+    if req_origin:
+        headers["Access-Control-Allow-Origin"] = req_origin
+    elif parsed_origins:
+        headers["Access-Control-Allow-Origin"] = parsed_origins[0]
+    else:
+        headers["Access-Control-Allow-Origin"] = "*"
+    return headers
+
+
+@app.middleware("http")
+async def cors_exception_safety_middleware(request: Request, call_next):
+    if request.method == "OPTIONS":
+        return Response(status_code=200, headers=_get_cors_headers(request))
+    try:
+        response = await call_next(request)
+    except Exception as exc:
+        traceback.print_exc()
+        headers = _get_cors_headers(request)
+        return JSONResponse(
+            status_code=500,
+            content={"detail": f"Internal Server Error: {str(exc)}"},
+            headers=headers
+        )
+
+    req_origin = request.headers.get("origin")
+    if req_origin and "access-control-allow-origin" not in response.headers:
+        response.headers["Access-Control-Allow-Origin"] = req_origin
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        response.headers["Access-Control-Allow-Methods"] = "*"
+        response.headers["Access-Control-Allow-Headers"] = "*"
+        response.headers["Access-Control-Expose-Headers"] = "*"
+    return response
+
+
+@app.exception_handler(HTTPException)
+async def custom_http_exception_handler(request: Request, exc: HTTPException):
+    headers = _get_cors_headers(request)
+    if exc.headers:
+        headers.update(exc.headers)
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail},
+        headers=headers
+    )
+
+
+@app.exception_handler(RequestValidationError)
+async def custom_validation_exception_handler(request: Request, exc: RequestValidationError):
+    headers = _get_cors_headers(request)
+    return JSONResponse(
+        status_code=422,
+        content={"detail": exc.errors()},
+        headers=headers
+    )
+
+
+@app.exception_handler(Exception)
+async def custom_generic_exception_handler(request: Request, exc: Exception):
+    traceback.print_exc()
+    headers = _get_cors_headers(request)
+    return JSONResponse(
+        status_code=500,
+        content={"detail": f"Internal Server Error: {str(exc)}"},
+        headers=headers
+    )
+
 
 # Mount static file routes for storage and data directories
 storage_path = Path(__file__).resolve().parent.parent / "storage"
@@ -294,9 +374,30 @@ app.include_router(inspection_runs_router, prefix="/api")
 app.include_router(inspection_runs_router)
 app.include_router(dashboard_router, prefix="/api")
 app.include_router(notifications_router, prefix="/api")
-app.include_router(notifications_router)
 app.include_router(leaf_disease_router, prefix="/api")
 app.include_router(leaf_disease_router)
+
+
+@app.get("/api/feedback", tags=["Feedback"])
+@app.get("/feedback", tags=["Feedback"])
+def feedback_alias_endpoint(
+    model_id: Optional[str] = Query(None),
+    model_version_id: Optional[str] = Query(None),
+    run_id: Optional[str] = Query(None),
+    feedback_type: Optional[str] = Query(None),
+    user_id: str = Depends(get_current_user_id),
+    db=Depends(get_db)
+):
+    from services.inspection_service import get_all_feedback
+    return get_all_feedback(
+        db,
+        user_id=user_id,
+        model_id=model_id,
+        model_version_id=model_version_id,
+        run_id=run_id,
+        feedback_type=feedback_type
+    )
+
 
 
 # ---------------------------------------------------------------

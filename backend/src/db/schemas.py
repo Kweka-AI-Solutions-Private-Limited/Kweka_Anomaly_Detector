@@ -300,6 +300,7 @@ class FeedbackSchema(BaseModel):
     model_id: Any  # ObjectId
     model_version_id: Any  # ObjectId
     run_id: Optional[Any] = None  # ObjectId
+    user_id: Optional[str] = "usr_default"
 
     # Original Prediction Snapshots (Preserves historical record without modification)
     original_prediction: Optional[Dict[str, Any]] = None

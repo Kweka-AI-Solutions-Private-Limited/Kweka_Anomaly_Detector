@@ -874,7 +874,8 @@ def submit_feedback(
     corrected_location: Optional[str] = None,
     corrected_severity: Optional[str] = None,
     comment: Optional[str] = None,
-    feedback_type: Optional[str] = None
+    feedback_type: Optional[str] = None,
+    user_id: Optional[str] = "usr_default"
 ) -> Dict[str, Any]:
     """
     Submits structured user feedback for an inspection.
@@ -904,10 +905,10 @@ def submit_feedback(
     is_reject = pred_status in ("anomalous", "reject")
 
     if is_reject and detection_feedback == "false_negative":
-        raise HTTPException(status_code=400, detail="False Negative is not valid for a REJECT result. Use False Positive if PatchCore incorrectly flagged a GOOD image.")
+        raise HTTPException(status_code=400, detail="Detection feedback cannot be 'false_negative' for a REJECT result. Use False Positive if PatchCore incorrectly flagged a GOOD image.")
 
     if is_pass and detection_feedback == "false_positive":
-        raise HTTPException(status_code=400, detail="False Positive is not valid for a PASS result. Use False Negative if PatchCore missed a defect.")
+        raise HTTPException(status_code=400, detail="Detection feedback cannot be 'false_positive' for a PASS result. Use False Negative if PatchCore missed a defect.")
 
     # Validate VLM feedback categories
     for cat in vlm_cats:
@@ -918,6 +919,9 @@ def submit_feedback(
     orig_pred = insp.get("prediction", {})
     orig_vlm = insp.get("vlm_analysis", {})
 
+    # Determine user identity
+    effective_user_id = user_id or insp.get("user_id") or "usr_default"
+
     # Check for existing feedback submission to update rather than duplicate
     existing = db.ad_feedback.find_one({"inspection_id": ObjectId(inspection_id)})
 
@@ -927,6 +931,7 @@ def submit_feedback(
         model_id=ObjectId(insp["model_id"]),
         model_version_id=ObjectId(insp["model_version_id"]),
         run_id=ObjectId(insp["run_id"]) if insp.get("run_id") and ObjectId.is_valid(insp.get("run_id")) else None,
+        user_id=effective_user_id,
         original_prediction=orig_pred,
         original_vlm_analysis=orig_vlm,
         detection_feedback=detection_feedback,
@@ -965,6 +970,7 @@ def get_feedback(db: Database, inspection_id: str) -> List[Dict[str, Any]]:
 
 def get_all_feedback(
     db: Database,
+    user_id: Optional[str] = "usr_default",
     model_id: Optional[str] = None,
     model_version_id: Optional[str] = None,
     run_id: Optional[str] = None,
@@ -972,22 +978,47 @@ def get_all_feedback(
 ) -> List[Dict[str, Any]]:
     """
     Returns aggregated feedback records for the Feedback Review Workspace.
-    Supports filtering by model_id, model_version_id, run_id, and feedback_type.
+    Supports filtering by user_id, model_id, model_version_id, run_id, and feedback_type.
     """
-    query = {}
-    if model_id and ObjectId.is_valid(model_id):
-        query["model_id"] = ObjectId(model_id)
-    if model_version_id and ObjectId.is_valid(model_version_id):
-        query["model_version_id"] = ObjectId(model_version_id)
-    if run_id and ObjectId.is_valid(run_id):
-        query["run_id"] = ObjectId(run_id)
+    and_clauses: List[Dict[str, Any]] = []
+
+    if user_id:
+        if user_id == "usr_default":
+            and_clauses.append({"$or": [{"user_id": "usr_default"}, {"user_id": {"$exists": False}}]})
+        else:
+            user_insp_ids = [doc["_id"] for doc in db.ad_inspections.find({"user_id": user_id}, {"_id": 1})]
+            all_keys = user_insp_ids + [str(i) for i in user_insp_ids]
+            and_clauses.append({"$or": [
+                {"user_id": user_id},
+                {"inspection_id": {"$in": all_keys}}
+            ]})
+
+    if model_id:
+        if ObjectId.is_valid(model_id):
+            and_clauses.append({"$or": [{"model_id": ObjectId(model_id)}, {"model_id": model_id}]})
+        else:
+            and_clauses.append({"model_id": model_id})
+
+    if model_version_id:
+        if ObjectId.is_valid(model_version_id):
+            and_clauses.append({"$or": [{"model_version_id": ObjectId(model_version_id)}, {"model_version_id": model_version_id}]})
+        else:
+            and_clauses.append({"model_version_id": model_version_id})
+
+    if run_id:
+        if ObjectId.is_valid(run_id):
+            and_clauses.append({"$or": [{"run_id": ObjectId(run_id)}, {"run_id": run_id}]})
+        else:
+            and_clauses.append({"run_id": run_id})
 
     if feedback_type:
-        query["$or"] = [
+        and_clauses.append({"$or": [
             {"detection_feedback": feedback_type},
             {"vlm_feedback_categories": feedback_type},
             {"feedback_type": feedback_type}
-        ]
+        ]})
+
+    query = {"$and": and_clauses} if and_clauses else {}
 
     cursor = db.ad_feedback.find(query).sort("created_at", -1)
     feedbacks = []

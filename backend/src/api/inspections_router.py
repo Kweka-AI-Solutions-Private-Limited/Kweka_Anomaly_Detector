@@ -99,6 +99,7 @@ def list_inspections_endpoint(
     )
 
 
+@router.get("/feedback")
 @router.get("/feedback/workspace")
 def list_workspace_feedback_endpoint(
     model_id: Optional[str] = Query(None),
@@ -144,7 +145,12 @@ def analyze_instance_vlm_endpoint(
 
 
 @router.post("/{inspection_id}/feedback", status_code=201)
-def submit_feedback_endpoint(inspection_id: str, req: FeedbackCreateRequest, db=Depends(get_db)):
+def submit_feedback_endpoint(
+    inspection_id: str,
+    req: FeedbackCreateRequest,
+    user_id: str = Depends(get_current_user_id),
+    db=Depends(get_db)
+):
     """Submits user feedback for an inspection."""
     return submit_feedback(
         db,
@@ -155,7 +161,8 @@ def submit_feedback_endpoint(inspection_id: str, req: FeedbackCreateRequest, db=
         corrected_location=req.corrected_location,
         corrected_severity=req.corrected_severity,
         comment=req.comment,
-        feedback_type=req.feedback_type
+        feedback_type=req.feedback_type,
+        user_id=user_id
     )
 
 

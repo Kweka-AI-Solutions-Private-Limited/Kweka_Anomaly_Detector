@@ -81,3 +81,8 @@ backend/tests/test_cucurbit_pathology.py
 backend/tests/test_leaf_disease.py
 backend/tests/test_nacl_*.py
 backend/tests/verify_*.py
+
+# Firebase CLI cache
+.firebase/
+**/.firebase/
+

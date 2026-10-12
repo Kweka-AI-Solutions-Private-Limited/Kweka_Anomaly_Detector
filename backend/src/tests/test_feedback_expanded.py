@@ -27,31 +27,33 @@ client = TestClient(app)
 def setup_test_db():
     """Setup clean test data in MongoDB before test execution."""
     # Clean up test collections
-    db["models"].delete_many({"name": "Test Feedback Model"})
-    db["model_versions"].delete_many({"version_number": 99})
-    db["inspection_runs"].delete_many({"run_number": 999})
-    db["inspections"].delete_many({"filename": "test_feedback_sample.png"})
-    db["feedback"].delete_many({"comment": {"$regex": "Test Feedback"}})
+    db["ad_models"].delete_many({"name": "Test Feedback Model"})
+    db["ad_model_versions"].delete_many({"version_number": 99})
+    db["ad_inspection_runs"].delete_many({"run_number": 999})
+    db["ad_inspections"].delete_many({"filename": "test_feedback_sample.png"})
+    db["ad_feedback"].delete_many({"comment": {"$regex": "Test Feedback"}})
 
     # Create parent hierarchy
-    model_res = db["models"].insert_one({
+    model_res = db["ad_models"].insert_one({
         "name": "Test Feedback Model",
         "description": "Model for feedback test suite",
         "reference_image_count": 5,
+        "user_id": "usr_default",
         "created_at": datetime.utcnow(),
     })
     model_id = str(model_res.inserted_id)
 
-    version_res = db["model_versions"].insert_one({
+    version_res = db["ad_model_versions"].insert_one({
         "model_id": model_id,
         "version_number": 99,
         "status": "active",
         "parameters": {},
+        "user_id": "usr_default",
         "created_at": datetime.utcnow(),
     })
     version_id = str(version_res.inserted_id)
 
-    run_res = db["inspection_runs"].insert_one({
+    run_res = db["ad_inspection_runs"].insert_one({
         "model_id": model_id,
         "model_version_id": version_id,
         "run_number": 999,
@@ -59,15 +61,17 @@ def setup_test_db():
         "total_images": 2,
         "completed_images": 2,
         "flagged_anomalies": 1,
+        "user_id": "usr_default",
         "created_at": datetime.utcnow(),
     })
     run_id = str(run_res.inserted_id)
 
     # Create REJECT inspection sample
-    reject_insp_res = db["inspections"].insert_one({
+    reject_insp_res = db["ad_inspections"].insert_one({
         "model_id": model_id,
         "model_version_id": version_id,
         "run_id": run_id,
+        "user_id": "usr_default",
         "filename": "test_feedback_sample.png",
         "storage_uri": "uploads/test_reject.png",
         "prediction": {
@@ -88,10 +92,11 @@ def setup_test_db():
     reject_insp_id = str(reject_insp_res.inserted_id)
 
     # Create PASS inspection sample
-    pass_insp_res = db["inspections"].insert_one({
+    pass_insp_res = db["ad_inspections"].insert_one({
         "model_id": model_id,
         "model_version_id": version_id,
         "run_id": run_id,
+        "user_id": "usr_default",
         "filename": "test_feedback_sample.png",
         "storage_uri": "uploads/test_pass.png",
         "prediction": {
@@ -113,11 +118,11 @@ def setup_test_db():
     }
 
     # Clean up after tests
-    db["models"].delete_many({"_id": model_res.inserted_id})
-    db["model_versions"].delete_many({"_id": version_res.inserted_id})
-    db["inspection_runs"].delete_many({"_id": run_res.inserted_id})
-    db["inspections"].delete_many({"filename": "test_feedback_sample.png"})
-    db["feedback"].delete_many({"comment": {"$regex": "Test Feedback"}})
+    db["ad_models"].delete_many({"_id": model_res.inserted_id})
+    db["ad_model_versions"].delete_many({"_id": version_res.inserted_id})
+    db["ad_inspection_runs"].delete_many({"_id": run_res.inserted_id})
+    db["ad_inspections"].delete_many({"filename": "test_feedback_sample.png"})
+    db["ad_feedback"].delete_many({"comment": {"$regex": "Test Feedback"}})
 
 
 def test_submit_valid_reject_feedback(setup_test_db):
