@@ -22,6 +22,7 @@ import {
   X,
   FileImage,
   Sparkles,
+  RefreshCw,
 } from 'lucide-react';
 import { getModels, activateModel, getModelVersions } from '../api/models';
 import { runInspection, retryVlmAnalysis, retryInstanceVlmAnalysis } from '../api/inspections';
@@ -349,6 +350,83 @@ export const Inspection: React.FC = () => {
     }
   };
 
+  // Retry single image inspection handler
+  const handleRetrySingleItem = async (index: number) => {
+    const item = batchItems[index];
+    if (!item || !selectedModelId) return;
+
+    setBatchItems((prev) =>
+      prev.map((b, i) => (i === index ? { ...b, status: 'processing', error: undefined } : b))
+    );
+
+    try {
+      let thresholdOverride: number | undefined = undefined;
+      if (thresholdMode === 'custom') {
+        const parsed = parseFloat(customThresholdInput);
+        if (!isNaN(parsed) && parsed > 0) {
+          thresholdOverride = parsed;
+        }
+      }
+      const singleRun = await createInspectionRun(selectedModelId, [item.file], thresholdOverride, inspectionMode);
+      const runId = singleRun.run_id || singleRun.id || (singleRun as any)._id;
+
+      if (singleRun.status === 'completed' || singleRun.status === 'partial' || singleRun.status === 'failed') {
+        const insp = (singleRun.inspections && singleRun.inspections[0]) as any;
+        if (insp) {
+          setBatchItems((prev) =>
+            prev.map((b, i) =>
+              i === index
+                ? {
+                    ...b,
+                    status: insp.status === 'failed' ? 'error' : 'completed',
+                    result: insp,
+                    error: insp.status === 'failed' ? (insp.error || 'Inference failed') : undefined,
+                  }
+                : b
+            )
+          );
+        } else {
+          setBatchItems((prev) =>
+            prev.map((b, i) =>
+              i === index ? { ...b, status: 'error', error: 'Inference did not return a result' } : b
+            )
+          );
+        }
+        return;
+      }
+
+      // Polling single run
+      const pollInterval = setInterval(async () => {
+        try {
+          const update = await getInspectionRun(runId);
+          if (update.status === 'completed' || update.status === 'partial' || update.status === 'failed') {
+            clearInterval(pollInterval);
+            const insp = (update.inspections && update.inspections[0]) as any;
+            setBatchItems((prev) =>
+              prev.map((b, i) =>
+                i === index
+                  ? {
+                      ...b,
+                      status: insp && insp.status !== 'failed' ? 'completed' : 'error',
+                      result: insp,
+                      error: insp && insp.status === 'failed' ? (insp.error || 'Inference failed') : undefined,
+                    }
+                  : b
+              )
+            );
+          }
+        } catch (e) {
+          clearInterval(pollInterval);
+        }
+      }, 1000);
+    } catch (err: any) {
+      const detail = err.response?.data?.detail || err.message || 'Retry failed';
+      setBatchItems((prev) =>
+        prev.map((b, i) => (i === index ? { ...b, status: 'error', error: detail } : b))
+      );
+    }
+  };
+
   // Calculate Batch Summary Stats
   const passCount = batchItems.filter(
     (b) => b.result?.prediction?.status === 'normal' || b.result?.prediction?.status === 'PASS'
@@ -362,19 +440,18 @@ export const Inspection: React.FC = () => {
   }
 
   return (
-    <div className="space-y-4">
-      {error && (
-        <div className="p-3 bg-reject-50 border border-reject-200 text-reject-700 text-xs rounded-md flex items-center justify-between">
-          <span>{error}</span>
-          <button onClick={() => setError(null)} className="text-reject-600 underline">
-            Dismiss
-          </button>
-        </div>
-      )}
-
+    <div className="space-y-4 w-full min-w-0">
       {/* STAGE 1: INSPECTION SETUP SCREEN */}
       {stage === 'setup' && (
         <div className="w-full max-w-6xl mx-auto space-y-6">
+          {error && (
+            <div className="p-3 bg-reject-50 border border-reject-200 text-reject-700 text-xs rounded-xl flex items-center justify-between">
+              <span>{error}</span>
+              <button onClick={() => setError(null)} className="text-reject-600 underline font-semibold">
+                Dismiss
+              </button>
+            </div>
+          )}
           {/* Header */}
           <div className="bg-white p-6 rounded-lg border border-industrial-200 shadow-sm">
             <h1 className="text-xl font-bold text-industrial-900 tracking-tight">New Inspection</h1>
@@ -484,7 +561,7 @@ export const Inspection: React.FC = () => {
                   </p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <button
                     type="button"
                     onClick={() => setInspectionMode('single_image')}
@@ -729,10 +806,10 @@ export const Inspection: React.FC = () => {
 
       {/* STAGE 2: PROCESSING & INSPECTION WORKSPACE SCREEN */}
       {stage === 'workspace' && (
-        <div className="space-y-4 h-[calc(100vh-100px)] flex flex-col">
+        <div className="space-y-4 min-h-[calc(100vh-120px)] lg:h-[calc(100vh-140px)] flex flex-col">
           {/* Top Bar with Setup Reset & Batch Progress */}
-          <div className="bg-white p-3.5 rounded-lg border border-industrial-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 flex-shrink-0">
-            <div className="flex items-center space-x-3">
+          <div className="bg-white p-3 sm:p-4 rounded-xl border border-industrial-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
+            <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
               <Button
                 variant="outline"
                 size="sm"
@@ -741,12 +818,12 @@ export const Inspection: React.FC = () => {
               >
                 ← Setup New Inspection
               </Button>
-              <div className="h-4 w-px bg-industrial-200" />
-              <div>
+              <div className="hidden sm:block h-4 w-px bg-industrial-200" />
+              <div className="min-w-0">
                 <span className="text-[10px] font-mono text-industrial-400 uppercase font-semibold block">
                   Active Model
                 </span>
-                <span className="text-xs font-bold text-industrial-900">
+                <span className="text-xs font-bold text-industrial-900 truncate block max-w-[200px]">
                   {selectedModel?.name}
                 </span>
               </div>
@@ -754,14 +831,14 @@ export const Inspection: React.FC = () => {
 
             {/* Batch Progress Status */}
             {isProcessingBatch ? (
-              <div className="flex items-center space-x-3 bg-brand-50 border border-brand-200 px-3 py-1.5 rounded-md text-xs font-mono">
-                <div className="w-3.5 h-3.5 border-2 border-brand-600 border-t-transparent rounded-full animate-spin" />
-                <span className="text-brand-800 font-semibold">
+              <div className="flex items-center space-x-2.5 bg-brand-50 border border-brand-200 px-3 py-1.5 rounded-lg text-xs font-mono">
+                <div className="w-3.5 h-3.5 border-2 border-brand-600 border-t-transparent rounded-full animate-spin shrink-0" />
+                <span className="text-brand-800 font-semibold truncate">
                   Analyzing test images... {processedCount} / {batchItems.length} completed
                 </span>
               </div>
             ) : (
-              <div className="flex items-center space-x-2 text-xs font-mono">
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs font-mono">
                 <span className="font-bold text-industrial-700">
                   {batchItems.length} Images Inspected:
                 </span>
@@ -771,21 +848,39 @@ export const Inspection: React.FC = () => {
                 <span className="bg-reject-50 text-reject-700 px-2 py-0.5 rounded font-bold border border-reject-200">
                   {rejectCount} REJECT
                 </span>
+                {batchItems.filter(b => b.status === 'error').length > 0 && (
+                  <span className="bg-reject-100 text-reject-800 px-2 py-0.5 rounded font-bold border border-reject-300">
+                    {batchItems.filter(b => b.status === 'error').length} FAILED
+                  </span>
+                )}
               </div>
             )}
           </div>
 
+          {/* Optional inline workspace error notice */}
+          {error && (
+            <div className="p-3 bg-reject-50 border border-reject-200 text-reject-700 text-xs rounded-xl flex items-center justify-between shrink-0">
+              <span className="truncate mr-2">{error}</span>
+              <button onClick={() => setError(null)} className="text-reject-600 underline font-semibold shrink-0">
+                Dismiss
+              </button>
+            </div>
+          )}
+
           {/* Main 3-Column Layout */}
-          <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-4 min-h-0">
-            {/* LEFT PANEL: Test Queue (2 Cols) */}
-            <div className="lg:col-span-2 bg-white rounded-lg border border-industrial-200 flex flex-col h-full overflow-hidden shadow-sm">
-              <div className="p-3 border-b border-industrial-200 bg-industrial-50 flex items-center justify-between">
+          <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 min-h-0">
+            {/* LEFT PANEL: Test Queue (2 Cols on desktop, horizontal carousel reel on mobile/tablet) */}
+            <div className="lg:col-span-2 bg-white rounded-xl border border-industrial-200 flex flex-col shadow-sm overflow-hidden shrink-0">
+              <div className="p-2.5 sm:p-3 border-b border-industrial-200 bg-industrial-50 flex items-center justify-between shrink-0">
                 <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-industrial-700 truncate">
                   Queue ({batchItems.length})
                 </h3>
+                <span className="text-[10px] text-industrial-400 font-mono lg:hidden">
+                  Swipe horizontal →
+                </span>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-2 space-y-2">
+              <div className="p-2 flex lg:flex-col overflow-x-auto lg:overflow-y-auto gap-2 scrollbar-thin">
                 {batchItems.map((item, idx) => {
                   const isSelected = idx === selectedIndex;
                   const predStatus = item.result?.prediction?.status;
@@ -797,17 +892,25 @@ export const Inspection: React.FC = () => {
                         setSelectedIndex(idx);
                         setFeedbackSubmitted(false);
                       }}
-                      className={`p-2.5 rounded-md border flex items-center space-x-3 cursor-pointer transition-all ${isSelected
-                          ? 'border-brand-500 bg-brand-50/50 shadow-sm ring-1 ring-brand-500'
-                          : 'border-industrial-200 hover:border-industrial-300 bg-white'
-                        }`}
+                      className={`shrink-0 w-44 sm:w-52 lg:w-full p-2 sm:p-2.5 rounded-lg border flex items-center space-x-2.5 cursor-pointer transition-all ${
+                        isSelected
+                          ? 'border-brand-500 bg-brand-50/60 shadow-sm ring-1 ring-brand-500'
+                          : item.status === 'error'
+                            ? 'border-reject-300 bg-reject-50/40 hover:border-reject-400'
+                            : 'border-industrial-200 hover:border-industrial-300 bg-white'
+                      }`}
                     >
-                      <div className="w-10 h-10 rounded border border-industrial-200 overflow-hidden bg-industrial-100 flex-shrink-0 relative">
+                      <div className="w-10 h-10 rounded border border-industrial-200 overflow-hidden bg-industrial-100 shrink-0 relative">
                         <img src={item.previewUrl} alt="Thumbnail" className="w-full h-full object-cover" />
+                        {item.status === 'error' && (
+                          <div className="absolute inset-0 bg-reject-900/60 flex items-center justify-center">
+                            <AlertTriangle className="w-3.5 h-3.5 text-white" />
+                          </div>
+                        )}
                       </div>
 
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-mono font-medium text-industrial-900 truncate">
+                        <p className="text-xs font-mono font-semibold text-industrial-900 truncate">
                           {item.file.name}
                         </p>
                         <div className="mt-1 flex items-center space-x-1.5">
@@ -827,7 +930,7 @@ export const Inspection: React.FC = () => {
                             </>
                           )}
                           {item.status === 'error' && (
-                            <span className="text-[10px] font-mono text-reject-600 font-semibold">
+                            <span className="text-[10px] font-mono text-reject-600 font-bold uppercase">
                               Error
                             </span>
                           )}
@@ -864,79 +967,110 @@ export const Inspection: React.FC = () => {
               </div>
             ) : (
               <>
-                {/* CENTER PANEL: Image Viewer (6 Cols, shifted left) */}
-                <div className="lg:col-span-6 bg-white rounded-lg border border-industrial-200 flex flex-col h-full overflow-hidden shadow-sm">
-                  <div className="p-3 border-b border-industrial-200 bg-industrial-50 flex items-center justify-between flex-shrink-0">
-                    <div className="flex items-center space-x-1 bg-white rounded border border-industrial-200 p-0.5">
+                {/* CENTER PANEL: Image Viewer (6 Cols on desktop) */}
+                <div className="lg:col-span-6 bg-white rounded-xl border border-industrial-200 flex flex-col shadow-sm overflow-hidden min-h-[360px] sm:min-h-[460px] lg:min-h-0">
+                  {/* Toolbar */}
+                  <div className="p-2 sm:p-2.5 border-b border-industrial-200 bg-industrial-50 flex flex-wrap items-center justify-between gap-2 shrink-0">
+                    <div className="flex items-center space-x-1 bg-white rounded-lg border border-industrial-200 p-0.5">
                       <button
                         onClick={() => setActiveTab('overlay')}
-                        className={`px-3 py-1 text-xs font-medium rounded transition-colors ${activeTab === 'overlay' ? 'bg-brand-600 text-white shadow-sm' : 'text-industrial-600 hover:text-industrial-900'
-                          }`}
+                        className={`px-2.5 sm:px-3 py-1 text-[11px] sm:text-xs font-semibold rounded-md transition-colors ${
+                          activeTab === 'overlay' ? 'bg-brand-600 text-white shadow-xs' : 'text-industrial-600 hover:text-industrial-900'
+                        }`}
                       >
                         Heatmap Overlay
                       </button>
                       <button
                         onClick={() => setActiveTab('original')}
-                        className={`px-3 py-1 text-xs font-medium rounded transition-colors ${activeTab === 'original' ? 'bg-brand-600 text-white shadow-sm' : 'text-industrial-600 hover:text-industrial-900'
-                          }`}
+                        className={`px-2.5 sm:px-3 py-1 text-[11px] sm:text-xs font-semibold rounded-md transition-colors ${
+                          activeTab === 'original' ? 'bg-brand-600 text-white shadow-xs' : 'text-industrial-600 hover:text-industrial-900'
+                        }`}
                       >
                         Original Image
                       </button>
                       <button
                         onClick={() => setActiveTab('heatmap')}
-                        className={`px-3 py-1 text-xs font-medium rounded transition-colors ${activeTab === 'heatmap' ? 'bg-brand-600 text-white shadow-sm' : 'text-industrial-600 hover:text-industrial-900'
-                          }`}
+                        className={`px-2.5 sm:px-3 py-1 text-[11px] sm:text-xs font-semibold rounded-md transition-colors ${
+                          activeTab === 'heatmap' ? 'bg-brand-600 text-white shadow-xs' : 'text-industrial-600 hover:text-industrial-900'
+                        }`}
                       >
                         Heatmap Only
                       </button>
                     </div>
 
-                    {activeTab === 'overlay' && (
-                      <div className="flex items-center space-x-2 text-xs font-mono text-industrial-600">
-                        <Sliders className="w-3.5 h-3.5" />
-                        <span>Opacity:</span>
-                        <input
-                          type="range"
-                          min="0.1"
-                          max="1.0"
-                          step="0.05"
-                          value={heatmapOpacity}
-                          onChange={(e) => setHeatmapOpacity(parseFloat(e.target.value))}
-                          className="w-20 h-1 bg-industrial-200 rounded-lg appearance-none cursor-pointer accent-brand-600"
-                        />
-                      </div>
-                    )}
+                    <div className="flex items-center space-x-2 sm:space-x-3">
+                      {activeTab === 'overlay' && (
+                        <div className="flex items-center space-x-1.5 text-xs font-mono text-industrial-600">
+                          <Sliders className="w-3.5 h-3.5 hidden sm:inline" />
+                          <span className="text-[11px]">Opacity:</span>
+                          <input
+                            type="range"
+                            min="0.1"
+                            max="1.0"
+                            step="0.05"
+                            value={heatmapOpacity}
+                            onChange={(e) => setHeatmapOpacity(parseFloat(e.target.value))}
+                            className="w-16 sm:w-20 h-1 bg-industrial-200 rounded-lg appearance-none cursor-pointer accent-brand-600"
+                          />
+                        </div>
+                      )}
 
-                    <div className="flex items-center space-x-1">
-                      <button
-                        onClick={() => setZoomLevel((z) => Math.max(0.5, z - 0.25))}
-                        className="p-1 text-industrial-500 hover:text-industrial-900 hover:bg-industrial-100 rounded"
-                      >
-                        <ZoomOut className="w-4 h-4" />
-                      </button>
-                      <span className="text-xs font-mono text-industrial-600 w-10 text-center">
-                        {Math.round(zoomLevel * 100)}%
-                      </span>
-                      <button
-                        onClick={() => setZoomLevel((z) => Math.min(3, z + 0.25))}
-                        className="p-1 text-industrial-500 hover:text-industrial-900 hover:bg-industrial-100 rounded"
-                      >
-                        <ZoomIn className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => setZoomLevel(1)}
-                        className="p-1 text-industrial-500 hover:text-industrial-900 hover:bg-industrial-100 rounded"
-                      >
-                        <Maximize2 className="w-4 h-4" />
-                      </button>
+                      <div className="flex items-center space-x-1">
+                        <button
+                          onClick={() => setZoomLevel((z) => Math.max(0.5, z - 0.25))}
+                          className="p-1 text-industrial-500 hover:text-industrial-900 hover:bg-industrial-100 rounded"
+                          title="Zoom Out"
+                        >
+                          <ZoomOut className="w-4 h-4" />
+                        </button>
+                        <span className="text-xs font-mono text-industrial-600 w-9 text-center">
+                          {Math.round(zoomLevel * 100)}%
+                        </span>
+                        <button
+                          onClick={() => setZoomLevel((z) => Math.min(3, z + 0.25))}
+                          className="p-1 text-industrial-500 hover:text-industrial-900 hover:bg-industrial-100 rounded"
+                          title="Zoom In"
+                        >
+                          <ZoomIn className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => setZoomLevel(1)}
+                          className="p-1 text-industrial-500 hover:text-industrial-900 hover:bg-industrial-100 rounded"
+                          title="Reset Zoom"
+                        >
+                          <Maximize2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </div>
                   </div>
 
-                  {/* Viewport */}
-                  <div className="flex-1 bg-industrial-900 relative overflow-hidden flex items-center justify-center p-4">
+                  {/* Viewport Area */}
+                  <div className="flex-1 bg-industrial-900 relative overflow-hidden flex items-center justify-center p-3 sm:p-4 min-h-[300px] sm:min-h-[420px] lg:min-h-0">
+                    {/* Viewport Floating Error Banner */}
+                    {currentItem?.status === 'error' && (
+                      <div className="absolute top-3 left-3 right-3 z-20 bg-reject-950/90 border border-reject-500/50 backdrop-blur-md rounded-xl p-3 flex items-center justify-between shadow-2xl animate-in fade-in slide-in-from-top-1">
+                        <div className="flex items-center space-x-2.5 min-w-0">
+                          <div className="p-1.5 rounded-lg bg-reject-500/20 text-reject-400 shrink-0">
+                            <AlertTriangle className="w-4 h-4" />
+                          </div>
+                          <div className="min-w-0">
+                            <span className="text-xs font-bold text-reject-200 font-mono uppercase tracking-wide block">
+                              Inference Error
+                            </span>
+                            <p className="text-[11px] text-reject-300 font-mono truncate">
+                              {currentItem.error || (currentItem.result as any)?.error || 'Anomaly detection failed for this image.'}
+                            </p>
+                          </div>
+                        </div>
+                        <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-reject-900/90 border border-reject-700 text-reject-300 uppercase shrink-0">
+                          Failed
+                        </span>
+                      </div>
+                    )}
+
                     {!currentItem ? (
                       <div className="text-center text-industrial-500 font-mono text-xs">
-                        Select a test image from left.
+                        Select a test image from the queue.
                       </div>
                     ) : currentItem.status === 'processing' ? (
                       <div className="text-center space-y-3">
@@ -951,38 +1085,29 @@ export const Inspection: React.FC = () => {
                         <img
                           src={currentItem.previewUrl}
                           alt="Original"
-                          className={`max-h-[440px] w-auto object-contain rounded shadow-lg ${activeTab === 'heatmap' ? 'opacity-0' : 'opacity-100'
-                            }`}
+                          className={`max-h-[320px] sm:max-h-[440px] w-auto max-w-full object-contain rounded-lg shadow-lg ${
+                            activeTab === 'heatmap' ? 'opacity-0' : 'opacity-100'
+                          }`}
                         />
 
                         {currentItem.result?.localization?.heatmap_uri && activeTab !== 'original' && (
                           <img
                             src={getStorageUrl(currentItem.result.localization.heatmap_uri)}
                             alt="Heatmap"
-                            className="absolute inset-0 w-full h-full object-contain rounded pointer-events-none"
+                            className="absolute inset-0 w-full h-full object-contain rounded-lg pointer-events-none"
                             style={{
                               opacity: activeTab === 'heatmap' ? 1.0 : heatmapOpacity,
                             }}
                           />
-                        )}
-
-                        {currentItem.status === 'error' && (
-                          <div className="absolute inset-0 bg-black/60 backdrop-blur-[2px] rounded flex flex-col items-center justify-center p-4 text-center">
-                            <AlertTriangle className="w-10 h-10 text-reject-400 mb-2" />
-                            <p className="text-sm font-bold text-reject-200 font-mono uppercase tracking-wider">Inspection Error</p>
-                            <p className="text-xs text-reject-300 font-mono mt-1 max-w-xs leading-relaxed">
-                              {currentItem.error || (currentItem.result as any)?.error || 'Inference encountered an error.'}
-                            </p>
-                          </div>
                         )}
                       </div>
                     )}
                   </div>
                 </div>
 
-                {/* RIGHT PANEL: Result & Metadata (4 Cols) */}
-                <div className="lg:col-span-4 bg-white rounded-lg border border-industrial-200 flex flex-col h-full overflow-hidden shadow-sm">
-                  <div className="p-3 border-b border-industrial-200 bg-industrial-50">
+                {/* RIGHT PANEL: Result & Metadata (4 Cols on desktop) */}
+                <div className="lg:col-span-4 bg-white rounded-xl border border-industrial-200 flex flex-col shadow-sm overflow-hidden">
+                  <div className="p-3 border-b border-industrial-200 bg-industrial-50 shrink-0">
                     <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-industrial-700">
                       Inspection Result
                     </h3>
@@ -991,17 +1116,73 @@ export const Inspection: React.FC = () => {
                   <div className="flex-1 p-4 overflow-y-auto space-y-4 text-xs">
                     {!currentItem ? (
                       <div className="h-full flex items-center justify-center text-center text-industrial-400 font-mono text-xs">
-                        Select a test image from left.
+                        Select a test image from the queue.
                       </div>
                     ) : currentItem.status === 'error' ? (
-                      <div className="p-4 bg-reject-50 border border-reject-200 rounded-lg text-center space-y-2">
-                        <AlertTriangle className="w-8 h-8 text-reject-600 mx-auto" />
-                        <h2 className="text-base font-extrabold text-reject-800 tracking-tight font-mono uppercase">
-                          Inspection Failed
-                        </h2>
-                        <p className="text-xs text-reject-600 font-mono">
-                          {currentItem.error || (currentItem.result as any)?.error || 'An error occurred during anomaly inference.'}
-                        </p>
+                      <div className="p-5 bg-reject-50 border border-reject-200 rounded-xl space-y-4">
+                        <div className="text-center space-y-2">
+                          <div className="w-12 h-12 rounded-2xl bg-reject-100 border border-reject-200 text-reject-600 flex items-center justify-center mx-auto shadow-xs">
+                            <AlertTriangle className="w-6 h-6 stroke-[2.2]" />
+                          </div>
+                          <h2 className="text-base font-extrabold text-reject-900 tracking-tight font-mono uppercase">
+                            Inspection Failed
+                          </h2>
+                          <div className="bg-white p-3 rounded-lg border border-reject-200 text-left">
+                            <p className="text-[11px] font-bold text-reject-900 font-mono uppercase mb-0.5">Error Detail:</p>
+                            <p className="text-xs text-reject-700 font-mono leading-relaxed">
+                              {currentItem.error || (currentItem.result as any)?.error || 'An error occurred during anomaly inference.'}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Diagnostic Metadata Box */}
+                        <div className="bg-white p-3 rounded-lg border border-reject-200 space-y-2 font-mono text-xs">
+                          <div className="flex justify-between items-center text-industrial-600">
+                            <span className="text-industrial-500">Target Model:</span>
+                            <span className="font-bold text-industrial-900 truncate max-w-[150px]">{selectedModel?.name}</span>
+                          </div>
+                          <div className="flex justify-between items-center text-industrial-600">
+                            <span className="text-industrial-500">File Name:</span>
+                            <span className="font-bold text-industrial-900 truncate max-w-[150px]">{currentItem.file.name}</span>
+                          </div>
+                          <div className="flex justify-between items-center text-industrial-600">
+                            <span className="text-industrial-500">Mode:</span>
+                            <span className="font-bold text-brand-700 capitalize">
+                              {inspectionMode === 'multi_instance' ? 'Multi-Product (Gemini)' : 'Single Product (PatchCore)'}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Troubleshooting guidance */}
+                        <div className="p-3 bg-reject-100/60 rounded-lg text-[11px] text-reject-800 space-y-1 font-sans">
+                          <p className="font-bold">Suggested Action:</p>
+                          <p className="leading-snug text-reject-700">
+                            Check that model is in <strong className="font-semibold text-reject-900">ACTIVE</strong> status with a trained coreset, and retry this image.
+                          </p>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="space-y-2 pt-1">
+                          <Button
+                            type="button"
+                            variant="primary"
+                            size="sm"
+                            className="w-full justify-center bg-reject-600 hover:bg-reject-700 text-white"
+                            onClick={() => handleRetrySingleItem(selectedIndex)}
+                            icon={<RefreshCw className="w-3.5 h-3.5" />}
+                          >
+                            Retry This Image
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="w-full justify-center text-xs"
+                            onClick={() => setStage('setup')}
+                          >
+                            Return to Setup
+                          </Button>
+                        </div>
                       </div>
                     ) : currentItem.status === 'processing' || !currentItem.result ? (
                       <>
@@ -1212,7 +1393,7 @@ export const Inspection: React.FC = () => {
           </div>
 
           {/* Bottom Bar Navigation */}
-          <div className="bg-white p-3 rounded-lg border border-industrial-200 shadow-sm flex items-center justify-between flex-shrink-0">
+          <div className="bg-white p-2.5 sm:p-3 rounded-xl border border-industrial-200 shadow-sm flex items-center justify-between shrink-0">
             <Button
               variant="outline"
               size="sm"

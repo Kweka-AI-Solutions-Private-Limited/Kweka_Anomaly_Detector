@@ -196,7 +196,7 @@ export const AppLayout: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen w-screen bg-industrial-100 flex overflow-x-hidden">
+    <div className="min-h-screen w-full min-w-0 max-w-full bg-industrial-100 flex overflow-x-hidden">
       {/* Responsive Sidebar */}
       <Sidebar isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
 
