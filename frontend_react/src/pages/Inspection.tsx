@@ -244,8 +244,10 @@ export const Inspection: React.FC = () => {
       const updateBatchFromRun = (runData: InspectionRun) => {
         if (!runData.inspections || runData.inspections.length === 0) return;
         setBatchItems((prev) =>
-          prev.map((item) => {
-            const insp: any = runData.inspections?.find((i: any) => i.filename === item.file.name);
+          prev.map((item, idx) => {
+            const insp: any =
+              runData.inspections?.find((i: any) => i.filename === item.file.name) ||
+              runData.inspections?.[idx];
             if (insp) {
               // 'review' is a terminal state for multi-instance inspections (e.g. PATCHCORE_INSTANCE_FAILED, NO_OBJECTS_DETECTED)
               const isTerminal = insp.status === 'completed' || insp.status === 'review';
@@ -261,11 +263,18 @@ export const Inspection: React.FC = () => {
         );
       };
 
-      // Check if run already finished (e.g. synchronous unit test mode)
+      // Check if run already finished (e.g. synchronous execution mode)
       if (runResult.status === 'completed' || runResult.status === 'partial' || runResult.status === 'failed') {
         updateBatchFromRun(runResult);
         setProcessedCount(runResult.completed_images || testFileItems.length);
         setIsProcessingBatch(false);
+        setBatchItems((prev) =>
+          prev.map((item) =>
+            item.status === 'processing'
+              ? { ...item, status: 'error', error: 'Inference did not return a verdict' }
+              : item
+          )
+        );
         return;
       }
 
@@ -281,6 +290,13 @@ export const Inspection: React.FC = () => {
           if (runUpdate.status === 'completed' || runUpdate.status === 'partial' || runUpdate.status === 'failed') {
             stopPolling();
             setIsProcessingBatch(false);
+            setBatchItems((prev) =>
+              prev.map((item) =>
+                item.status === 'processing'
+                  ? { ...item, status: 'error', error: 'Inference did not return a verdict' }
+                  : item
+              )
+            );
           }
         } catch (pollErr: any) {
           console.warn('Inspection run polling error:', pollErr);
@@ -931,6 +947,14 @@ export const Inspection: React.FC = () => {
                         <div className="w-10 h-10 border-4 border-brand-500 border-t-transparent rounded-full animate-spin mx-auto" />
                         <p className="text-xs font-mono text-brand-400">Running PatchCore Feature Comparison...</p>
                       </div>
+                    ) : currentItem.status === 'error' ? (
+                      <div className="text-center space-y-3 p-6 max-w-sm">
+                        <AlertTriangle className="w-10 h-10 text-reject-400 mx-auto" />
+                        <p className="text-sm font-bold text-reject-300">Inspection Failed</p>
+                        <p className="text-xs font-mono text-reject-400 leading-relaxed">
+                          {currentItem.error || (currentItem.result as any)?.error || 'Inference encountered an error.'}
+                        </p>
+                      </div>
                     ) : (
                       <div
                         className="relative transition-transform duration-200 ease-out max-h-full max-w-full"
@@ -972,6 +996,16 @@ export const Inspection: React.FC = () => {
                     {!currentItem ? (
                       <div className="h-full flex items-center justify-center text-center text-industrial-400 font-mono text-xs">
                         Select a test image from left.
+                      </div>
+                    ) : currentItem.status === 'error' ? (
+                      <div className="p-4 bg-reject-50 border border-reject-200 rounded-lg text-center space-y-2">
+                        <AlertTriangle className="w-8 h-8 text-reject-600 mx-auto" />
+                        <h2 className="text-base font-extrabold text-reject-800 tracking-tight font-mono uppercase">
+                          Inspection Failed
+                        </h2>
+                        <p className="text-xs text-reject-600 font-mono">
+                          {currentItem.error || (currentItem.result as any)?.error || 'An error occurred during anomaly inference.'}
+                        </p>
                       </div>
                     ) : currentItem.status === 'processing' || !currentItem.result ? (
                       <>

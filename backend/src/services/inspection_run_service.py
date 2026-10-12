@@ -129,7 +129,7 @@ def _process_inspection_run_background(
             print(f"[WARN] Inspection item '{filename}' in run '{run_id}' failed: {e}")
             try:
                 db.ad_inspections.update_many(
-                    {"run_id": ObjectId(run_id), "input.filename": filename, "status": "processing"},
+                    {"run_id": ObjectId(run_id), "input.filename": filename},
                     {"$set": {"status": "failed", "error": str(e)}}
                 )
             except Exception:
@@ -353,7 +353,7 @@ def get_inspection_run(db: Database, run_id: str, user_id: Optional[str] = None)
     inspections = []
     for insp_doc in cursor:
         insp_id = str(insp_doc["_id"])
-        res_doc = db.ad_inspections.find_one({"inspection_id": ObjectId(insp_id)})
+        res_doc = db.ad_inspection_results.find_one({"inspection_id": ObjectId(insp_id)})
         inspections.append(normalize_inspection_payload(insp_doc, res_doc))
 
     serialized_run["inspections"] = inspections

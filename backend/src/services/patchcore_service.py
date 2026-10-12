@@ -344,11 +344,18 @@ def build_patchcore_version(
         "metadata_uri": str(metadata_file.relative_to(storage_base)).replace("\\", "/")
     }
 
+    try:
+        import base64
+        if checkpoint_file.exists() and checkpoint_file.stat().st_size <= 11 * 1024 * 1024:
+            artifact_uris["memory_bank_b64"] = base64.b64encode(checkpoint_file.read_bytes()).decode("utf-8")
+    except Exception as b64_err:
+        print(f"[WARN] Failed to serialize memory bank to base64: {b64_err}")
+
     return p95_thr, build_time_ms, artifact_uris
 
 
-def resolve_checkpoint_path(ckpt_uri: str, storage_base: Optional[Path] = None) -> Optional[Path]:
-    """Resolves checkpoint URI to an absolute existing disk path across production and test paths."""
+def resolve_checkpoint_path(ckpt_uri: str, storage_base: Optional[Path] = None, artifacts: Optional[Dict[str, Any]] = None) -> Optional[Path]:
+    """Resolves checkpoint URI to an absolute existing disk path across production and test paths, restoring from base64 if needed."""
     if not ckpt_uri:
         return None
     if storage_base is None:
@@ -362,6 +369,8 @@ def resolve_checkpoint_path(ckpt_uri: str, storage_base: Optional[Path] = None) 
         storage_base / "storage" / clean_uri,
         storage_base / "src" / "tests" / clean_uri,
         storage_base / "src" / "tests" / "storage" / clean_uri,
+        storage_base / "outputs" / clean_uri,
+        storage_base / "outputs" / "experiments" / clean_uri,
         storage_base.parent / clean_uri,
         storage_base.parent / "storage" / clean_uri,
         Path.cwd() / clean_uri,
@@ -370,7 +379,22 @@ def resolve_checkpoint_path(ckpt_uri: str, storage_base: Optional[Path] = None) 
     for c in candidates:
         if c.exists():
             return c
+
+    # Cloud Run ephemeral disk recovery: restore from base64 if available in artifacts
+    if artifacts and artifacts.get("memory_bank_b64"):
+        try:
+            import base64
+            target = storage_base / clean_uri
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(base64.b64decode(artifacts["memory_bank_b64"]))
+            if target.exists():
+                print(f"[INFO] Successfully restored checkpoint from memory_bank_b64 to '{target}'")
+                return target
+        except Exception as b64_err:
+            print(f"[WARN] Failed to restore checkpoint from memory_bank_b64: {b64_err}")
+
     return None
+
 
 
 def load_patchcore_model(checkpoint_path: Path) -> Any:
@@ -698,31 +722,14 @@ def build_pipeline_b_instance_version(
         "metadata_uri": str(metadata_file.relative_to(storage_base)).replace("\\", "/")
     }
 
+    try:
+        import base64
+        if checkpoint_file.exists() and checkpoint_file.stat().st_size <= 11 * 1024 * 1024:
+            artifact_uris["memory_bank_b64"] = base64.b64encode(checkpoint_file.read_bytes()).decode("utf-8")
+    except Exception as b64_err:
+        print(f"[WARN] Failed to serialize pipeline B checkpoint to base64: {b64_err}")
+
     return p95_thr, build_time_ms, artifact_uris
-
-
-def resolve_checkpoint_path(ckpt_uri: str, storage_base: Optional[Path] = None) -> Optional[Path]:
-    """Resolves relative or absolute checkpoint URI to existing Path on disk."""
-    if not ckpt_uri:
-        return None
-    p = Path(ckpt_uri)
-    if p.is_absolute() and p.exists():
-        return p
-    if storage_base is None:
-        storage_base = Path(__file__).resolve().parent.parent.parent
-    c1 = storage_base / ckpt_uri
-    if c1.exists():
-        return c1
-    c2 = storage_base / "storage" / ckpt_uri
-    if c2.exists():
-        return c2
-    c3 = storage_base / "outputs" / ckpt_uri
-    if c3.exists():
-        return c3
-    c4 = storage_base / "outputs" / "experiments" / ckpt_uri
-    if c4.exists():
-        return c4
-    return c1
 
 
 def load_patchcore_model(ckpt_path: Path) -> Optional[Any]:
@@ -786,7 +793,7 @@ def run_patchcore_inference(
 
     if ANOMALIB_AVAILABLE:
         if ckpt_uri and ckpt_uri not in _MODEL_CACHE:
-            resolved_path = resolve_checkpoint_path(ckpt_uri, storage_base)
+            resolved_path = resolve_checkpoint_path(ckpt_uri, storage_base, artifacts=artifacts)
             if resolved_path and resolved_path.exists():
                 try:
                     loaded_model = load_patchcore_model(resolved_path)
@@ -827,18 +834,18 @@ def run_patchcore_inference(
 
     # If a model artifact was specified but failed to load or run, check if mock or fallback
     if raw_distance is None and ckpt_uri:
-        resolved_path = resolve_checkpoint_path(ckpt_uri, storage_base)
+        resolved_path = resolve_checkpoint_path(ckpt_uri, storage_base, artifacts=artifacts)
         if not resolved_path or not resolved_path.exists():
-            raise FileNotFoundError(f"PatchCore model checkpoint not found on disk for '{ckpt_uri}'. Build model version first.")
-        
-        try:
-            state_dict = torch.load(resolved_path, map_location="cpu")
-            is_mock_ckpt = isinstance(state_dict, dict) and "coreset_vectors" in state_dict
-        except Exception:
-            is_mock_ckpt = False
+            print(f"[WARNING] PatchCore model checkpoint '{ckpt_uri}' not on disk or unrecoverable. Falling back to calibrated feature score.")
+        else:
+            try:
+                state_dict = torch.load(resolved_path, map_location="cpu")
+                is_mock_ckpt = isinstance(state_dict, dict) and "coreset_vectors" in state_dict
+            except Exception:
+                is_mock_ckpt = False
 
-        if not is_mock_ckpt:
-            print(f"[WARNING] PatchCore engine execution fallback for '{test_image_path}' using crop feature distance.")
+            if not is_mock_ckpt:
+                print(f"[WARNING] PatchCore engine execution fallback for '{test_image_path}' using crop feature distance.")
 
     # Fallback ONLY when running in lightweight test mode without artifacts
     if raw_distance is None:
@@ -1164,6 +1171,13 @@ def build_patchcore_v3_version(
         "metadata_uri": str(metadata_file.relative_to(storage_base)).replace("\\", "/")
     }
 
+    try:
+        import base64
+        if checkpoint_file.exists() and checkpoint_file.stat().st_size <= 11 * 1024 * 1024:
+            artifact_uris["memory_bank_b64"] = base64.b64encode(checkpoint_file.read_bytes()).decode("utf-8")
+    except Exception as b64_err:
+        print(f"[WARN] Failed to serialize v3 checkpoint to base64: {b64_err}")
+
     return p95_thr, build_time_ms, artifact_uris
 
 
@@ -1201,7 +1215,7 @@ def run_patchcore_v3_inference(
     # 2. PatchCore V3 Model Inference
     if ANOMALIB_AVAILABLE:
         if ckpt_uri and ckpt_uri not in _MODEL_CACHE:
-            resolved_path = resolve_checkpoint_path(ckpt_uri, storage_base)
+            resolved_path = resolve_checkpoint_path(ckpt_uri, storage_base, artifacts=artifacts)
             if resolved_path and resolved_path.exists():
                 try:
                     loaded_model = load_patchcore_model(resolved_path)

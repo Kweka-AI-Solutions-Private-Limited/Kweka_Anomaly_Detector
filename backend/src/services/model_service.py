@@ -609,6 +609,16 @@ def get_model_version(db: Database, model_id: str, version_id: str, user_id: Opt
         "_id": v_obj_id,
         "model_id": {"$in": [m_obj_id, str(model_id)]},
         "status": {"$ne": "deleted"}
+    }) or db.ad_model_versions.find_one({
+        "_id": v_obj_id,
+        "model_id": {"$in": [m_obj_id, str(model_id)]},
+        "status": {"$ne": "deleted"}
+    }) or db.ad_models.find_one({
+        "_id": v_obj_id,
+        "status": {"$ne": "deleted"}
+    }) or db.ad_model_versions.find_one({
+        "_id": v_obj_id,
+        "status": {"$ne": "deleted"}
     })
     if not doc:
         raise HTTPException(status_code=404, detail=f"Version '{version_id}' for model '{model_id}' not found.")

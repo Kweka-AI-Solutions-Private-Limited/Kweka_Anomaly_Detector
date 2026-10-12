@@ -212,7 +212,7 @@ def run_single_image_inspection(
     except Exception as e:
         db.ad_inspections.update_one(
             {"_id": ObjectId(inspection_id)},
-            {"$set": {"status": "failed"}}
+            {"$set": {"status": "failed", "error": str(e)}}
         )
         raise HTTPException(status_code=500, detail=f"Inspection processing failed: {str(e)}")
 
