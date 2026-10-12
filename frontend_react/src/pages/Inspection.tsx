@@ -88,6 +88,15 @@ export const Inspection: React.FC = () => {
   // Error state
   const [error, setError] = useState<string | null>(null);
 
+  // Scroll ref for Right Inspection Result panel to ensure reset on image change
+  const resultPanelScrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (resultPanelScrollRef.current) {
+      resultPanelScrollRef.current.scrollTop = 0;
+    }
+  }, [selectedIndex]);
+
   // Fetch models on load and select active model
   const fetchModelsList = async () => {
     try {
@@ -806,7 +815,7 @@ export const Inspection: React.FC = () => {
 
       {/* STAGE 2: PROCESSING & INSPECTION WORKSPACE SCREEN */}
       {stage === 'workspace' && (
-        <div className="space-y-4 min-h-[calc(100vh-120px)] lg:h-[calc(100vh-140px)] flex flex-col">
+        <div className="space-y-4 min-h-[calc(100vh-120px)] flex flex-col">
           {/* Top Bar with Setup Reset & Batch Progress */}
           <div className="bg-white p-3 sm:p-4 rounded-xl border border-industrial-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
             <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
@@ -816,7 +825,7 @@ export const Inspection: React.FC = () => {
                 onClick={() => setStage('setup')}
                 icon={<ChevronLeft className="w-4 h-4" />}
               >
-                ← Setup New Inspection
+                Setup New Inspection
               </Button>
               <div className="hidden sm:block h-4 w-px bg-industrial-200" />
               <div className="min-w-0">
@@ -1068,6 +1077,45 @@ export const Inspection: React.FC = () => {
                       </div>
                     )}
 
+                    {/* Viewport Floating Verdict Overlay for Completed Inspections */}
+                    {currentItem?.status === 'completed' && currentItem?.result && (
+                      <div className="absolute top-3 left-3 z-20 pointer-events-none">
+                        {currentItem.result.prediction?.status === 'anomalous' ||
+                        currentItem.result.prediction?.status === 'REJECT' ||
+                        (currentItem.result.prediction?.anomaly_score !== undefined &&
+                          currentItem.result.prediction?.threshold !== undefined &&
+                          currentItem.result.prediction.anomaly_score >= currentItem.result.prediction.threshold) ||
+                        currentItem.result.overall_prediction?.status === 'anomalous' ||
+                        currentItem.result.overall_prediction?.status === 'REJECT' ? (
+                          <div className="flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-reject-950/90 border border-reject-500/60 backdrop-blur-md shadow-lg text-white font-mono">
+                            <XCircle className="w-4 h-4 text-reject-400 shrink-0" />
+                            <span className="text-xs font-black tracking-wider text-reject-300 uppercase">REJECT</span>
+                            <span className="text-industrial-500 text-[10px]">|</span>
+                            <span className="text-[11px] font-bold text-reject-200">
+                              Score: {(currentItem.result.prediction?.anomaly_score ?? currentItem.result.overall_prediction?.max_anomaly_score ?? 0).toFixed(1)}
+                            </span>
+                            <span className="text-industrial-500 text-[10px]">/</span>
+                            <span className="text-[10px] text-industrial-400">
+                              Thr: {(currentItem.result.prediction?.threshold ?? (selectedModel as any)?.active_version?.calibration?.threshold ?? 21.43).toFixed(1)}
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-pass-950/90 border border-pass-500/60 backdrop-blur-md shadow-lg text-white font-mono">
+                            <CheckCircle2 className="w-4 h-4 text-pass-400 shrink-0" />
+                            <span className="text-xs font-black tracking-wider text-pass-300 uppercase">PASS</span>
+                            <span className="text-industrial-500 text-[10px]">|</span>
+                            <span className="text-[11px] font-bold text-pass-200">
+                              Score: {(currentItem.result.prediction?.anomaly_score ?? currentItem.result.overall_prediction?.max_anomaly_score ?? 0).toFixed(1)}
+                            </span>
+                            <span className="text-industrial-500 text-[10px]">/</span>
+                            <span className="text-[10px] text-industrial-400">
+                              Thr: {(currentItem.result.prediction?.threshold ?? (selectedModel as any)?.active_version?.calibration?.threshold ?? 21.43).toFixed(1)}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     {!currentItem ? (
                       <div className="text-center text-industrial-500 font-mono text-xs">
                         Select a test image from the queue.
@@ -1107,13 +1155,100 @@ export const Inspection: React.FC = () => {
 
                 {/* RIGHT PANEL: Result & Metadata (4 Cols on desktop) */}
                 <div className="lg:col-span-4 bg-white rounded-xl border border-industrial-200 flex flex-col shadow-sm overflow-hidden">
-                  <div className="p-3 border-b border-industrial-200 bg-industrial-50 shrink-0">
+                  {/* Pinned Card Header */}
+                  <div className="p-3 border-b border-industrial-200 bg-industrial-50 shrink-0 flex items-center justify-between">
                     <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-industrial-700">
                       Inspection Result
                     </h3>
+                    {currentItem?.status === 'completed' && currentItem.result && (
+                      <div className="flex items-center space-x-2">
+                        <span className="text-[10px] font-mono text-industrial-500 truncate max-w-[110px]">
+                          {currentItem.file.name}
+                        </span>
+                        <Badge
+                          status={
+                            currentItem.result.prediction?.status === 'anomalous' ||
+                            currentItem.result.prediction?.status === 'REJECT' ||
+                            (currentItem.result.prediction?.anomaly_score !== undefined &&
+                              currentItem.result.prediction?.threshold !== undefined &&
+                              currentItem.result.prediction.anomaly_score >= currentItem.result.prediction.threshold) ||
+                            currentItem.result.overall_prediction?.status === 'anomalous' ||
+                            currentItem.result.overall_prediction?.status === 'REJECT'
+                              ? 'anomalous'
+                              : 'normal'
+                          }
+                          size="sm"
+                        />
+                      </div>
+                    )}
                   </div>
 
-                  <div className="flex-1 p-4 overflow-y-auto space-y-4 text-xs">
+                  {/* PINNED VERDICT & KEY METRICS (Always visible, never scrolled away) */}
+                  {currentItem?.status === 'completed' && currentItem.result && (
+                    <div className="p-3.5 border-b border-industrial-200 bg-industrial-50/50 shrink-0 space-y-2.5">
+                      {/* Status Banner */}
+                      {currentItem.result.prediction?.status === 'anomalous' ||
+                      currentItem.result.prediction?.status === 'REJECT' ||
+                      (currentItem.result.prediction?.anomaly_score !== undefined &&
+                        currentItem.result.prediction?.threshold !== undefined &&
+                        currentItem.result.prediction.anomaly_score >= currentItem.result.prediction.threshold) ||
+                      currentItem.result.overall_prediction?.status === 'anomalous' ||
+                      currentItem.result.overall_prediction?.status === 'REJECT' ? (
+                        <div className="p-3 bg-reject-50 border border-reject-200 rounded-lg text-center space-y-1 shadow-2xs">
+                          <div className="flex items-center justify-center space-x-1.5">
+                            <XCircle className="w-5 h-5 text-reject-600" />
+                            <h2 className="text-base font-extrabold text-reject-800 tracking-tight font-mono uppercase">
+                              REJECT
+                            </h2>
+                          </div>
+                          <p className="text-[11px] font-bold text-reject-600 font-mono tracking-wide">
+                            ANOMALY DETECTED
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="p-3 bg-pass-50 border border-pass-200 rounded-lg text-center space-y-1 shadow-2xs">
+                          <div className="flex items-center justify-center space-x-1.5">
+                            <CheckCircle2 className="w-5 h-5 text-pass-600" />
+                            <h2 className="text-base font-extrabold text-pass-800 tracking-tight font-mono uppercase">
+                              PASS
+                            </h2>
+                          </div>
+                          <p className="text-[11px] font-bold text-pass-600 font-mono tracking-wide">
+                            PRODUCT NORMAL
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Scores & Threshold Grid */}
+                      <div className="grid grid-cols-2 gap-2 font-mono">
+                        <div className="p-2.5 bg-white rounded-lg border border-industrial-200 shadow-2xs">
+                          <span className="text-[10px] text-industrial-500 uppercase font-semibold">Anomaly Score</span>
+                          <p className="text-sm sm:text-base font-extrabold text-industrial-900 mt-0.5">
+                            {(currentItem.result.prediction?.anomaly_score ?? currentItem.result.overall_prediction?.max_anomaly_score)?.toFixed(2) ?? 'N/A'}
+                          </p>
+                        </div>
+                        <div className="p-2.5 bg-white rounded-lg border border-industrial-200 shadow-2xs">
+                          <span className="text-[10px] text-industrial-500 uppercase font-semibold">Threshold</span>
+                          <p className="text-sm sm:text-base font-extrabold text-industrial-700 mt-0.5">
+                            {(currentItem.result.prediction?.threshold ?? (selectedModel as any)?.active_version?.calibration?.threshold)?.toFixed(2) ?? '21.43'}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Compact Severity & Latency Bar */}
+                      <div className="flex items-center justify-between px-2.5 py-1.5 bg-white rounded-lg border border-industrial-200 text-[11px] font-mono">
+                        <span className="text-industrial-500">
+                          Severity: <strong className="text-industrial-800 capitalize font-bold">{currentItem.result.prediction?.severity || 'none'}</strong>
+                        </span>
+                        <span className="text-industrial-500">
+                          Latency: <strong className="text-industrial-800 font-bold">{currentItem.result.processing_time_ms || 32} ms</strong>
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* SCROLLABLE SECONDARY DETAILS (VLM Defect Analysis, Model Info, Operator Feedback) */}
+                  <div ref={resultPanelScrollRef} className="flex-1 p-3.5 overflow-y-auto space-y-3.5 text-xs">
                     {!currentItem ? (
                       <div className="h-full flex items-center justify-center text-center text-industrial-400 font-mono text-xs">
                         Select a test image from the queue.
@@ -1197,38 +1332,6 @@ export const Inspection: React.FC = () => {
                           </p>
                         </div>
 
-                        {/* Scores Placeholder */}
-                        <div className="grid grid-cols-2 gap-2 font-mono">
-                          <div className="p-3 bg-industrial-50 rounded border border-industrial-200">
-                            <span className="text-[10px] text-industrial-500 uppercase">Score</span>
-                            <p className="text-base font-bold text-industrial-400 mt-0.5">—</p>
-                          </div>
-                          <div className="p-3 bg-industrial-50 rounded border border-industrial-200">
-                            <span className="text-[10px] text-industrial-500 uppercase">Threshold</span>
-                            <p className="text-base font-bold text-industrial-700 mt-0.5">
-                              {(selectedModel as any)?.active_version?.calibration?.threshold?.toFixed(2) ?? '21.43'}
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* Status Metadata */}
-                        <div className="bg-industrial-50 p-3 rounded border border-industrial-200 space-y-2 font-mono">
-                          <div className="flex justify-between">
-                            <span className="text-industrial-500">Status:</span>
-                            <span className="font-semibold text-brand-600 animate-pulse">Processing</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-industrial-500">Severity:</span>
-                            <span className="font-semibold text-industrial-400">—</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-industrial-500">Processing Time:</span>
-                            <span className="font-semibold text-industrial-400">—</span>
-                          </div>
-                        </div>
-
-
-
                         {/* Model Metadata */}
                         <div className="bg-white p-3 rounded border border-industrial-200 space-y-1 text-industrial-600 font-mono">
                           <div className="flex items-center space-x-1.5 font-semibold text-industrial-900 mb-1">
@@ -1240,65 +1343,9 @@ export const Inspection: React.FC = () => {
                       </>
                     ) : (
                       <>
-                        {/* Status Banner */}
-                        {currentItem.result.prediction?.status === 'anomalous' ||
-                          currentItem.result.prediction?.status === 'REJECT' ||
-                          (currentItem.result.prediction?.anomaly_score !== undefined &&
-                            currentItem.result.prediction?.threshold !== undefined &&
-                            currentItem.result.prediction.anomaly_score >= currentItem.result.prediction.threshold) ? (
-                          <div className="p-4 bg-reject-50 border border-reject-200 rounded-lg text-center space-y-1">
-                            <XCircle className="w-8 h-8 text-reject-600 mx-auto" />
-                            <h2 className="text-lg font-extrabold text-reject-700 tracking-tight font-mono">
-                              REJECT
-                            </h2>
-                            <p className="text-[11px] font-semibold text-reject-600">ANOMALY DETECTED</p>
-                          </div>
-                        ) : (
-                          <div className="p-4 bg-pass-50 border border-pass-200 rounded-lg text-center space-y-1">
-                            <CheckCircle2 className="w-8 h-8 text-pass-600 mx-auto" />
-                            <h2 className="text-lg font-extrabold text-pass-700 tracking-tight font-mono">
-                              PASS
-                            </h2>
-                            <p className="text-[11px] font-semibold text-pass-600">PRODUCT NORMAL</p>
-                          </div>
-                        )}
-
-                        {/* Scores */}
-                        <div className="grid grid-cols-2 gap-2 font-mono">
-                          <div className="p-3 bg-industrial-50 rounded border border-industrial-200">
-                            <span className="text-[10px] text-industrial-500 uppercase">Score</span>
-                            <p className="text-base font-bold text-industrial-900 mt-0.5">
-                              {currentItem.result.prediction?.anomaly_score?.toFixed(2) ?? 'N/A'}
-                            </p>
-                          </div>
-                          <div className="p-3 bg-industrial-50 rounded border border-industrial-200">
-                            <span className="text-[10px] text-industrial-500 uppercase">Threshold</span>
-                            <p className="text-base font-bold text-industrial-700 mt-0.5">
-                              {currentItem.result.prediction?.threshold?.toFixed(2) ?? '21.43'}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="bg-industrial-50 p-3 rounded border border-industrial-200 space-y-2 font-mono">
-                          <div className="flex justify-between">
-                            <span className="text-industrial-500">Severity:</span>
-                            <span className="font-semibold capitalize text-industrial-900">
-                              {currentItem.result.prediction?.severity || 'none'}
-                            </span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-industrial-500">Processing Time:</span>
-                            <span className="font-semibold text-industrial-900">
-                              {currentItem.result.processing_time_ms || 32} ms
-                            </span>
-                          </div>
-                        </div>
-
-
-
                         {/* Model Metadata */}
-                        <div className="bg-white p-3 rounded border border-industrial-200 space-y-1 text-industrial-600 font-mono">
-                          <div className="flex items-center space-x-1.5 font-semibold text-industrial-900 mb-1">
+                        <div className="bg-industrial-50 p-3 rounded-lg border border-industrial-200 space-y-1 text-industrial-600 font-mono">
+                          <div className="flex items-center space-x-1.5 font-semibold text-industrial-900 mb-0.5">
                             <Layers className="w-3.5 h-3.5 text-brand-600" />
                             <span>{selectedModel?.name}</span>
                           </div>
