@@ -397,34 +397,7 @@ def resolve_checkpoint_path(ckpt_uri: str, storage_base: Optional[Path] = None, 
 
 
 
-def load_patchcore_model(checkpoint_path: Path) -> Any:
-    """
-    Instantiates PatchCore using the operational baseline configuration and loads
-    the saved state_dict checkpoint from disk. Returns None if checkpoint is a lightweight mock.
-    """
-    if not ANOMALIB_AVAILABLE:
-        raise RuntimeError("Anomalib library is not installed or available.")
-
-    if not checkpoint_path.exists():
-        raise FileNotFoundError(f"PatchCore checkpoint file not found at '{checkpoint_path}'.")
-
-    state_dict = torch.load(checkpoint_path, map_location="cpu")
-
-    # Handle lightweight mock checkpoints created during fast API unit test suites
-    if isinstance(state_dict, dict) and "coreset_vectors" in state_dict and "backbone" in state_dict:
-        return None
-
-    model = Patchcore(
-        backbone=PATCHCORE_CONFIG["backbone"],
-        layers=PATCHCORE_CONFIG["layers"],
-        pre_trained=PATCHCORE_CONFIG["pretrained"],
-        coreset_sampling_ratio=PATCHCORE_CONFIG["coreset_sampling_ratio"],
-        num_neighbors=PATCHCORE_CONFIG["num_neighbors"],
-    )
-
-    model.load_state_dict(state_dict)
-    model.eval()
-    return model
+# (load_patchcore_model is defined below at line 735 with full memory_bank tensor validation)
 
 
 from services.instance_preprocessing_service import (
@@ -737,13 +710,6 @@ def load_patchcore_model(ckpt_path: Path) -> Optional[Any]:
     if not ANOMALIB_AVAILABLE or not ckpt_path or not ckpt_path.exists():
         return None
     try:
-        model = Patchcore(
-            backbone=PATCHCORE_CONFIG["backbone"],
-            layers=PATCHCORE_CONFIG["layers"],
-            pre_trained=PATCHCORE_CONFIG["pretrained"],
-            coreset_sampling_ratio=PATCHCORE_CONFIG["coreset_sampling_ratio"],
-            num_neighbors=PATCHCORE_CONFIG["num_neighbors"],
-        )
         try:
             ckpt = torch.load(ckpt_path, map_location="cpu", weights_only=False)
         except TypeError:
@@ -754,13 +720,29 @@ def load_patchcore_model(ckpt_path: Path) -> Optional[Any]:
         else:
             sd = ckpt
 
+        # Guard 1: If this is a lightweight mock or metadata dictionary, return None immediately
+        if isinstance(sd, dict) and ("coreset_vectors" in sd or "coreset_vectors" in ckpt):
+            return None
+
+        # Guard 2: Verify that real memory_bank tensor exists and has valid elements
+        mb = None
         if isinstance(sd, dict):
             mb = sd.get("model.memory_bank") if "model.memory_bank" in sd else sd.get("memory_bank")
-            if mb is not None:
-                model.model.memory_bank = mb
-            model.load_state_dict(sd, strict=False)
-            return model
-        return None
+        if mb is None or not isinstance(mb, torch.Tensor) or mb.numel() == 0:
+            return None
+
+        model = Patchcore(
+            backbone=PATCHCORE_CONFIG["backbone"],
+            layers=PATCHCORE_CONFIG["layers"],
+            pre_trained=PATCHCORE_CONFIG["pretrained"],
+            coreset_sampling_ratio=PATCHCORE_CONFIG["coreset_sampling_ratio"],
+            num_neighbors=PATCHCORE_CONFIG["num_neighbors"],
+        )
+
+        model.model.memory_bank = mb
+        model.load_state_dict(sd, strict=False)
+        model.eval()
+        return model
     except Exception as exc:
         print(f"[ERROR] load_patchcore_model failed for '{ckpt_path}': {exc}")
         return None
@@ -831,6 +813,8 @@ def run_patchcore_inference(
             except Exception as e:
                 import traceback
                 print(f"[ERROR] PatchCore engine predict failed for '{test_image_path}': {e}\n{traceback.format_exc()}")
+                raw_distance = None
+                anomaly_map = None
 
     # If a model artifact was specified but failed to load or run, check if mock or fallback
     if raw_distance is None and ckpt_uri:

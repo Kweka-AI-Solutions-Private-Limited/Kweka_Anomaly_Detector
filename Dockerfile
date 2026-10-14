@@ -58,7 +58,8 @@ RUN sed -i 's/+cu128//g' requirements.txt && \
     --extra-index-url https://download.pytorch.org/whl/cpu \
     -r requirements.txt && \
     find /usr/local/lib/python3.11/site-packages/ -name "*.pyc" -delete && \
-    find /usr/local/lib/python3.11/site-packages/ -name "tests" -type d -exec rm -rf {} + 2>/dev/null || true
+    find /usr/local/lib/python3.11/site-packages/ -name "tests" -type d -exec rm -rf {} + 2>/dev/null || true && \
+    python -c "import torchvision.models as models; models.wide_resnet50_2(weights=models.Wide_ResNet50_2_Weights.DEFAULT)" 2>/dev/null || true
 
 # ---------------------------------------------------------------
 # Copy backend application source
