@@ -16,12 +16,12 @@ from api.deps import get_current_user_id
 
 router = APIRouter(tags=["Authentication"])
 
-DEFAULT_SECRET_KEY = "fallback_secret_key"
+DEFAULT_SECRET_KEY = "MetSiq2G3wpDGnrtS5w6rBf17KnFZJRr"
 
 
 def get_jwt_secret() -> str:
     """Returns JWT_SECRET_KEY from environment or fallback default."""
-    return os.getenv("JWT_SECRET_KEY", DEFAULT_SECRET_KEY)
+    return os.getenv("JWT_SECRET_KEY") or DEFAULT_SECRET_KEY
 
 
 class ExchangeCodeRequest(BaseModel):
@@ -80,7 +80,7 @@ def verify_central_exchange_code(code_str: str) -> Optional[Dict[str, Any]]:
             if resp.status == 200:
                 body = json.loads(resp.read().decode("utf-8"))
                 return body
-    except Exception as e:
+    except Exception:
         pass
     return None
 
@@ -139,8 +139,9 @@ def extract_user_info_from_payload(payload: Dict[str, Any]) -> tuple[str, Dict[s
 @router.post("/auth/login", response_model=AuthTokenResponse)
 def exchange_code(req: ExchangeCodeRequest):
     """
-    Exchanges parent website authorization code or JWT token for a session access token.
+    Exchanges authorization code or JWT token for a session access token.
     Validates code/token using JWT_SECRET_KEY and extracts user identity.
+    Rejects unauthorized tokens with 401.
     """
     code_val = req.code or req.exchange_code or req.token
     if not code_val or not code_val.strip():
@@ -164,33 +165,25 @@ def exchange_code(req: ExchangeCodeRequest):
         elif isinstance(central_res, dict):
             extracted_user_id, user_metadata = extract_user_info_from_payload(central_res)
 
-    # 2. Attempt to decode code_str as a signed JWT token if central exchange returned nothing
+    # 2. Attempt to decode and cryptographically verify code_str as a signed JWT token
     if not extracted_user_id:
         try:
             payload = jwt.decode(
                 code_str,
                 secret,
-                algorithms=["HS256", "HS384", "HS512", "RS256"],
-                options={"verify_signature": True if secret != DEFAULT_SECRET_KEY else False}
+                algorithms=["HS256", "HS384", "HS512"],
+                options={"verify_signature": True, "verify_exp": True}
             )
             extracted_user_id, user_metadata = extract_user_info_from_payload(payload)
         except Exception:
-            # 3. Try unverified decode if signature failed or external secret used
-            try:
-                payload = jwt.decode(code_str, options={"verify_signature": False})
-                extracted_user_id, user_metadata = extract_user_info_from_payload(payload)
-            except Exception:
-                # 4. Try base64 json decode
-                try:
-                    decoded_bytes = base64.b64decode(code_str)
-                    decoded_json = json.loads(decoded_bytes.decode('utf-8'))
-                    if isinstance(decoded_json, dict):
-                        extracted_user_id, user_metadata = extract_user_info_from_payload(decoded_json)
-                except Exception:
-                    extracted_user_id = code_str
+            pass
 
+    # If neither verification succeeds, the user is NOT authorized
     if not extracted_user_id:
-        extracted_user_id = code_str
+        raise HTTPException(
+            status_code=401,
+            detail="You are not authorized to enter: Invalid authentication credentials or exchange code. Please log in at https://agents.kweka.ai/login"
+        )
 
     user_id_clean = extracted_user_id.strip()
     if "id" not in user_metadata or not user_metadata["id"]:
@@ -218,7 +211,8 @@ def get_current_user_profile(request: Request, user_id: str = Depends(get_curren
     if auth_header and auth_header.startswith("Bearer "):
         token = auth_header.split(" ", 1)[1].strip()
         try:
-            payload = jwt.decode(token, options={"verify_signature": False})
+            secret = get_jwt_secret()
+            payload = jwt.decode(token, secret, algorithms=["HS256", "HS384", "HS512"], options={"verify_signature": True})
             _, meta = extract_user_info_from_payload(payload)
             name = meta.get("name")
             email = meta.get("email")
@@ -228,9 +222,10 @@ def get_current_user_profile(request: Request, user_id: str = Depends(get_curren
 
     return {
         "user_id": user_id,
-        "name": name,
-        "email": email,
+        "name": name or user_id,
+        "email": email or "",
         "role": role,
-        "authenticated": user_id != "usr_default",
+        "authenticated": True,
         "status": "active"
     }
+

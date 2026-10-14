@@ -260,7 +260,8 @@ async def legacy_run_inspection(
     category: str = Form("Transistor"),
     threshold: float = Form(27.0),
     coreset_ratio: float = Form(0.05),
-    file: Optional[UploadFile] = File(None)
+    file: Optional[UploadFile] = File(None),
+    user_id: str = Depends(get_current_user_id)
 ):
     start_time = time.time()
     filename = file.filename if file else "tile_sample.png"
@@ -329,6 +330,7 @@ async def legacy_run_inspection(
 
     record = {
         "id": record_id,
+        "user_id": user_id,
         "timestamp": datetime.now().strftime("%H:%M:%S.%f")[:-3],
         "model": "PatchCore WideResNet50_2 (Real Engine)",
         "category": category,
@@ -359,10 +361,10 @@ async def legacy_run_inspection(
 
 
 @app.delete("/api/inspections")
-def legacy_delete_inspections():
+def legacy_delete_inspections(user_id: str = Depends(get_current_user_id)):
     try:
         db = get_db()
-        result = db.ad_inspections.delete_many({})
+        result = db.ad_inspections.delete_many({"user_id": user_id})
         return {"success": True, "deleted_count": result.deleted_count}
     except Exception as e:
         return {"success": False, "error": str(e)}

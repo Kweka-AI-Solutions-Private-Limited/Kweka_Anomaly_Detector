@@ -29,19 +29,41 @@ export const apiClient = axios.create({
 
 // Automatic User Isolation Context Interceptor
 apiClient.interceptors.request.use((config) => {
-  const userId = localStorage.getItem('user_id') || 'usr_default';
+  const userId = localStorage.getItem('user_id');
   const token = localStorage.getItem('auth_token') || localStorage.getItem('token');
-  config.headers['X-User-ID'] = userId;
+  if (userId) {
+    config.headers['X-User-ID'] = userId;
+  }
   if (token) {
     config.headers['Authorization'] = `Bearer ${token}`;
   }
   return config;
 });
 
-// Automatic retry interceptor for handling Cloud Run cold starts and transient 502/503/504 errors
+// Automatic retry & unauthorized interceptor
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
+    // If backend returns 401 Unauthorized
+    if (error.response && error.response.status === 401) {
+      console.warn('[Auth] Received 401 Unauthorized from backend:', error.response.data?.detail);
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('token');
+      localStorage.removeItem('user_id');
+      localStorage.removeItem('user_name');
+      localStorage.removeItem('user_email');
+      localStorage.removeItem('user_profile');
+      
+      window.dispatchEvent(
+        new CustomEvent('auth_unauthorized', {
+          detail: {
+            message: error.response.data?.detail || 'You are not authorised to enter'
+          }
+        })
+      );
+      return Promise.reject(error);
+    }
+
     const config = error.config;
     if (!config) return Promise.reject(error);
 

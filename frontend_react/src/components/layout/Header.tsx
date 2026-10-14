@@ -382,9 +382,15 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu }) => {
                   type="button"
                   onClick={() => {
                     setIsProfileOpen(false);
-                    alert('Logout action triggered.');
+                    localStorage.removeItem('auth_token');
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user_id');
+                    localStorage.removeItem('user_name');
+                    localStorage.removeItem('user_email');
+                    localStorage.removeItem('user_profile');
+                    window.location.href = 'https://agents.kweka.ai/login';
                   }}
-                  className="w-full text-left px-5 py-2.5 hover:bg-reject-50 text-reject-600 font-semibold text-sm flex items-center space-x-3"
+                  className="w-full text-left px-5 py-2.5 hover:bg-reject-50 text-reject-600 font-semibold text-sm flex items-center space-x-3 transition-colors"
                 >
                   <LogOut className="w-4.5 h-4.5" />
                   <span>Logout</span>
