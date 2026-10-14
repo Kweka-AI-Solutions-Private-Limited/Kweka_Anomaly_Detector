@@ -23,11 +23,7 @@ export async function runInspection(
   }
   formData.append('image', file);
 
-  const response = await apiClient.post('/api/inspections', formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
-  });
+  const response = await apiClient.post('/api/inspections', formData);
   return response.data;
 }
 

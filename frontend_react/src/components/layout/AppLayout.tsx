@@ -86,6 +86,13 @@ export const AppLayout: React.FC = () => {
         getCurrentUser()
           .then((res) => {
             if (res && res.authenticated) {
+              if (res.name && !/^[0-9a-fA-F]{16,}$/.test(res.name.trim()) && !res.name.startsWith('Operator (')) {
+                localStorage.setItem('user_name', res.name.trim());
+              }
+              if (res.email) {
+                localStorage.setItem('user_email', res.email.trim());
+              }
+              window.dispatchEvent(new Event('profile_updated'));
               setIsAuthenticated(true);
               setAuthError(null);
             } else {

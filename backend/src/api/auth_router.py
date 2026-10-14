@@ -85,6 +85,69 @@ def verify_central_exchange_code(code_str: str) -> Optional[Dict[str, Any]]:
     return None
 
 
+def lookup_user_profile(user_id: Optional[str] = None, email: Optional[str] = None) -> Dict[str, Any]:
+    """Looks up user details from kp_users collection in MongoDB or derives friendly name from email."""
+    result: Dict[str, Any] = {}
+    
+    # 1. Query MongoDB kp_users collection if database is reachable
+    try:
+        from db.connection import get_db
+        from bson import ObjectId
+        db = get_db()
+        queries = []
+        if user_id:
+            uid_str = str(user_id).strip()
+            if ObjectId.is_valid(uid_str):
+                queries.append({"_id": ObjectId(uid_str)})
+            queries.append({"_id": uid_str})
+            queries.append({"user_id": uid_str})
+            queries.append({"id": uid_str})
+        if email:
+            clean_email = email.strip()
+            queries.append({"email": clean_email.lower()})
+            queries.append({"email": clean_email})
+
+        for q in queries:
+            doc = db.kp_users.find_one(q)
+            if doc:
+                first = (doc.get("first_name") or "").strip()
+                last = (doc.get("last_name") or "").strip()
+                combined = f"{first} {last}".strip()
+                full = combined or doc.get("name") or doc.get("full_name") or doc.get("display_name")
+                result = {
+                    "id": str(doc.get("_id", user_id)),
+                    "first_name": first or None,
+                    "last_name": last or None,
+                    "name": full or None,
+                    "email": doc.get("email") or email,
+                    "company": doc.get("company"),
+                    "job_title": doc.get("job_title"),
+                    "role": doc.get("role", "user")
+                }
+                break
+    except Exception:
+        pass
+
+    # 2. If name is still missing or matches raw ID, derive a friendly human name from email
+    target_email = result.get("email") or email
+    current_name = result.get("name")
+    if target_email and (not current_name or current_name == user_id or (user_id and current_name.startswith(f"Operator ({user_id[:8]}")) or (len(str(current_name)) >= 16 and all(c in "0123456789abcdefABCDEF" for c in str(current_name)))):
+        local_part = target_email.split("@")[0].strip()
+        import re
+        alpha_match = re.match(r"^([a-zA-Z]+)", local_part)
+        if alpha_match and len(alpha_match.group(1)) >= 2:
+            derived = alpha_match.group(1).capitalize()
+            result["name"] = derived
+            if not result.get("first_name"):
+                result["first_name"] = derived
+        else:
+            clean_local = re.sub(r"[._-]+", " ", local_part).strip().title()
+            if clean_local:
+                result["name"] = clean_local
+
+    return result
+
+
 def extract_user_info_from_payload(payload: Dict[str, Any]) -> tuple[str, Dict[str, Any]]:
     """Helper to extract user_id, name, email, and role from JWT or JSON payload dictionary."""
     sub = str(payload.get("sub") or "").strip()
@@ -121,15 +184,27 @@ def extract_user_info_from_payload(payload: Dict[str, Any]) -> tuple[str, Dict[s
         sub
     )
 
+    # Enrich from database kp_users collection
+    db_profile = lookup_user_profile(user_id=str(user_id) if user_id else None, email=str(email) if email else None)
+    if db_profile:
+        if not name or name == user_id or (user_id and str(name).startswith(f"Operator ({str(user_id)[:8]}")):
+            name = db_profile.get("name") or name
+        if not first_name:
+            first_name = db_profile.get("first_name") or first_name
+        if not last_name:
+            last_name = db_profile.get("last_name") or last_name
+        if not email:
+            email = db_profile.get("email") or email
+
     metadata = {
         "id": str(user_id) if user_id else None,
         "email": str(email) if email else None,
         "name": str(name) if name else None,
-        "role": payload.get("role", "user"),
-        "first_name": first_name or None,
-        "last_name": last_name or None,
-        "company": payload.get("company"),
-        "job_title": payload.get("job_title"),
+        "role": payload.get("role") or db_profile.get("role", "user"),
+        "first_name": first_name or db_profile.get("first_name"),
+        "last_name": last_name or db_profile.get("last_name"),
+        "company": payload.get("company") or db_profile.get("company"),
+        "job_title": payload.get("job_title") or db_profile.get("job_title"),
     }
     return str(user_id) if user_id else "", metadata
 
@@ -223,6 +298,10 @@ def get_current_user_profile(request: Request, user_id: str = Depends(get_curren
     return {
         "user_id": user_id,
         "name": name or user_id,
+        "first_name": meta.get("first_name"),
+        "last_name": meta.get("last_name"),
+        "company": meta.get("company"),
+        "job_title": meta.get("job_title"),
         "email": email or "",
         "role": role,
         "authenticated": True,

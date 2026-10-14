@@ -35,11 +35,7 @@ export async function createInspectionRun(
     formData.append('files', file);
   });
 
-  const response = await apiClient.post('/api/inspection-runs', formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
-  });
+  const response = await apiClient.post('/api/inspection-runs', formData);
   return response.data;
 }
 

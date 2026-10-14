@@ -311,7 +311,10 @@ export const Inspection: React.FC = () => {
 
     } catch (err: any) {
       stopPolling();
-      const detail = err.response?.data?.detail || err.message || 'Inspection run failed.';
+      let detail = err.response?.data?.detail || err.message || 'Inspection run failed.';
+      if (detail === 'Network Error') {
+        detail = 'Network Error: Unable to connect to inspection service. The backend may be booting up or experiencing connectivity issues. Please retry in a few moments.';
+      }
       setError(`Batch inspection run error: ${detail}`);
       setBatchItems((prev) =>
         prev.map((b) => ({ ...b, status: 'error', error: detail }))

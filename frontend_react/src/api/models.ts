@@ -55,12 +55,7 @@ export async function uploadReferenceImages(modelId: string, files: File[]): Pro
 
     const response = await apiClient.post(
       `/api/models/${modelId}/references`,
-      formData,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      }
+      formData
     );
     if (Array.isArray(response.data)) {
       allResults.push(...response.data);

@@ -26,7 +26,45 @@ function formatUserIdentity(id: string, name?: string | null, email?: string | n
   let finalName = name?.trim();
   let finalEmail = email?.trim();
 
-  // If missing or raw hex ID string, format human-friendly display name
+  // Check stored user_profile from localStorage if name is missing or placeholder
+  if (!finalName || finalName === id || isHexId(finalName) || finalName.startsWith('Operator (')) {
+    try {
+      const storedProfile = localStorage.getItem('user_profile');
+      if (storedProfile) {
+        const parsed = JSON.parse(storedProfile);
+        const pFirst = (parsed.first_name || '').trim();
+        const pLast = (parsed.last_name || '').trim();
+        const pCombined = `${pFirst} ${pLast}`.trim();
+        const pName = pCombined || parsed.name;
+        if (pName && pName !== id && !isHexId(pName) && !pName.startsWith('Operator (')) {
+          finalName = pName;
+        }
+        if (!finalEmail && parsed.email) {
+          finalEmail = parsed.email;
+        }
+      }
+    } catch {
+      // Ignore JSON parse errors
+    }
+  }
+
+  // If still missing or placeholder, attempt extraction from email
+  if (!finalName || finalName === id || isHexId(finalName) || finalName.startsWith('Operator (')) {
+    if (finalEmail && finalEmail.includes('@')) {
+      const localPart = finalEmail.split('@')[0];
+      const alphaMatch = localPart.match(/^([a-zA-Z]+)/);
+      if (alphaMatch && alphaMatch[1].length >= 2) {
+        finalName = alphaMatch[1].charAt(0).toUpperCase() + alphaMatch[1].slice(1).toLowerCase();
+      } else {
+        const clean = localPart.replace(/[._-]+/g, ' ').trim();
+        if (clean) {
+          finalName = clean.split(' ').map((s) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()).join(' ');
+        }
+      }
+    }
+  }
+
+  // Fallbacks if no valid name could be derived
   if (!finalName || finalName === id || isHexId(finalName)) {
     if (id === 'usr_default') {
       finalName = 'QA Operator';
@@ -100,6 +138,12 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu }) => {
         const activeId = res.user_id || localStorage.getItem('user_id') || 'usr_default';
         const storedName = res.name || localStorage.getItem('user_name');
         const storedEmail = res.email || localStorage.getItem('user_email');
+        if (res.name && !isHexId(res.name) && !res.name.startsWith('Operator (')) {
+          localStorage.setItem('user_name', res.name);
+        }
+        if (res.email) {
+          localStorage.setItem('user_email', res.email);
+        }
         setUserProfile(formatUserIdentity(activeId, storedName, storedEmail));
       })
       .catch(() => {
@@ -108,11 +152,15 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu }) => {
   }, []);
 
   const getInitials = (name: string): string => {
-    const parts = name.trim().split(/[\s_-]+/);
+    const clean = name.replace(/\s*\([^)]*\)/g, '').replace(/[^a-zA-Z0-9\s]/g, ' ').trim();
+    const parts = clean.split(/\s+/).filter(Boolean);
     if (parts.length >= 2 && parts[0] && parts[1]) {
       return (parts[0][0] + parts[1][0]).toUpperCase();
     }
-    return name.slice(0, 2).toUpperCase() || 'QA';
+    if (parts.length === 1 && parts[0].length >= 2) {
+      return parts[0].slice(0, 2).toUpperCase();
+    }
+    return (parts[0]?.[0] || 'U').toUpperCase();
   };
 
   // Fetch unread count from backend
